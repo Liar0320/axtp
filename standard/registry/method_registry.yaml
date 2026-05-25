@@ -1,0 +1,116 @@
+methods:
+  - id: 0x0201
+    name: session.identify
+    domain: session
+    status: mvp
+    rpc_op: request_response
+    request_schema: SessionIdentifyRequest
+    response_schema: SessionIdentifyResponse
+    recommended_encoding: [json, binary_tlv]
+    capabilities: [session.identify]
+    events: []
+    errors: [SUCCESS, RPC_INVALID_PARAMS, AUTH_REQUIRED]
+
+  - id: 0x0101
+    name: device.getInfo
+    domain: device
+    status: mvp
+    rpc_op: request_response
+    request_schema: DeviceGetInfoRequest
+    response_schema: DeviceGetInfoResponse
+    recommended_encoding: [json, binary_tlv]
+    capabilities: [device.info]
+    events: []
+    errors: [SUCCESS, RPC_UNKNOWN_METHOD, RPC_INVALID_PARAMS]
+    legacy:
+      cmd_value: 0x000B0002
+      name: BetaDeviceInfo
+      payload_format: fixed_struct
+
+  - id: 0x0301
+    name: capability.getAll
+    domain: capability
+    status: mvp
+    rpc_op: request_response
+    request_schema: CapabilityGetAllRequest
+    response_schema: CapabilityGetAllResponse
+    recommended_encoding: [json, binary_tlv]
+    capabilities: [capability.get]
+    events: []
+    errors: [SUCCESS, RPC_UNKNOWN_METHOD]
+
+  - id: 0x0601
+    name: brightness.get
+    domain: brightness
+    status: mvp
+    rpc_op: request_response
+    request_schema: BrightnessGetRequest
+    response_schema: BrightnessGetResponse
+    recommended_encoding: [json, binary_tlv]
+    capabilities: [brightness.get]
+    events: []
+    errors: [SUCCESS, RPC_UNKNOWN_METHOD]
+
+  - id: 0x0602
+    name: brightness.set
+    domain: brightness
+    status: mvp
+    rpc_op: request_response
+    request_schema: BrightnessSetRequest
+    response_schema: CommonEmptyResponse
+    recommended_encoding: [json, binary_tlv]
+    capabilities: [brightness.set]
+    events: [brightness.changed]
+    errors: [SUCCESS, RPC_INVALID_PARAMS, DEVICE_BUSY]
+    legacy:
+      cmd_value: 0x000B0042
+      name: BetaBrightnessSet
+      payload_format: fixed_struct
+
+  - id: 0x0B02
+    name: firmware.begin
+    domain: firmware
+    status: mvp
+    rpc_op: request_response
+    request_schema: FirmwareBeginRequest
+    response_schema: FirmwareBeginResponse
+    recommended_encoding: [json, binary_tlv]
+    capabilities: [firmware.ota]
+    events: [firmware.updateProgress]
+    errors: [SUCCESS, RPC_INVALID_PARAMS, DEVICE_BUSY]
+
+  - id: 0x0B03
+    name: firmware.end
+    domain: firmware
+    status: mvp
+    rpc_op: request_response
+    request_schema: FirmwareEndRequest
+    response_schema: CommonEmptyResponse
+    recommended_encoding: [json, binary_tlv]
+    capabilities: [firmware.ota]
+    events: []
+    errors: [SUCCESS, STREAM_NOT_FOUND, DEVICE_BUSY]
+
+  - id: 0x0B04
+    name: firmware.verify
+    domain: firmware
+    status: mvp
+    rpc_op: request_response
+    request_schema: FirmwareVerifyRequest
+    response_schema: CommonEmptyResponse
+    recommended_encoding: [json, binary_tlv]
+    capabilities: [firmware.ota]
+    events: [firmware.updateCompleted, firmware.updateFailed]
+    errors: [SUCCESS, STREAM_CRC_ERROR, DEVICE_BUSY]
+
+  - id: 0x0B05
+    name: firmware.apply
+    domain: firmware
+    status: mvp
+    rpc_op: request_response
+    request_schema: FirmwareApplyRequest
+    response_schema: CommonEmptyResponse
+    recommended_encoding: [json, binary_tlv]
+    capabilities: [firmware.ota]
+    events: [firmware.updateCompleted, firmware.updateFailed]
+    errors: [SUCCESS, DEVICE_BUSY]

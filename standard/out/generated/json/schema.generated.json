@@ -1,0 +1,483 @@
+{
+  "schemas": [
+    {
+      "name": "CommonEmptyRequest",
+      "type": "object",
+      "fields": []
+    },
+    {
+      "name": "CommonEmptyResponse",
+      "type": "object",
+      "fields": []
+    },
+    {
+      "name": "ControlConnectBody",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "protocolVersion",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 1,
+          "max": 15
+        },
+        {
+          "id": 2,
+          "name": "maxFrameSize",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false,
+          "min": 1,
+          "max": 65535
+        },
+        {
+          "id": 3,
+          "name": "supportedPayloadTypes",
+          "type": "bitmap",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 4,
+          "name": "supportedRpcEncodings",
+          "type": "bitmap",
+          "required": true,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "name": "ControlAcceptBody",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "sessionId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 2,
+          "name": "selectedVersion",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 1,
+          "max": 15
+        },
+        {
+          "id": 3,
+          "name": "maxFrameSize",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false,
+          "min": 1,
+          "max": 65535
+        }
+      ]
+    },
+    {
+      "name": "DeviceGetInfoRequest",
+      "type": "object",
+      "fields": []
+    },
+    {
+      "name": "DeviceGetInfoResponse",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "vendor",
+          "type": "string",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 32
+        },
+        {
+          "id": 2,
+          "name": "product",
+          "type": "string",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 32
+        },
+        {
+          "id": 3,
+          "name": "firmwareVersion",
+          "type": "string",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 32
+        },
+        {
+          "id": 4,
+          "name": "serialNumber",
+          "type": "string",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 64
+        }
+      ]
+    },
+    {
+      "name": "CapabilityGetAllRequest",
+      "type": "object",
+      "fields": []
+    },
+    {
+      "name": "CapabilityGetAllResponse",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "capabilityCount",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 2,
+          "name": "capabilityIds",
+          "type": "array",
+          "required": false,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "name": "FirmwareOtaCapability",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "maxImageSize",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 2,
+          "name": "maxChunkSize",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "name": "BrightnessGetRequest",
+      "type": "object",
+      "fields": []
+    },
+    {
+      "name": "BrightnessGetResponse",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "value",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "name": "BrightnessSetRequest",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "value",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": 2,
+          "name": "transitionMs",
+          "type": "uint16",
+          "required": false,
+          "deprecated": false,
+          "min": 0,
+          "max": 60000
+        }
+      ]
+    },
+    {
+      "name": "BrightnessChangedEvent",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "value",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 0,
+          "max": 100
+        },
+        {
+          "id": 2,
+          "name": "previousValue",
+          "type": "uint8",
+          "required": false,
+          "deprecated": false,
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "name": "FirmwareBeginRequest",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "totalSize",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 2,
+          "name": "hashAlgo",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 16
+        },
+        {
+          "id": 3,
+          "name": "hash",
+          "type": "bytes",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 64
+        },
+        {
+          "id": 4,
+          "name": "chunkSize",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "name": "FirmwareBeginResponse",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 2,
+          "name": "ackMode",
+          "type": "enum",
+          "required": true,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "name": "FirmwareEndRequest",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "name": "FirmwareVerifyRequest",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "name": "FirmwareApplyRequest",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "name": "FirmwareUpdateProgressEvent",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 2,
+          "name": "percent",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "name": "FirmwareUpdateCompletedEvent",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "version",
+          "type": "string",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 32
+        }
+      ]
+    },
+    {
+      "name": "FirmwareUpdateFailedEvent",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "errorCode",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 2,
+          "name": "message",
+          "type": "string",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 96
+        }
+      ]
+    },
+    {
+      "name": "StreamOtaChunk",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 2,
+          "name": "seqId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 3,
+          "name": "cursor",
+          "type": "uint64",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 4,
+          "name": "data",
+          "type": "bytes",
+          "required": true,
+          "deprecated": false
+        }
+      ]
+    },
+    {
+      "name": "SessionIdentifyRequest",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "clientName",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 64
+        },
+        {
+          "id": 2,
+          "name": "clientVersion",
+          "type": "string",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 32
+        },
+        {
+          "id": 3,
+          "name": "schemaVersion",
+          "type": "string",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 32
+        },
+        {
+          "id": 4,
+          "name": "authResponse",
+          "type": "bytes",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 64
+        }
+      ]
+    },
+    {
+      "name": "SessionIdentifyResponse",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "accepted",
+          "type": "bool",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 2,
+          "name": "authRequired",
+          "type": "bool",
+          "required": false,
+          "deprecated": false
+        }
+      ]
+    }
+  ]
+}

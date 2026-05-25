@@ -222,7 +222,7 @@ OTA 进度与结果
 
 说明：
 
-`CONTROL` 的 `HELLO / CLOSE / RESUME` 是协议运行时信令，不应注册为 EventId。这里的 `session.*` 只表达业务层会话状态。
+`CONTROL` 的 `OPEN / CLOSE / RESUME` 是协议运行时信令，不应注册为 EventId。这里的 `session.*` 只表达业务层会话状态。
 
 ---
 
@@ -597,7 +597,7 @@ stream.error
 
 ## 12. Event 与 Control 的关系
 
-Control 层的 ACK/NACK、HELLO、HEARTBEAT 不应作为 Event 上报。
+Control 层的 ACK/NACK、OPEN、HEARTBEAT 不应作为 Event 上报。
 
 原因：
 

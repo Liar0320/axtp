@@ -622,8 +622,8 @@ schema runtime reflection
 namespace axtp {
 
 enum class ControlOpcode : uint8_t {
-    HELLO         = 0x01,
-    HELLO_ACK     = 0x02,
+    OPEN          = 0x01,
+    ACCEPT     = 0x02,
     HEARTBEAT     = 0x03,
     HEARTBEAT_ACK = 0x04,
     ACK           = 0x05,
@@ -642,7 +642,7 @@ enum class BodyEncoding : uint8_t {
 };
 
 struct ControlMessage {
-    ControlOpcode opcode = ControlOpcode::HELLO;
+    ControlOpcode opcode = ControlOpcode::OPEN;
     uint8_t flags = 0;
     uint16_t controlId = 0;
     ErrorCode statusCode = ErrorCode::OK;
@@ -662,7 +662,7 @@ public:
 } // namespace axtp
 ```
 
-### 10.2 HELLO 构造示例
+### 10.2 OPEN 构造示例
 
 ```cpp
 TlvWriter body;
@@ -674,7 +674,7 @@ body.putU8(0x08, 0x03);    // rpc encodings bitmap
 body.putU16(0x0A, 1000);   // heartbeat interval
 
 ControlMessage hello;
-hello.opcode = ControlOpcode::HELLO;
+hello.opcode = ControlOpcode::OPEN;
 hello.controlId = 1;
 hello.bodyEncoding = BodyEncoding::TLV;
 hello.body = body.bytes();
@@ -905,7 +905,7 @@ Session MVP 必须负责：
 生成 requestId
 生成 controlId
 维护 pending request table
-处理 HELLO / HELLO_ACK
+处理 CONNECT / ACCEPT
 处理 ACK / NACK
 路由 Frame 到 Control/RPC/Stream Parser
 ```
@@ -1049,8 +1049,8 @@ Client Session <-> Memory Transport <-> Device Session
 ### 16.2 必须跑通流程
 
 ```text
-1. Client 发送 CONTROL HELLO
-2. Device 返回 CONTROL HELLO_ACK
+1. Client 发送 CONTROL OPEN
+2. Device 返回 CONTROL ACCEPT
 3. Client 发送 RPC capability.getAll
 4. Device 返回 capability 列表
 5. Client 发送 RPC device.getInfo
@@ -1410,9 +1410,9 @@ Demo 日志建议使用简单 stdout。
 日志格式：
 
 ```text
-[CLIENT] send CONTROL HELLO messageId=1
-[DEVICE] recv CONTROL HELLO controlId=1
-[DEVICE] send CONTROL HELLO_ACK sessionId=0x12345678
+[CLIENT] send CONTROL OPEN messageId=1
+[DEVICE] recv CONTROL OPEN controlId=1
+[DEVICE] send CONTROL ACCEPT sessionId=0x12345678
 [CLIENT] send RPC device.getInfo requestId=0x00000001
 [DEVICE] send RPC response status=OK
 ```
@@ -1438,7 +1438,7 @@ C++ Demo v1 通过验收必须满足：
 4. Frame Standard 编解码测试通过
 5. Frame Compact 编解码测试通过
 6. TLV 编解码测试通过
-7. Control HELLO / HELLO_ACK 测试通过
+7. Control CONNECT / ACCEPT 测试通过
 8. RPC device.getInfo / brightness.set 测试通过
 9. Event brightness.changed 测试通过
 10. Stream OTA chunk + ACK 测试通过
@@ -1568,9 +1568,9 @@ Demo 重点：
 
 ```text
 [CLIENT] transport connected
-[CLIENT] send CONTROL HELLO
-[DEVICE] recv CONTROL HELLO
-[DEVICE] send CONTROL HELLO_ACK
+[CLIENT] send CONTROL OPEN
+[DEVICE] recv CONTROL OPEN
+[DEVICE] send CONTROL ACCEPT
 [CLIENT] session ready
 
 [CLIENT] send RPC capability.getAll

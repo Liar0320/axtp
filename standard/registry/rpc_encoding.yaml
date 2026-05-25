@@ -1,0 +1,16 @@
+rpc_encodings:
+  - id: 0x01
+    name: JSON
+    domain: rpc
+    status: mvp
+    description: JSON RPC body or debug adapter payload.
+  - id: 0x02
+    name: BINARY
+    domain: rpc
+    status: mvp
+    description: Binary RPC header and body.
+  - id: 0x03
+    name: CBOR
+    domain: rpc
+    status: draft
+    description: CBOR encoded RPC body.

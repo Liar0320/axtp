@@ -256,7 +256,7 @@ priority: P0
 MVP 不追求覆盖全部业务，而是要跑通一条端到端链路：
 
 ```text
-CONTROL HELLO / HELLO_ACK
+CONTROL OPEN / ACCEPT
   ↓
 RPC capability.getAll
   ↓
@@ -356,7 +356,7 @@ MVP 方法表：
 说明：
 
 ```text
-协议能力优先通过 CONTROL HELLO / HELLO_ACK 协商。
+协议能力优先通过 CONTROL OPEN / ACCEPT 协商。
 业务能力通过 capability.* RPC 查询。
 ```
 

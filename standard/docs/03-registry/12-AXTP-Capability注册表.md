@@ -74,20 +74,20 @@ BLE MTU = 247
 
 ---
 
-## 3. Capability 与 CONTROL HELLO 的关系
+## 3. Capability 与 CONTROL OPEN 的关系
 
 AXTP 中有两类能力发现机制：
 
 ```text
-CONTROL HELLO / HELLO_ACK
+CONTROL OPEN / ACCEPT
 RPC capability.*
 ```
 
 二者职责不同。
 
-### 3.1 CONTROL HELLO 负责协议级能力协商
+### 3.1 CONTROL OPEN 负责协议级能力协商
 
-CONTROL HELLO 只协商协议运行时必须知道的能力。
+CONTROL OPEN 只协商协议运行时必须知道的能力。
 
 例如：
 
@@ -111,7 +111,7 @@ encryption
 
 ### 3.2 capability.* RPC 负责业务能力查询
 
-业务能力不应该放进 CONTROL HELLO。
+业务能力不应该放进 CONTROL OPEN。
 
 例如：
 
@@ -157,9 +157,9 @@ Capability
 
 | 类别 | 说明 | 发现方式 |
 |---|---|---|
-| protocol capability | 协议版本、PayloadType、Header Profile | CONTROL HELLO + RPC |
-| transport capability | MTU、最大包长、窗口、ACK 模式 | CONTROL HELLO + RPC |
-| rpc capability | RPC 编码、bodyEncoding、methodId 支持 | CONTROL HELLO + RPC |
+| protocol capability | 协议版本、PayloadType、Header Profile | CONTROL OPEN + RPC |
+| transport capability | MTU、最大包长、窗口、ACK 模式 | CONTROL OPEN + RPC |
+| rpc capability | RPC 编码、bodyEncoding、methodId 支持 | CONTROL OPEN + RPC |
 | stream capability | Stream Profile ID、窗口、断点续传、CRC | RPC |
 | business capability | brightness、firmware、file、video 等业务能力 | RPC |
 | vendor capability | 厂商私有能力 | RPC |
@@ -229,7 +229,7 @@ Capability Registry 的标准条目格式如下：
 | description | 描述 |
 | values | 枚举或 bitmap 值 |
 | range | 数值范围 |
-| discovery | 是否可通过 HELLO 或 RPC 查询 |
+| discovery | 是否可通过 OPEN 或 RPC 查询 |
 | relatedMethods | 相关 RPC 方法 |
 | relatedEvents | 相关事件 |
 | relatedStreams | 相关 Stream 类型 |
@@ -376,7 +376,7 @@ Capability Registry 的标准条目格式如下：
 
 ### 11.1 stream.profiles
 
-Stream Profile 是具体可建流协议档案。能力值推荐使用 `list<uint16>` 返回完整 profileId；低带宽 HELLO 摘要可使用 bitmap，但 bitmap 只能表达 MVP 小集合。
+Stream Profile 是具体可建流协议档案。能力值推荐使用 `list<uint16>` 返回完整 profileId；低带宽 OPEN 摘要可使用 bitmap，但 bitmap 只能表达 MVP 小集合。
 
 | profileId | Profile |
 |---:|---|
@@ -1076,7 +1076,7 @@ C++ Demo v1 至少需要实现：
 
 ```text
 1. 设备启动时构造 CapabilitySet
-2. HELLO_ACK 返回协议能力摘要
+2. ACCEPT 返回协议能力摘要
 3. capability.getAll 返回完整 MVP capability
 4. capability.getDomain 返回指定 domain
 5. capability.hasMethod 判断 methodId
@@ -1086,8 +1086,8 @@ C++ Demo v1 至少需要实现：
 示例流程：
 
 ```text
-Client -> CONTROL HELLO
-Server -> CONTROL HELLO_ACK，返回 protocol/transport/rpc/stream 摘要
+Client -> CONTROL OPEN
+Server -> CONTROL ACCEPT，返回 protocol/transport/rpc/stream 摘要
 
 Client -> RPC capability.getAll
 Server -> 返回完整能力集
@@ -1124,8 +1124,8 @@ Capability 查询相关错误码来自 ErrorCode Registry。
 Capability Registry 至少应提供以下测试向量：
 
 ```text
-1. HELLO_ACK 返回 protocol.payloadTypes
-2. HELLO_ACK 返回 transport.mtu
+1. ACCEPT 返回 protocol.payloadTypes
+2. ACCEPT 返回 transport.mtu
 3. capability.getAll JSON 返回
 4. capability.getAll Binary TLV 返回
 5. capability.getDomain(domain=firmware)
@@ -1160,7 +1160,7 @@ Capability Registry 是 AXTP 设备协议从“固定命令表”走向“可发
 最终结构如下：
 
 ```text
-CONTROL HELLO
+CONTROL OPEN
   ↓
 协议能力 / 传输能力快速协商
 

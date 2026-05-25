@@ -1,0 +1,237 @@
+{
+  "methods": [
+    {
+      "id": 257,
+      "name": "device.getInfo",
+      "domain": "device",
+      "status": "mvp",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "DeviceGetInfoRequest",
+      "responseSchema": "DeviceGetInfoResponse",
+      "recommendedEncoding": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "device.info"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "RPC_UNKNOWN_METHOD",
+        "RPC_INVALID_PARAMS"
+      ],
+      "legacy": {
+        "cmd_value": 720898,
+        "name": "BetaDeviceInfo",
+        "payload_format": "fixed_struct"
+      },
+      "idHex": "0x0101"
+    },
+    {
+      "id": 513,
+      "name": "session.identify",
+      "domain": "session",
+      "status": "mvp",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "SessionIdentifyRequest",
+      "responseSchema": "SessionIdentifyResponse",
+      "recommendedEncoding": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "session.identify"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "RPC_INVALID_PARAMS",
+        "AUTH_REQUIRED"
+      ],
+      "idHex": "0x0201"
+    },
+    {
+      "id": 769,
+      "name": "capability.getAll",
+      "domain": "capability",
+      "status": "mvp",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "CapabilityGetAllRequest",
+      "responseSchema": "CapabilityGetAllResponse",
+      "recommendedEncoding": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "capability.get"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "RPC_UNKNOWN_METHOD"
+      ],
+      "idHex": "0x0301"
+    },
+    {
+      "id": 1537,
+      "name": "brightness.get",
+      "domain": "brightness",
+      "status": "mvp",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "BrightnessGetRequest",
+      "responseSchema": "BrightnessGetResponse",
+      "recommendedEncoding": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "brightness.get"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "RPC_UNKNOWN_METHOD"
+      ],
+      "idHex": "0x0601"
+    },
+    {
+      "id": 1538,
+      "name": "brightness.set",
+      "domain": "brightness",
+      "status": "mvp",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "BrightnessSetRequest",
+      "responseSchema": "CommonEmptyResponse",
+      "recommendedEncoding": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "brightness.set"
+      ],
+      "events": [
+        "brightness.changed"
+      ],
+      "errors": [
+        "SUCCESS",
+        "RPC_INVALID_PARAMS",
+        "DEVICE_BUSY"
+      ],
+      "legacy": {
+        "cmd_value": 720962,
+        "name": "BetaBrightnessSet",
+        "payload_format": "fixed_struct"
+      },
+      "idHex": "0x0602"
+    },
+    {
+      "id": 2818,
+      "name": "firmware.begin",
+      "domain": "firmware",
+      "status": "mvp",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "FirmwareBeginRequest",
+      "responseSchema": "FirmwareBeginResponse",
+      "recommendedEncoding": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [
+        "firmware.updateProgress"
+      ],
+      "errors": [
+        "SUCCESS",
+        "RPC_INVALID_PARAMS",
+        "DEVICE_BUSY"
+      ],
+      "idHex": "0x0B02"
+    },
+    {
+      "id": 2819,
+      "name": "firmware.end",
+      "domain": "firmware",
+      "status": "mvp",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "FirmwareEndRequest",
+      "responseSchema": "CommonEmptyResponse",
+      "recommendedEncoding": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "STREAM_NOT_FOUND",
+        "DEVICE_BUSY"
+      ],
+      "idHex": "0x0B03"
+    },
+    {
+      "id": 2820,
+      "name": "firmware.verify",
+      "domain": "firmware",
+      "status": "mvp",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "FirmwareVerifyRequest",
+      "responseSchema": "CommonEmptyResponse",
+      "recommendedEncoding": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [
+        "firmware.updateCompleted",
+        "firmware.updateFailed"
+      ],
+      "errors": [
+        "SUCCESS",
+        "STREAM_CRC_ERROR",
+        "DEVICE_BUSY"
+      ],
+      "idHex": "0x0B04"
+    },
+    {
+      "id": 2821,
+      "name": "firmware.apply",
+      "domain": "firmware",
+      "status": "mvp",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "FirmwareApplyRequest",
+      "responseSchema": "CommonEmptyResponse",
+      "recommendedEncoding": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [
+        "firmware.updateCompleted",
+        "firmware.updateFailed"
+      ],
+      "errors": [
+        "SUCCESS",
+        "DEVICE_BUSY"
+      ],
+      "idHex": "0x0B05"
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+schemas:
+  SessionIdentifyRequest:
+    type: object
+    fields:
+      - id: 0x01
+        name: clientName
+        type: string
+        required: true
+        max_length: 64
+        deprecated: false
+      - id: 0x02
+        name: clientVersion
+        type: string
+        required: false
+        max_length: 32
+        deprecated: false
+      - id: 0x03
+        name: schemaVersion
+        type: string
+        required: false
+        max_length: 32
+        deprecated: false
+      - id: 0x04
+        name: authResponse
+        type: bytes
+        required: false
+        max_length: 64
+        deprecated: false
+
+  SessionIdentifyResponse:
+    type: object
+    fields:
+      - id: 0x01
+        name: accepted
+        type: bool
+        required: true
+        deprecated: false
+      - id: 0x02
+        name: authRequired
+        type: bool
+        required: false
+        deprecated: false

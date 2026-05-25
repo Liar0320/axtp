@@ -1,0 +1,51 @@
+schemas:
+  BrightnessGetRequest:
+    type: object
+    fields: []
+
+  BrightnessGetResponse:
+    type: object
+    fields:
+      - id: 0x01
+        name: value
+        type: uint8
+        required: true
+        min: 0
+        max: 100
+        deprecated: false
+
+  BrightnessSetRequest:
+    type: object
+    fields:
+      - id: 0x01
+        name: value
+        type: uint8
+        required: true
+        min: 0
+        max: 100
+        deprecated: false
+      - id: 0x02
+        name: transitionMs
+        type: uint16
+        required: false
+        min: 0
+        max: 60000
+        deprecated: false
+
+  BrightnessChangedEvent:
+    type: object
+    fields:
+      - id: 0x01
+        name: value
+        type: uint8
+        required: true
+        min: 0
+        max: 100
+        deprecated: false
+      - id: 0x02
+        name: previousValue
+        type: uint8
+        required: false
+        min: 0
+        max: 100
+        deprecated: false

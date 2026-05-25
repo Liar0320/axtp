@@ -763,7 +763,7 @@ CONTROL 负责 ACK/NACK / WINDOW_UPDATE
 AXTP 拆成两类能力：
 
 ```text
-协议能力：通过 CONTROL HELLO/HELLO_ACK 协商
+协议能力：通过 CONTROL OPEN/ACCEPT 协商
 业务能力：通过 capability.* RPC 查询
 ```
 
@@ -965,9 +965,9 @@ Tunnel 模式仅用于：
 
 ## 17. 兼容协商
 
-### 17.1 CONTROL HELLO 中声明兼容能力
+### 17.1 CONTROL OPEN 中声明兼容能力
 
-建议在 CONTROL HELLO / HELLO_ACK 中加入以下 TLV：
+建议在 CONTROL OPEN / ACCEPT 中加入以下 TLV：
 
 | 字段 | 类型 | 说明 |
 |---|---|---|
@@ -1213,7 +1213,7 @@ event.unsubscribe
 AXTP Native
 ```
 
-Host 通过 HELLO / capability 判断使用哪一路。
+Host 通过 OPEN / capability 判断使用哪一路。
 
 ### 20.4 Phase 3：Native AXTP
 
@@ -1427,7 +1427,7 @@ AXTP 请求 -> 旧请求
 | 文档 | 关系 |
 |---|---|
 | `01-AXTP-整体协议规范.md` | 定义 Frame / PayloadType / Profile |
-| `02-AXTP-Control信令协议规范.md` | 定义 HELLO / ACK / NACK / RESUME |
+| `02-AXTP-Control信令协议规范.md` | 定义 OPEN / ACK / NACK / RESUME |
 | `03-AXTP-RPC协议与二进制映射规范.md` | 定义 RPC request/response/event 映射 |
 | `04-AXTP-Stream流式传输协议规范.md` | 定义 OTA / File / Log / Media 数据面 |
 | `05-AXTP-Type-System基础类型规范.md` | 定义基础类型 |

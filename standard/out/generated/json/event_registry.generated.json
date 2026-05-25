@@ -1,0 +1,73 @@
+{
+  "events": [
+    {
+      "id": 34305,
+      "name": "brightness.changed",
+      "domain": "brightness",
+      "status": "mvp",
+      "deprecated": false,
+      "eventSchema": "BrightnessChangedEvent",
+      "severity": "info",
+      "trigger": [
+        "brightness.set",
+        "device_local_change"
+      ],
+      "capabilities": [
+        "brightness.event"
+      ],
+      "idHex": "0x8601"
+    },
+    {
+      "id": 35586,
+      "name": "firmware.updateProgress",
+      "domain": "firmware",
+      "status": "mvp",
+      "deprecated": false,
+      "eventSchema": "FirmwareUpdateProgressEvent",
+      "severity": "info",
+      "trigger": [
+        "firmware.begin",
+        "stream.ota.chunk"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "idHex": "0x8B02"
+    },
+    {
+      "id": 35587,
+      "name": "firmware.updateCompleted",
+      "domain": "firmware",
+      "status": "mvp",
+      "deprecated": false,
+      "eventSchema": "FirmwareUpdateCompletedEvent",
+      "severity": "info",
+      "trigger": [
+        "firmware.verify",
+        "firmware.apply"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "idHex": "0x8B03"
+    },
+    {
+      "id": 35588,
+      "name": "firmware.updateFailed",
+      "domain": "firmware",
+      "status": "mvp",
+      "deprecated": false,
+      "eventSchema": "FirmwareUpdateFailedEvent",
+      "severity": "error",
+      "trigger": [
+        "firmware.verify",
+        "firmware.apply",
+        "stream.error"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "idHex": "0x8B04"
+    }
+  ]
+}

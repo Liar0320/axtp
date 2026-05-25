@@ -1,0 +1,78 @@
+capabilities:
+  - id: 0x0001
+    name: protocol.payload.control
+    domain: protocol
+    status: mvp
+    type: bool
+    description: Device supports CONTROL payload.
+
+  - id: 0x0002
+    name: protocol.payload.rpc
+    domain: protocol
+    status: mvp
+    type: bool
+    description: Device supports RPC payload.
+
+  - id: 0x0003
+    name: protocol.payload.stream
+    domain: protocol
+    status: mvp
+    type: bool
+    description: Device supports STREAM payload.
+
+  - id: 0x0201
+    name: session.identify
+    domain: session
+    status: mvp
+    type: bool
+    description: Device supports application identity handshake.
+
+  - id: 0x0101
+    name: device.info
+    domain: device
+    status: mvp
+    type: bool
+    description: Device supports device.getInfo.
+
+  - id: 0x0301
+    name: capability.get
+    domain: capability
+    status: mvp
+    type: bool
+    description: Device supports capability.getAll.
+
+  - id: 0x0601
+    name: brightness.get
+    domain: brightness
+    status: mvp
+    type: bool
+    description: Device supports reading brightness.
+
+  - id: 0x0602
+    name: brightness.set
+    domain: brightness
+    status: mvp
+    type: bool
+    description: Device supports setting brightness.
+
+  - id: 0x0603
+    name: brightness.event
+    domain: brightness
+    status: mvp
+    type: bool
+    description: Device supports brightness.changed event.
+
+  - id: 0x0B01
+    name: firmware.ota
+    domain: firmware
+    status: mvp
+    type: object
+    schema: FirmwareOtaCapability
+    description: Device supports firmware OTA over STREAM.
+
+  - id: 0x0309
+    name: reserved.requestIdWidth
+    domain: reserved
+    status: reserved
+    type: reserved
+    description: Historical requestId width negotiation bit; AXTP v1 fixes requestId as uint32.

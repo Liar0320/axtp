@@ -1322,7 +1322,7 @@ Control Payload 中的 body 推荐使用 TLV。
 
 ```text
 payloadType = CONTROL
-opcode = HELLO
+opcode = OPEN
 bodyEncoding = TLV
 
 Body:
@@ -1879,7 +1879,7 @@ Compatibility:
 这套 TLV 规范可以直接支撑：
 
 ```text
-CONTROL HELLO / ACK / NACK
+CONTROL OPEN / ACK / NACK
 RPC Binary params/result/event
 STREAM metadata
 Capability registry

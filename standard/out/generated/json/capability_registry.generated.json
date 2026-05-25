@@ -1,0 +1,115 @@
+{
+  "capabilities": [
+    {
+      "id": 1,
+      "name": "protocol.payload.control",
+      "domain": "protocol",
+      "status": "mvp",
+      "description": "Device supports CONTROL payload.",
+      "deprecated": false,
+      "type": "bool",
+      "idHex": "0x0001"
+    },
+    {
+      "id": 2,
+      "name": "protocol.payload.rpc",
+      "domain": "protocol",
+      "status": "mvp",
+      "description": "Device supports RPC payload.",
+      "deprecated": false,
+      "type": "bool",
+      "idHex": "0x0002"
+    },
+    {
+      "id": 3,
+      "name": "protocol.payload.stream",
+      "domain": "protocol",
+      "status": "mvp",
+      "description": "Device supports STREAM payload.",
+      "deprecated": false,
+      "type": "bool",
+      "idHex": "0x0003"
+    },
+    {
+      "id": 257,
+      "name": "device.info",
+      "domain": "device",
+      "status": "mvp",
+      "description": "Device supports device.getInfo.",
+      "deprecated": false,
+      "type": "bool",
+      "idHex": "0x0101"
+    },
+    {
+      "id": 513,
+      "name": "session.identify",
+      "domain": "session",
+      "status": "mvp",
+      "description": "Device supports application identity handshake.",
+      "deprecated": false,
+      "type": "bool",
+      "idHex": "0x0201"
+    },
+    {
+      "id": 769,
+      "name": "capability.get",
+      "domain": "capability",
+      "status": "mvp",
+      "description": "Device supports capability.getAll.",
+      "deprecated": false,
+      "type": "bool",
+      "idHex": "0x0301"
+    },
+    {
+      "id": 777,
+      "name": "reserved.requestIdWidth",
+      "domain": "reserved",
+      "status": "reserved",
+      "description": "Historical requestId width negotiation bit; AXTP v1 fixes requestId as uint32.",
+      "deprecated": false,
+      "type": "reserved",
+      "idHex": "0x0309"
+    },
+    {
+      "id": 1537,
+      "name": "brightness.get",
+      "domain": "brightness",
+      "status": "mvp",
+      "description": "Device supports reading brightness.",
+      "deprecated": false,
+      "type": "bool",
+      "idHex": "0x0601"
+    },
+    {
+      "id": 1538,
+      "name": "brightness.set",
+      "domain": "brightness",
+      "status": "mvp",
+      "description": "Device supports setting brightness.",
+      "deprecated": false,
+      "type": "bool",
+      "idHex": "0x0602"
+    },
+    {
+      "id": 1539,
+      "name": "brightness.event",
+      "domain": "brightness",
+      "status": "mvp",
+      "description": "Device supports brightness.changed event.",
+      "deprecated": false,
+      "type": "bool",
+      "idHex": "0x0603"
+    },
+    {
+      "id": 2817,
+      "name": "firmware.ota",
+      "domain": "firmware",
+      "status": "mvp",
+      "description": "Device supports firmware OTA over STREAM.",
+      "deprecated": false,
+      "type": "object",
+      "schema": "FirmwareOtaCapability",
+      "idHex": "0x0B01"
+    }
+  ]
+}

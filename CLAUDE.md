@@ -53,6 +53,12 @@ Transport Layer     → BLE / HID / UART / TCP / WebSocket / USB Bulk
 
 RPC uses an internal `rpcEncoding` field (JSON / BINARY / TLV / CBOR / FIXED_STRUCT). JSON means the DS-RPC Text Profile; Binary-RPC uses the same Method/Event/Error/Capability semantics with binary headers and TLV bodies.
 
+## Connection Profiles
+
+- WebSocket Text and HTTP Debug API use DS-RPC Text Profile only. They carry Hello, Heartbeat, Request, Response, Event, and Bye through DS-RPC `op` values and do not send AXTP Frame Header.
+- WebSocket Binary, HID, BLE, UART, TCP, and USB Bulk use AXTP Framed Mode. They carry lifecycle and reliability through `PayloadType=CONTROL`, business calls through `PayloadType=RPC`, and data plane traffic through `PayloadType=STREAM`.
+- Do not mix DS-RPC Envelope and AXTP Frame Header on the same connection. Both codecs should decode into the same internal Session + ProtocolMessage runtime.
+
 ## Development Phases
 
 The project is in **Phase 0 (documentation)**. Planned phases:

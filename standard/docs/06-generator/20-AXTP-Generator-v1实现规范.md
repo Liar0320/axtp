@@ -89,7 +89,7 @@ Generator v1 必须优先覆盖 13《AXTP MVP 最小实现注册表》中的 P0 
 P0 包括：
 
 ```text
-CONTROL HELLO / HELLO_ACK / ACK / NACK / HEARTBEAT / CLOSE
+CONTROL CONNECT / ACCEPT / ACK / NACK / HEARTBEAT / CLOSE
 RPC device.getInfo
 RPC capability.getAll
 RPC brightness.get
@@ -130,7 +130,7 @@ legacy_cmd_mapping.md
 推荐输入结构如下：
 
 ```text
-utpf-spec/
+standard/
 ├── registry/
 │   ├── payload_type.yaml
 │   ├── control_opcode.yaml
@@ -683,7 +683,7 @@ generated/
 │   └── legacy_mapping.generated.json
 │
 └── test_vectors/
-    ├── control_hello.hex
+    ├── control_connect.hex
     ├── rpc_device_get_info.hex
     ├── rpc_brightness_set.hex
     ├── event_brightness_changed.hex
@@ -973,11 +973,11 @@ STREAM data exceeds Compact limit (> 239B)
 Generator v1 推荐提供命令行工具：
 
 ```bash
-axtp-gen validate --spec ./standard
-axtp-gen generate --spec ./standard --out ./generated
-axtp-gen diff --old ./spec-v1 --new ./spec-v2
-axtp-gen doc --spec ./standard --out ./generated/docs
-axtp-gen test-vector --spec ./standard --out ./generated/test_vectors
+pnpm --dir standard/generator axtp-gen validate --spec ./standard
+pnpm --dir standard/generator axtp-gen generate --spec ./standard --out ./standard/out/generated
+pnpm --dir standard/generator axtp-gen diff --old ./spec-v1 --new ./spec-v2
+pnpm --dir standard/generator axtp-gen doc --spec ./standard --out ./standard/out/generated/docs
+pnpm --dir standard/generator axtp-gen test-vector --spec ./standard --out ./standard/out/generated/test_vectors
 ```
 
 ### 14.1 validate
@@ -1014,38 +1014,32 @@ axtp-gen test-vector --spec ./standard --out ./generated/test_vectors
 ## 15. Generator v1 内部模块建议
 
 ```text
-axtp_generator/
-├── loader/
-│   ├── yaml_loader.py
-│   └── registry_loader.py
-│
-├── model/
-│   ├── registry_model.py
-│   ├── schema_model.py
-│   └── type_model.py
-│
-├── validator/
-│   ├── id_validator.py
-│   ├── schema_validator.py
-│   ├── mvp_validator.py
-│   └── compatibility_validator.py
-│
-├── emitters/
-│   ├── cpp_emitter.py
-│   ├── markdown_emitter.py
-│   ├── json_emitter.py
-│   └── test_vector_emitter.py
-│
-├── cli.py
-└── main.py
+standard/generator/
+├── package.json
+├── tsconfig.json
+├── vitest.config.ts
+└── src/
+    ├── cli.ts
+    ├── loader.ts
+    ├── models.ts
+    ├── validator.ts
+    ├── errors.ts
+    ├── util.ts
+    └── emitters/
+        ├── cpp.ts
+        ├── markdown.ts
+        ├── json.ts
+        ├── testVectors.ts
+        └── index.ts
 ```
 
-Generator v1 可以使用 Python 实现，原因：
+Generator v1 使用 TypeScript + Node.js 实现，原因：
 
 ```text
+团队调试和维护成本低
 YAML/JSON 处理成熟
-方便 CI 集成
-便于快速迭代
+便于与 Web Demo、文档工具和 CI 集成
+类型系统足以约束 registry/schema 中间模型
 不进入设备端运行时
 ```
 
@@ -1083,8 +1077,8 @@ message: duplicate methodId 0x0602, already used by display.setBrightness
 在 AXTP 仓库中，CI 至少执行：
 
 ```bash
-axtp-gen validate --spec ./utpf-spec
-axtp-gen generate --spec ./utpf-spec --out ./generated
+pnpm --dir standard/generator axtp-gen validate --spec ./standard
+pnpm --dir standard/generator axtp-gen generate --spec ./standard --out ./standard/out/generated
 cmake -S cpp-demo -B build
 cmake --build build
 ctest --test-dir build
@@ -1160,7 +1154,7 @@ manifest.json
 至少 5 个测试向量：
 
 ```text
-CONTROL HELLO
+CONTROL CONNECT
 RPC device.getInfo request
 RPC brightness.set request
 EVENT brightness.changed

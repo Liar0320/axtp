@@ -1,0 +1,36 @@
+events:
+  - id: 0x8601
+    name: brightness.changed
+    domain: brightness
+    status: mvp
+    event_schema: BrightnessChangedEvent
+    severity: info
+    trigger: [brightness.set, device_local_change]
+    capabilities: [brightness.event]
+
+  - id: 0x8B02
+    name: firmware.updateProgress
+    domain: firmware
+    status: mvp
+    event_schema: FirmwareUpdateProgressEvent
+    severity: info
+    trigger: [firmware.begin, stream.ota.chunk]
+    capabilities: [firmware.ota]
+
+  - id: 0x8B03
+    name: firmware.updateCompleted
+    domain: firmware
+    status: mvp
+    event_schema: FirmwareUpdateCompletedEvent
+    severity: info
+    trigger: [firmware.verify, firmware.apply]
+    capabilities: [firmware.ota]
+
+  - id: 0x8B04
+    name: firmware.updateFailed
+    domain: firmware
+    status: mvp
+    event_schema: FirmwareUpdateFailedEvent
+    severity: error
+    trigger: [firmware.verify, firmware.apply, stream.error]
+    capabilities: [firmware.ota]

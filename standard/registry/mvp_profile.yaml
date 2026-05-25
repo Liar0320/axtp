@@ -1,0 +1,34 @@
+mvp:
+  methods:
+    - session.identify
+    - device.getInfo
+    - capability.getAll
+    - brightness.get
+    - brightness.set
+    - firmware.begin
+    - firmware.end
+    - firmware.verify
+    - firmware.apply
+  events:
+    - brightness.changed
+    - firmware.updateProgress
+    - firmware.updateCompleted
+    - firmware.updateFailed
+  errors:
+    - SUCCESS
+    - RPC_UNKNOWN_METHOD
+    - RPC_INVALID_PARAMS
+    - STREAM_NOT_FOUND
+    - STREAM_CRC_ERROR
+    - DEVICE_BUSY
+  capabilities:
+    - protocol.payload.control
+    - protocol.payload.rpc
+    - protocol.payload.stream
+    - session.identify
+    - device.info
+    - capability.get
+    - brightness.get
+    - brightness.set
+    - brightness.event
+    - firmware.ota

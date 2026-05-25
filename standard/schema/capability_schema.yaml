@@ -1,0 +1,32 @@
+schemas:
+  CapabilityGetAllRequest:
+    type: object
+    fields: []
+
+  CapabilityGetAllResponse:
+    type: object
+    fields:
+      - id: 0x01
+        name: capabilityCount
+        type: uint16
+        required: true
+        deprecated: false
+      - id: 0x02
+        name: capabilityIds
+        type: array
+        required: false
+        deprecated: false
+
+  FirmwareOtaCapability:
+    type: object
+    fields:
+      - id: 0x01
+        name: maxImageSize
+        type: uint32
+        required: true
+        deprecated: false
+      - id: 0x02
+        name: maxChunkSize
+        type: uint16
+        required: true
+        deprecated: false

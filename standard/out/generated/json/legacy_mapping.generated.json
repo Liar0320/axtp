@@ -1,0 +1,30 @@
+{
+  "legacyMappings": [
+    {
+      "legacyProtocol": "axdp_hid",
+      "legacyCmdValue": 720898,
+      "legacyName": "BetaDeviceInfo",
+      "axtpMethodId": 257,
+      "axtpMethodName": "device.getInfo",
+      "direction": "request_response",
+      "statusMapping": {
+        "0": "SUCCESS",
+        "1": "RPC_INVALID_PARAMS",
+        "2": "DEVICE_BUSY"
+      }
+    },
+    {
+      "legacyProtocol": "axdp_hid",
+      "legacyCmdValue": 720962,
+      "legacyName": "BetaBrightnessSet",
+      "axtpMethodId": 1538,
+      "axtpMethodName": "brightness.set",
+      "direction": "request_response",
+      "statusMapping": {
+        "0": "SUCCESS",
+        "1": "RPC_INVALID_PARAMS",
+        "2": "DEVICE_BUSY"
+      }
+    }
+  ]
+}

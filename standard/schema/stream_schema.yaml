@@ -1,0 +1,24 @@
+schemas:
+  StreamOtaChunk:
+    type: object
+    fields:
+      - id: 0x01
+        name: streamId
+        type: uint32
+        required: true
+        deprecated: false
+      - id: 0x02
+        name: seqId
+        type: uint32
+        required: true
+        deprecated: false
+      - id: 0x03
+        name: cursor
+        type: uint64
+        required: true
+        deprecated: false
+      - id: 0x04
+        name: data
+        type: bytes
+        required: true
+        deprecated: false

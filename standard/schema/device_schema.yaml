@@ -1,0 +1,32 @@
+schemas:
+  DeviceGetInfoRequest:
+    type: object
+    fields: []
+
+  DeviceGetInfoResponse:
+    type: object
+    fields:
+      - id: 0x01
+        name: vendor
+        type: string
+        required: false
+        max_length: 32
+        deprecated: false
+      - id: 0x02
+        name: product
+        type: string
+        required: false
+        max_length: 32
+        deprecated: false
+      - id: 0x03
+        name: firmwareVersion
+        type: string
+        required: false
+        max_length: 32
+        deprecated: false
+      - id: 0x04
+        name: serialNumber
+        type: string
+        required: false
+        max_length: 64
+        deprecated: false

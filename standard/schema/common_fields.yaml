@@ -1,0 +1,8 @@
+schemas:
+  CommonEmptyRequest:
+    type: object
+    fields: []
+
+  CommonEmptyResponse:
+    type: object
+    fields: []

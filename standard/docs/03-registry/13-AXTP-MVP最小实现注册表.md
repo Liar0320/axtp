@@ -162,7 +162,7 @@ bodyEncoding = RAW_BYTES
 |---|---|---|
 | PayloadType | CONTROL / RPC / STREAM | 新增 PayloadType |
 | Header Profile | Compact 必须，Standard 建议 | Dynamic Header |
-| Control | HELLO / HELLO_ACK / HEARTBEAT / ACK / NACK / CLOSE | RESUME / WINDOW_UPDATE 高级策略 |
+| Control | CONNECT / ACCEPT / HEARTBEAT / ACK / NACK / CLOSE | RESUME / WINDOW_UPDATE 高级策略 |
 | RPC Encoding | BINARY 必须，JSON 建议 | CBOR / MessagePack |
 | RPC Op | REQUEST / RESPONSE / EVENT | BATCH |
 | Stream Profile | firmware.ota 必须，file/log 建议 | media/kvm/sensor |
@@ -261,8 +261,8 @@ Compact Profile -> Standard Profile
 
 | Opcode | Name | Direction | Body | 说明 |
 |---:|---|---|---|---|
-| `0x01` | `HELLO` | Client -> Device | TLV | 建立协议会话，声明协议能力 |
-| `0x02` | `HELLO_ACK` | Device -> Client | TLV | 返回协商结果 |
+| `0x01` | `OPEN` | Client -> Device | TLV | 建立协议会话，声明协议能力 |
+| `0x02` | `ACCEPT` | Device -> Client | TLV | 返回协商结果 |
 | `0x03` | `HEARTBEAT` | Both | Optional TLV | 保活 |
 | `0x04` | `HEARTBEAT_ACK` | Both | Optional TLV | 保活响应 |
 | `0x05` | `ACK` | Both | TLV | 确认 Frame / Message / Stream Chunk |
@@ -278,7 +278,7 @@ Compact Profile -> Standard Profile
 |---:|---|---|
 | `0x07` | `RESUME` | 断点恢复可先由业务层 OTA resume 覆盖 |
 | `0x08` | `RESUME_ACK` | 同上 |
-| `0x0B` | `SESSION_RESET` | 可先使用 CLOSE + HELLO 重建 |
+| `0x0B` | `SESSION_RESET` | 可先使用 CLOSE + OPEN 重建 |
 | `0x0C` | `WINDOW_UPDATE` | 第一版可使用固定窗口 |
 | `0x0D` | `PING` | HEARTBEAT 已能覆盖基本保活 |
 | `0x0E` | `PONG` | 同上 |
@@ -987,8 +987,8 @@ C++ Demo v1 必须跑通以下链路。
 ### 18.1 建连链路
 
 ```text
-Client -> Device : CONTROL HELLO
-Device -> Client : CONTROL HELLO_ACK
+Client -> Device : CONTROL OPEN
+Device -> Client : CONTROL ACCEPT
 ```
 
 验收：
@@ -1088,8 +1088,8 @@ MVP 至少提供以下测试向量：
 
 | 编号 | 名称 | 类型 |
 |---|---|---|
-| TV-001 | Compact CONTROL HELLO | hex |
-| TV-002 | Compact CONTROL HELLO_ACK | hex |
+| TV-001 | Compact CONTROL OPEN | hex |
+| TV-002 | Compact CONTROL ACCEPT | hex |
 | TV-003 | RPC Binary device.getInfo request | hex |
 | TV-004 | RPC Binary device.getInfo response | hex |
 | TV-005 | RPC Binary brightness.set request | hex |
@@ -1117,7 +1117,7 @@ AXTP MVP 只有满足以下条件，才视为落地完成：
 
 ```text
 1. Compact Header 编解码通过测试
-2. CONTROL HELLO / HELLO_ACK 可跑通
+2. CONTROL OPEN / ACCEPT 可跑通
 3. CONTROL ACK / NACK 可跑通
 4. RPC BINARY + TLV REQUEST / RESPONSE 可跑通
 5. RPC EVENT 可跑通

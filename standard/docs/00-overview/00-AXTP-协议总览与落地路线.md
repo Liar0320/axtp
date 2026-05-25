@@ -25,6 +25,7 @@
 01-core-protocol/02-AXTP-Control信令协议规范.md
 01-core-protocol/03-AXTP-RPC协议与二进制映射规范.md
 01-core-protocol/04-AXTP-Stream流式传输协议规范.md
+01-core-protocol/05-AXTP-连接场景与调用流程规范.md
 02-type-system/01-AXTP-Type-System基础类型规范.md
 02-type-system/02-AXTP-TLV-Schema编码规范.md
 03-registry/*.md
@@ -239,7 +240,7 @@ AXTP v1 只保留三种 `PayloadType`：
 
 | PayloadType | 名称 | 作用 | 典型内容 |
 |---:|---|---|---|
-| `0x01` | `CONTROL` | 协议运行时信令 | HELLO、ACK、NACK、HEARTBEAT、RESUME、CLOSE |
+| `0x01` | `CONTROL` | 协议运行时信令 | OPEN、ACCEPT、ACK、NACK、HEARTBEAT、RESUME、CLOSE |
 | `0x02` | `RPC` | 结构化业务控制面 | request、response、event、batch |
 | `0x03` | `STREAM` | 连续数据 / 大块数据面 | video frame、audio frame、OTA chunk、file chunk、log stream |
 
@@ -258,7 +259,8 @@ PayloadType = RPC_BINARY
 
 ```text
 PayloadType = RPC
-  rpcEncoding = JSON / BINARY / CBOR / TLV / FIXED_STRUCT
+  rpcEncoding = JSON / BINARY / MSGPACK / CBOR
+  bodyEncoding = TLV / FIXED_STRUCT
 ```
 
 原因：
@@ -302,8 +304,8 @@ PayloadType = STREAM
 典型信令：
 
 ```text
-HELLO
-HELLO_ACK
+OPEN
+ACCEPT
 HEARTBEAT
 HEARTBEAT_ACK
 ACK
@@ -421,7 +423,8 @@ docs/
 │   ├── 01-AXTP-整体协议规范.md
 │   ├── 02-AXTP-Control信令协议规范.md
 │   ├── 03-AXTP-RPC协议与二进制映射规范.md
-│   └── 04-AXTP-Stream流式传输协议规范.md
+│   ├── 04-AXTP-Stream流式传输协议规范.md
+│   └── 05-AXTP-连接场景与调用流程规范.md
 │
 ├── 02-type-system/
 │   ├── 01-AXTP-Type-System基础类型规范.md
@@ -503,7 +506,7 @@ Session 生命周期
 Control Payload Header
 Control Opcode
 Control TLV
-HELLO / HELLO_ACK
+CONNECT / ACCEPT
 ACK / NACK
 HEARTBEAT
 RESUME
@@ -755,17 +758,16 @@ MVP 第一阶段只建议实现以下 domain：
 ```text
 device.*
 capability.*
-brightness.*
 firmware.*
 stream.*
 event.*
+video.*
+audio.*
 ```
 
 暂缓完整实现：
 
 ```text
-video.*
-audio.*
 file.*
 log.*
 diagnostic.*
@@ -790,8 +792,6 @@ MVP MethodId 建议先实现：
 | device | `device.getVersion` | 获取版本信息 |
 | capability | `capability.getAll` | 获取完整能力集 |
 | capability | `capability.getDomain` | 获取指定域能力 |
-| brightness | `brightness.get` | 获取亮度 |
-| brightness | `brightness.set` | 设置亮度 |
 | firmware | `firmware.getInfo` | 获取固件信息 |
 | firmware | `firmware.begin` | 开始升级 |
 | firmware | `firmware.verify` | 校验固件 |
@@ -813,7 +813,6 @@ MVP EventId 建议先实现：
 |---|---|
 | `device.statusChanged` | 设备状态变化 |
 | `capability.changed` | 能力变化 |
-| `brightness.changed` | 亮度变化 |
 | `firmware.updateProgress` | 升级进度 |
 | `firmware.updateCompleted` | 升级完成 |
 | `firmware.updateFailed` | 升级失败 |
@@ -864,8 +863,8 @@ RPC 控制面 + STREAM 数据面协作
 ### 11.1 Session 建立
 
 ```text
-Client -> Server: CONTROL HELLO
-Server -> Client: CONTROL HELLO_ACK
+Client -> Server: CONTROL OPEN
+Server -> Client: CONTROL ACCEPT
 ```
 
 目标：验证 `PayloadType = CONTROL`、Control Payload、TLV body、sessionId、MTU、Profile、心跳参数。
@@ -897,9 +896,9 @@ Server -> Client: RPC Response device.getInfo
 ### 11.4 亮度设置
 
 ```text
-Client -> Server: RPC brightness.set
+Client -> Server: RPC display.setBrightness
 Server -> Client: RPC Response success
-Server -> Client: RPC Event brightness.changed
+Server -> Client: RPC Event display.brightnessChanged
 ```
 
 目标：验证 request/response/event 三种 RPC 语义。
@@ -1081,7 +1080,7 @@ src/
 ### 14.2 Demo 必须跑通的流程
 
 ```text
-1. CONTROL HELLO / HELLO_ACK
+1. CONTROL OPEN / ACCEPT
 2. RPC capability.getAll
 3. RPC device.getInfo
 4. RPC brightness.set
@@ -1102,8 +1101,8 @@ src/
 测试向量应至少包含：
 
 ```text
-CONTROL HELLO hex
-CONTROL HELLO_ACK hex
+CONTROL OPEN hex
+CONTROL ACCEPT hex
 CONTROL ACK hex
 CONTROL NACK hex
 RPC device.getInfo JSON example
@@ -1340,7 +1339,7 @@ Generator 可以生成测试向量骨架
 ### 19.3 Demo 验收
 
 ```text
-C++ Demo 可以完成 HELLO / HELLO_ACK
+C++ Demo 可以完成 OPEN / ACCEPT
 C++ Demo 可以完成 RPC request / response
 C++ Demo 可以完成 RPC event
 C++ Demo 可以发送 STREAM OTA chunk

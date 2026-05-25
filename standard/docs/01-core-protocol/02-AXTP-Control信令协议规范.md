@@ -27,7 +27,7 @@
 ```text
 1. 当 Frame Header.payloadType = CONTROL 时，Payload 如何解析；
 2. CONTROL Payload 是否可以携带负载消息；
-3. HELLO / HELLO_ACK 如何协商协议能力；
+3. CONNECT / ACCEPT 如何协商协议能力；
 4. ACK / NACK 如何确认 Frame、Message、Stream Chunk；
 5. RESUME 如何支持断线恢复；
 6. HEARTBEAT / PING 如何维持连接与检测链路质量；
@@ -69,7 +69,7 @@ control metadata
 optional body
 ```
 
-其中 `body` 可用于携带 HELLO 协商参数、ACK/NACK 目标、恢复 token、关闭原因、流控窗口等协议运行时信息。
+其中 `body` 可用于携带 OPEN 协商参数、ACK/NACK 目标、恢复 token、关闭原因、流控窗口等协议运行时信息。
 
 ---
 
@@ -166,7 +166,7 @@ kvm raw input
 | Frame Header | `payloadLength` | 指定 Control Payload 的字节长度 |
 | Frame Header | `messageId` | 标识一条完整 Control Message 的 Frame 层消息 |
 | Frame Header | `frameIndex/frameCount` | 对大型 Control Payload 做 Frame 分片 |
-| Control Payload | `opcode` | 指定控制操作，例如 HELLO / ACK / NACK |
+| Control Payload | `opcode` | 指定控制操作，例如 OPEN / ACK / NACK |
 | Control Payload | `controlId` | 匹配控制请求与控制响应 |
 | Control Payload | `statusCode` | 表达控制操作执行结果 |
 | Control Payload | `bodyEncoding/bodyLen/body` | 携带控制负载参数 |
@@ -320,8 +320,8 @@ TLV：type:uint8 + length:uint8 + value:bytes
 | opcode | 名称 | 方向 | 是否有 body | 是否 MVP 必须 | 说明 |
 |---:|---|---|---|---|---|
 | `0x00` | `RESERVED` | - | 否 | 是 | 保留，不得使用 |
-| `0x01` | `HELLO` | Client -> Peer | 是 | 是 | 发起协议会话 |
-| `0x02` | `HELLO_ACK` | Peer -> Client | 是 | 是 | 返回协商结果 |
+| `0x01` | `OPEN` | Client -> Peer | 是 | 是 | 发起协议会话 |
+| `0x02` | `ACCEPT` | Peer -> Client | 是 | 是 | 返回协商结果 |
 | `0x03` | `HEARTBEAT` | 双向 | 可选 | 是 | 心跳保活 |
 | `0x04` | `HEARTBEAT_ACK` | 双向 | 可选 | 是 | 心跳响应 |
 | `0x05` | `ACK` | 双向 | 是 | 是 | 确认 Frame / Message / Stream Chunk / Control |
@@ -587,7 +587,7 @@ MVP 阶段推荐尽量使用 bitmap 字段，避免需要 repeated 语义。
 
 ### 12.4 sessionId 携带规则
 
-`sessionId` 只在 Control Session Context 中出现，由 HELLO_ACK 分配，并在 RESUME/CLOSE/SESSION_RESET 等会话类 Control 消息中引用。
+`sessionId` 只在 Control Session Context 中出现，由 ACCEPT 分配，并在 RESUME/CLOSE/SESSION_RESET 等会话类 Control 消息中引用。
 
 普通 RPC 与 STREAM 业务帧不得在 Frame Header、RPC Header 或 STREAM L2 Header 中重复携带 `sessionId`。接收端根据当前连接绑定的 Session Context 解释后续业务交互；连接恢复后，RESUME 成功即重新绑定同一个 Session Context。
 
@@ -688,7 +688,7 @@ SESSION
 
 ## 15. ACK Mode
 
-`ackMode` 用于 HELLO 协商后确定默认确认策略。
+`ackMode` 用于 OPEN 协商后确定默认确认策略。
 
 | ackMode | 名称 | 说明 |
 |---:|---|---|
@@ -724,7 +724,7 @@ DISCONNECTED
   ↓
 TRANSPORT_CONNECTED
   ↓
-HELLO_SENT / HELLO_RECEIVED
+OPEN_SENT / OPEN_RECEIVED
   ↓
 SESSION_READY
   ↓
@@ -757,8 +757,8 @@ TRANSPORT_CONNECTED or CLOSED
 |---|---|
 | `DISCONNECTED` | 底层连接不存在 |
 | `TRANSPORT_CONNECTED` | TCP/BLE/HID/UART 等传输已建立 |
-| `HELLO_SENT` | 已发送 HELLO，等待 HELLO_ACK |
-| `HELLO_RECEIVED` | 已收到 HELLO，准备返回 HELLO_ACK |
+| `OPEN_SENT` | 已发送 CONNECT，等待 ACCEPT |
+| `OPEN_RECEIVED` | 已收到 CONNECT，准备返回 ACCEPT |
 | `SESSION_READY` | Control 协商完成，可发送 RPC / STREAM |
 | `SUSPENDED` | 底层连接中断，但 session 可尝试恢复 |
 | `CLOSING` | 正在关闭 |
@@ -770,8 +770,8 @@ TRANSPORT_CONNECTED or CLOSED
 
 ```text
 允许：
-  CONTROL HELLO
-  CONTROL HELLO_ACK
+  CONTROL OPEN
+  CONTROL ACCEPT
   CONTROL CLOSE
   CONTROL SESSION_RESET
 
@@ -786,10 +786,10 @@ TRANSPORT_CONNECTED or CLOSED
 
 | 场景 | 当前状态 | 输入 | 期望结果 |
 |---|---|---|---|
-| 未协商即收到 RPC | `TRANSPORT_CONNECTED` / `HELLO_SENT` | `PayloadType=RPC` | 返回或记录 `SESSION_NOT_READY`，不得进入 RPC Parser |
-| 未协商即收到 STREAM | `TRANSPORT_CONNECTED` / `HELLO_SENT` | `PayloadType=STREAM` | 返回或记录 `SESSION_NOT_READY`，不得进入 STREAM Parser |
-| 不支持的协议版本 | `HELLO_RECEIVED` | HELLO `protocolVersion` 不支持 | HELLO_ACK with `Control flags.ERROR` + `UNSUPPORTED_VERSION` |
-| Profile 无公共交集 | `HELLO_RECEIVED` | `headerProfile` 无法协商 | HELLO_ACK with `Control flags.ERROR` + `UNSUPPORTED_HEADER_PROFILE` |
+| 未协商即收到 RPC | `TRANSPORT_CONNECTED` / `OPEN_SENT` | `PayloadType=RPC` | 返回或记录 `SESSION_NOT_READY`，不得进入 RPC Parser |
+| 未协商即收到 STREAM | `TRANSPORT_CONNECTED` / `OPEN_SENT` | `PayloadType=STREAM` | 返回或记录 `SESSION_NOT_READY`，不得进入 STREAM Parser |
+| 不支持的协议版本 | `OPEN_RECEIVED` | CONNECT `protocolVersion` 不支持 | ACCEPT with `Control flags.ERROR` + `UNSUPPORTED_VERSION` |
+| Profile 无公共交集 | `OPEN_RECEIVED` | `headerProfile` 无法协商 | ACCEPT with `Control flags.ERROR` + `UNSUPPORTED_HEADER_PROFILE` |
 | sessionId 过期 | `SUSPENDED` | RESUME with expired `sessionId` | RESUME_ACK with `Control flags.ERROR` + `INVALID_SESSION` |
 | resumeToken 无效 | `SUSPENDED` | RESUME with invalid `resumeToken` | RESUME_ACK with `Control flags.ERROR` + `RESUME_TOKEN_INVALID` |
 | 关闭中收到业务帧 | `CLOSING` | RPC / STREAM | 拒绝业务帧，维持关闭流程 |
@@ -803,13 +803,13 @@ TRANSPORT_CONNECTED or CLOSED
 
 ---
 
-## 17. HELLO / HELLO_ACK
+## 17. CONNECT / ACCEPT
 
-### 17.1 HELLO 目的
+### 17.1 OPEN 目的
 
-`HELLO` 用于建立 AXTP Session，并协商协议运行时能力。
+`OPEN` 用于建立 AXTP Session，并协商协议运行时能力。
 
-HELLO 协商的是协议能力，不是业务能力。
+OPEN 协商的是协议能力，不是业务能力。
 
 协议能力包括：
 
@@ -825,7 +825,7 @@ ackMode
 windowSize
 ```
 
-业务能力不在 HELLO 中协商，例如：
+业务能力不在 OPEN 中协商，例如：
 
 ```text
 是否支持 brightness.set
@@ -842,9 +842,9 @@ capability.getDomain
 capability.hasMethod
 ```
 
-### 17.2 HELLO 请求字段
+### 17.2 OPEN 请求字段
 
-HELLO body 推荐携带：
+OPEN body 推荐携带：
 
 | 字段 | TLV | 是否必须 | 说明 |
 |---|---:|---|---|
@@ -858,9 +858,9 @@ HELLO body 推荐携带：
 | `ackMode` | `0x0B` | 是 | 建议 ACK 模式 |
 | `windowSize` | `0x0C` | P1 | 建议窗口大小 |
 
-### 17.3 HELLO_ACK 响应字段
+### 17.3 ACCEPT 响应字段
 
-HELLO_ACK body 推荐携带：
+ACCEPT body 推荐携带：
 
 | 字段 | TLV | 是否必须 | 说明 |
 |---|---:|---|---|
@@ -876,12 +876,12 @@ HELLO_ACK body 推荐携带：
 | `windowSize` | `0x0C` | P1 | 协商后的窗口大小 |
 | `resumeToken` | `0x18` | P1 | 可用于恢复的 token |
 
-### 17.4 HELLO 示例
+### 17.4 OPEN 示例
 
 Standard Control Payload：
 
 ```text
-opcode       = 0x01    // HELLO
+opcode       = 0x01    // OPEN
 flags        = 0x04    // HAS_BODY
 controlId    = 0x0001
 statusCode   = 0x0000
@@ -903,12 +903,12 @@ Body TLV：
 0B 01 02        // ackMode = MESSAGE_ACK
 ```
 
-### 17.5 HELLO_ACK 示例
+### 17.5 ACCEPT 示例
 
 Standard Control Payload：
 
 ```text
-opcode       = 0x02    // HELLO_ACK
+opcode       = 0x02    // ACCEPT
 flags        = 0x05    // SUCCESS | HAS_BODY
 controlId    = 0x0001
 statusCode   = 0x0064  // SUCCESS
@@ -930,16 +930,16 @@ Body TLV：
 0B 01 02              // ackMode = MESSAGE_ACK
 ```
 
-### 17.6 HELLO 失败
+### 17.6 OPEN 失败
 
-如果无法协商，应返回 HELLO_ACK，将 `Control flags.ERROR` bit 置 1，并填写 statusCode。
+如果无法协商，应返回 ACCEPT，将 `Control flags.ERROR` bit 置 1，并填写 statusCode。
 
 示例：
 
 ```text
-opcode       = HELLO_ACK
+opcode       = ACCEPT
 flags        = Control flags.ERROR | Control flags.HAS_BODY
-controlId    = 原 HELLO controlId
+controlId    = 原 OPEN controlId
 statusCode   = VERSION_NOT_SUPPORTED
 body:
   reasonCode
@@ -952,20 +952,20 @@ body:
 
 | 失败原因 | statusCode | 接收端动作 | 发送端动作 |
 | --- | --- | --- | --- |
-| Header Version 不支持 | `VERSION_NOT_SUPPORTED` | 返回 HELLO_ACK(ERROR)，断开连接 | 降级重试或放弃 |
-| headerProfile 不支持 | `PROFILE_NOT_SUPPORTED` | 返回 HELLO_ACK(ERROR)，body 中填写支持的 profile 列表 | 改用对端支持的 profile 重新 HELLO |
-| payloadType 集合无交集 | `NO_COMMON_PAYLOAD_TYPE` | 返回 HELLO_ACK(ERROR) | 放弃连接 |
-| rpcEncoding 集合无交集 | `NO_COMMON_RPC_ENCODING` | 返回 HELLO_ACK(ERROR)，body 中填写支持的 encoding 列表 | 改用对端支持的 encoding 重新 HELLO |
-| MTU 协商结果不满足最小要求 | `MTU_TOO_SMALL` | 返回 HELLO_ACK(ERROR) | 放弃连接或切换传输 |
-| HELLO 格式非法（无法解析） | — | 直接断开底层连接，不发送任何响应 | — |
+| Header Version 不支持 | `VERSION_NOT_SUPPORTED` | 返回 ACCEPT(ERROR)，断开连接 | 降级重试或放弃 |
+| headerProfile 不支持 | `PROFILE_NOT_SUPPORTED` | 返回 ACCEPT(ERROR)，body 中填写支持的 profile 列表 | 改用对端支持的 profile 重新 CONNECT |
+| payloadType 集合无交集 | `NO_COMMON_PAYLOAD_TYPE` | 返回 ACCEPT(ERROR) | 放弃连接 |
+| rpcEncoding 集合无交集 | `NO_COMMON_RPC_ENCODING` | 返回 ACCEPT(ERROR)，body 中填写支持的 encoding 列表 | 改用对端支持的 encoding 重新 CONNECT |
+| MTU 协商结果不满足最小要求 | `MTU_TOO_SMALL` | 返回 ACCEPT(ERROR) | 放弃连接或切换传输 |
+| OPEN 格式非法（无法解析） | — | 直接断开底层连接，不发送任何响应 | — |
 
 协商降级规则：
 
 ```text
-1. Server 收到 HELLO 后，从 Client 提供的列表中选择自身支持的最优选项；
+1. Server 收到 OPEN 后，从 Client 提供的列表中选择自身支持的最优选项；
 2. 如果某个字段 Client 未提供（可选字段），Server 使用自身默认值；
-3. 如果必选字段无法协商，返回 HELLO_ACK(ERROR) 并在 body 中说明原因；
-4. Client 收到 HELLO_ACK(ERROR) 后，可根据 body 中的提示调整参数重新发起 HELLO，
+3. 如果必选字段无法协商，返回 ACCEPT(ERROR) 并在 body 中说明原因；
+4. Client 收到 ACCEPT(ERROR) 后，可根据 body 中的提示调整参数重新发起 CONNECT，
    最多重试 3 次，超过后断开连接。
 ```
 
@@ -1048,7 +1048,7 @@ Session 操作
 Frame Header 不表达确认请求。接收方是否发送 CONTROL ACK 由以下信息决定：
 
 ```text
-1. HELLO / HELLO_ACK 协商得到的 ackMode；
+1. CONNECT / ACCEPT 协商得到的 ackMode；
 2. Control Payload 中的 ACK_REQUIRED 语义；
 3. RPC 或 STREAM 建立时协商的业务可靠性策略。
 ```
@@ -1086,7 +1086,7 @@ Body TLV：
 
 ```text
 20 01 04        // targetType = CONTROL
-21 01 01        // targetOpcode = HELLO
+21 01 01        // targetOpcode = OPEN
 22 02 01 00     // targetControlId = 1
 ```
 
@@ -1159,7 +1159,7 @@ Body TLV：
 | `MESSAGE` | 重传缺失分片或整条 Message |
 | `STREAM_CHUNK` | 根据 Stream 策略重传或跳过 |
 | `CONTROL` | 重发控制信令或关闭会话 |
-| `SESSION` | 重新 HELLO 或 SESSION_RESET |
+| `SESSION` | 重新 OPEN 或 SESSION_RESET |
 
 MVP 阶段可以只支持：
 
@@ -1184,7 +1184,7 @@ RESUME 是 P1 能力，MVP 可以先保留字段但不实现完整恢复。
 | 字段 | TLV | 说明 |
 |---|---:|---|
 | `sessionId` | `0x01` | 要恢复的 session |
-| `resumeToken` | `0x18` | HELLO_ACK 或历史会话中获得的恢复 token |
+| `resumeToken` | `0x18` | ACCEPT 或历史会话中获得的恢复 token |
 | `messageId` | `0x11` | 最后确认的 MessageId，可选 |
 | `streamId` | `0x15` | 要恢复的 Stream，可选 |
 | `seqId` | `0x16` | 最后确认的 Stream seqId，可选 |
@@ -1238,7 +1238,7 @@ offset
 statusCode = RESUME_TOKEN_INVALID / INVALID_SESSION
 ```
 
-失败后客户端应重新走 HELLO。
+失败后客户端应重新走 OPEN。
 
 ---
 
@@ -1336,7 +1336,7 @@ Body：
 1. 清理 session 状态；
 2. 丢弃未完成 Message；
 3. 关闭或回到 TRANSPORT_CONNECTED；
-4. 如需继续通信，重新 HELLO。
+4. 如需继续通信，重新 OPEN。
 ```
 
 ---
@@ -1483,7 +1483,7 @@ Compact controlId 回绕规则：
 但在以下场景可能需要分片：
 
 ```text
-HELLO 携带大量扩展能力；
+OPEN 携带大量扩展能力；
 errorDetail 很长；
 vendorData 很大；
 未来安全握手携带证书或公钥；
@@ -1518,8 +1518,8 @@ payloadLength 是否足够；
 opcode 是否支持；
 bodyLen 是否越界；
 TLV length 是否越界；
-HELLO 是否出现在合法状态；
-HELLO_ACK 是否匹配 HELLO；
+OPEN 是否出现在合法状态；
+ACCEPT 是否匹配 CONNECT；
 controlId 是否匹配；
 statusCode 是否合法；
 协商参数是否可接受；
@@ -1570,8 +1570,8 @@ CONTROL 建立 Session 后，RPC 才能承载业务命令。
 示例流程：
 
 ```text
-CONTROL HELLO
-CONTROL HELLO_ACK
+CONTROL OPEN
+CONTROL ACCEPT
 RPC capability.getAll
 RPC device.getInfo
 RPC brightness.set
@@ -1608,7 +1608,7 @@ CONTROL 只负责传输确认、窗口、恢复等运行时问题，不解释 OT
 如果老协议中存在：
 
 ```text
-HELLO
+OPEN
 PING
 ACK
 NACK
@@ -1667,8 +1667,8 @@ STREAM packet:
 ### 31.1 MVP 必须实现的 Opcode
 
 ```text
-HELLO
-HELLO_ACK
+OPEN
+ACCEPT
 HEARTBEAT
 HEARTBEAT_ACK
 ACK
@@ -1778,7 +1778,7 @@ PING/PONG RTT 测量
 | opcode 不支持 | 返回 NACK 或 CONTROL ERROR |
 | bodyEncoding 不支持 | 返回 NACK |
 | TLV 越界 | 返回 NACK，严重时 SESSION_RESET |
-| HELLO 参数不可接受 | 返回 HELLO_ACK ERROR |
+| CONNECT 参数不可接受 | 返回 ACCEPT ERROR |
 | 非法状态下收到 RPC | 返回 SESSION_NOT_READY 或丢弃 |
 | 连续错误过多 | SESSION_RESET 或关闭连接 |
 
@@ -1789,10 +1789,10 @@ PING/PONG RTT 测量
 后续测试向量文档至少应覆盖：
 
 ```text
-1. Standard HELLO
-2. Standard HELLO_ACK
-3. Compact HELLO
-4. Compact HELLO_ACK
+1. Standard OPEN
+2. Standard ACCEPT
+3. Compact OPEN
+4. Compact ACCEPT
 5. HEARTBEAT / HEARTBEAT_ACK
 6. ACK Frame
 7. ACK Message
@@ -1824,7 +1824,7 @@ Control Payload 字段
 
 ```text
 1. 能解析 Standard 或 Compact Control Payload；
-2. 能完成 HELLO / HELLO_ACK；
+2. 能完成 CONNECT / ACCEPT；
 3. 能进入 SESSION_READY；
 4. 能定期发送并响应 HEARTBEAT；
 5. 能发送和处理 ACK / NACK；
@@ -1912,7 +1912,7 @@ Control Payload
 MVP 阶段必须优先跑通：
 
 ```text
-HELLO / HELLO_ACK
+CONNECT / ACCEPT
 HEARTBEAT / HEARTBEAT_ACK
 ACK / NACK
 CLOSE / CLOSE_ACK

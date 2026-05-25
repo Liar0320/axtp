@@ -118,9 +118,9 @@ STREAM 不独立完成建流。
 典型流程：
 
 ```text
-CONTROL.HELLO
+CONTROL.OPEN
   ↓
-CONTROL.HELLO_ACK
+CONTROL.ACCEPT
   ↓
 RPC capability.getAll
   ↓
@@ -1219,7 +1219,7 @@ BLE 默认 ATT MTU 为 23 字节，去除 ATT 头后有效载荷仅 20 字节，
 因此，在 BLE 传输上使用 STREAM 时，必须遵守以下规则：
 
 ```text
-1. 在 CONTROL HELLO 阶段协商 MTU；
+1. 在 CONTROL OPEN 阶段协商 MTU；
 2. 协商后的有效 Payload 空间必须满足：
    可用字节 >= Compact Frame Header(4B) + STREAM L2 Header(16B) + CRC8 Footer(1B) + 最小业务数据长度(建议 1B)
    即 ATT 有效载荷至少 22B；
@@ -1508,7 +1508,7 @@ Legacy RawStream adapter
 最小端到端链路：
 
 ```text
-CONTROL HELLO
+CONTROL OPEN
   ↓
 RPC firmware.begin
   ↓

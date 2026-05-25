@@ -1,0 +1,56 @@
+errors:
+  - id: 0x0000
+    name: SUCCESS
+    domain: common
+    status: mvp
+    description: Operation completed successfully.
+    retryable: false
+
+  - id: 0x0201
+    name: AUTH_REQUIRED
+    domain: session
+    status: mvp
+    description: Application authentication is required.
+    retryable: false
+
+  - id: 0x0301
+    name: RPC_UNKNOWN_METHOD
+    domain: rpc
+    status: mvp
+    description: MethodId or method name is not supported.
+    retryable: false
+
+  - id: 0x0302
+    name: RPC_INVALID_PARAMS
+    domain: rpc
+    status: mvp
+    description: RPC parameters are invalid.
+    retryable: false
+
+  - id: 0x0401
+    name: STREAM_NOT_FOUND
+    domain: stream
+    status: mvp
+    description: Stream context does not exist.
+    retryable: false
+
+  - id: 0x0403
+    name: STREAM_CRC_ERROR
+    domain: stream
+    status: mvp
+    description: Stream chunk CRC check failed.
+    retryable: true
+
+  - id: 0x0501
+    name: DEVICE_BUSY
+    domain: device
+    status: mvp
+    description: Device is busy.
+    retryable: true
+
+  - id: 0x0502
+    name: CRC_ERROR
+    domain: frame
+    status: mvp
+    description: Frame CRC check failed.
+    retryable: true

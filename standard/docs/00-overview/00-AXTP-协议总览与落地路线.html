@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>00《AXTP 协议总览与落地路线》</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:          #0d1117;
+    --bg-surface:  #161b22;
+    --bg-code:     #1e2530;
+    --bg-table-hd: #1c2333;
+    --border:      #30363d;
+    --text:        #c9d1d9;
+    --text-muted:  #8b949e;
+    --text-head:   #e6edf3;
+    --accent:      #58a6ff;
+    --accent-dim:  #1f3a5f;
+    --green:       #3fb950;
+    --yellow:      #d29922;
+    --sidebar-w:   280px;
+    --font-sans:   -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                   "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    --font-mono:   "JetBrains Mono", "Fira Code", "Cascadia Code", "Source Code Pro",
+                   "Courier New", monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.75;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 24px 0 40px;
+    flex-shrink: 0;
+  }
+
+  #sidebar::-webkit-scrollbar { width: 4px; }
+  #sidebar::-webkit-scrollbar-track { background: transparent; }
+  #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sidebar-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 0 20px 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+
+  #toc { list-style: none; }
+
+  #toc li a {
+    display: block;
+    padding: 4px 20px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    line-height: 1.5;
+    transition: color .15s, background .15s;
+    border-left: 2px solid transparent;
+  }
+
+  #toc li a:hover {
+    color: var(--accent);
+    background: var(--accent-dim);
+    border-left-color: var(--accent);
+  }
+
+  #toc li.toc-h2 a { padding-left: 20px; font-weight: 600; color: var(--text); }
+  #toc li.toc-h3 a { padding-left: 36px; font-size: 12px; }
+  #toc li.toc-h4 a { padding-left: 52px; font-size: 11px; color: #6e7681; }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    max-width: 860px;
+    padding: 48px 56px 80px;
+    min-width: 0;
+  }
+
+  /* ── Meta banner ── */
+  .doc-meta {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 40px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.8;
+  }
+  .doc-meta strong { color: var(--text); }
+
+  /* ── Headings ── */
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-head);
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.3;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text-head);
+    margin: 48px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-head);
+    margin: 32px 0 12px;
+  }
+
+  h4 {
+    font-size: .95rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin: 24px 0 8px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  /* anchor offset for sticky header */
+  h1[id], h2[id], h3[id], h4[id] {
+    scroll-margin-top: 24px;
+  }
+
+  /* ── Paragraphs & lists ── */
+  p { margin-bottom: 14px; }
+
+  ol, ul { padding-left: 24px; margin-bottom: 14px; }
+  li { margin-bottom: 4px; }
+
+  /* ── Inline code ── */
+  code {
+    font-family: var(--font-mono);
+    font-size: .85em;
+    background: var(--bg-code);
+    color: #79c0ff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* ── Code blocks ── */
+  pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 16px 0 20px;
+    position: relative;
+  }
+
+  pre code {
+    font-family: var(--font-mono);
+    font-size: .82rem;
+    background: none;
+    color: #a5d6ff;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    line-height: 1.65;
+    white-space: pre;
+  }
+
+  /* ── Tables ── */
+  .table-wrap { overflow-x: auto; margin: 16px 0 24px; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+
+  thead tr { background: var(--bg-table-hd); }
+
+  th {
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-head);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+  tr:hover td { background: rgba(88,166,255,.05); }
+
+  td code, th code {
+    font-size: .8em;
+    background: var(--bg-code);
+    color: #79c0ff;
+  }
+
+  /* ── Horizontal rule ── */
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 900px) {
+    #sidebar { display: none; }
+    #content { padding: 32px 24px 60px; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div class="sidebar-title">目录</div>
+  <ul id="toc">
+    <li class="toc-h2"><a href="#s1">1. 文档目的</a></li>
+    <li class="toc-h2"><a href="#s2">2. AXTP 是什么</a></li>
+    <li class="toc-h2"><a href="#s3">3. AXTP 的核心问题</a></li>
+    <li class="toc-h3"><a href="#s3-1">3.1 多传输协议不统一</a></li>
+    <li class="toc-h3"><a href="#s3-2">3.2 Header 容易被业务污染</a></li>
+    <li class="toc-h3"><a href="#s3-3">3.3 DS-RPC Text 与二进制割裂</a></li>
+    <li class="toc-h3"><a href="#s3-4">3.4 控制面和数据面混在一起</a></li>
+    <li class="toc-h2"><a href="#s4">4. 协议总体分层</a></li>
+    <li class="toc-h2"><a href="#s5">5. PayloadType 总体设计</a></li>
+    <li class="toc-h3"><a href="#s5-1">5.1 PayloadType 表</a></li>
+    <li class="toc-h3"><a href="#s5-2">5.2 为什么不区分 RPC_JSON / RPC_BINARY</a></li>
+    <li class="toc-h3"><a href="#s5-3">5.3 为什么改为 STREAM</a></li>
+    <li class="toc-h2"><a href="#s6">6. 三类 Payload 职责边界</a></li>
+    <li class="toc-h3"><a href="#s6-1">6.1 CONTROL</a></li>
+    <li class="toc-h3"><a href="#s6-2">6.2 RPC</a></li>
+    <li class="toc-h3"><a href="#s6-3">6.3 STREAM</a></li>
+    <li class="toc-h2"><a href="#s7">7. 文档体系</a></li>
+    <li class="toc-h2"><a href="#s8">8. 各文档职责说明</a></li>
+    <li class="toc-h2"><a href="#s9">9. Registry 是单一事实源</a></li>
+    <li class="toc-h2"><a href="#s10">10. MVP 最小落地目标</a></li>
+    <li class="toc-h3"><a href="#s10-1">10.1 MVP 必须验证的能力</a></li>
+    <li class="toc-h3"><a href="#s10-2">10.2 MVP 推荐业务范围</a></li>
+    <li class="toc-h3"><a href="#s10-3">10.3 MVP 方法建议</a></li>
+    <li class="toc-h3"><a href="#s10-4">10.4 MVP 事件建议</a></li>
+    <li class="toc-h3"><a href="#s10-5">10.5 MVP Stream Profile 建议</a></li>
+    <li class="toc-h2"><a href="#s11">11. MVP 最小可运行流程</a></li>
+    <li class="toc-h2"><a href="#s12">12. 老协议适配策略</a></li>
+    <li class="toc-h2"><a href="#s13">13. Generator v1 落地范围</a></li>
+    <li class="toc-h2"><a href="#s14">14. C++ Demo v1 落地范围</a></li>
+    <li class="toc-h2"><a href="#s15">15. 测试向量要求</a></li>
+    <li class="toc-h2"><a href="#s16">16. 版本治理策略</a></li>
+    <li class="toc-h2"><a href="#s17">17. 延后实现内容</a></li>
+    <li class="toc-h2"><a href="#s18">18. 落地阶段规划</a></li>
+    <li class="toc-h2"><a href="#s19">19. 最终验收标准</a></li>
+    <li class="toc-h2"><a href="#s20">20. 总结</a></li>
+  </ul>
+</nav>
+
+<main id="content">
+
+<h1>00《AXTP 协议总览与落地路线》</h1>
+
+<div class="doc-meta">
+  <strong>版本：</strong>v0.1 Draft &nbsp;|&nbsp;
+  <strong>状态：</strong>MVP 落地规划稿<br>
+  <strong>适用范围：</strong>AXTP Core Protocol、Control、RPC、Stream、Type System、Registry、Generator、C++ Demo 统一入口文档
+</div>
+
+<!-- PLACEHOLDER_BODY -->
+</main>
+</body>
+</html>

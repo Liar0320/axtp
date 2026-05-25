@@ -77,7 +77,6 @@ FILE
 OTA
 LOG
 KVM
-BRIGHTNESS
 DISPLAY
 DIAGNOSTIC
 ```
@@ -107,7 +106,6 @@ Frame Header 不负责：
 音视频编码
 OTA 状态
 文件类型
-亮度值
 ```
 
 ### 2.4 同一业务语义支持 DS-RPC Text 与二进制
@@ -123,7 +121,7 @@ PayloadType = RPC
 再由 RPC Payload 内部字段区分：
 
 ```text
-rpcEncoding = JSON / BINARY / CBOR / TLV / FIXED_STRUCT
+rpcEncoding = JSON / BINARY / CBOR / MSGPACK
 ```
 
 ### 2.5 控制面与数据面分离
@@ -200,7 +198,7 @@ AXTP 推荐分层如下：
 | FrameIndex | 当前分片序号 |
 | FrameCount | 分片总数 |
 | CRC | Frame 级完整性校验 |
-| Session | 逻辑通信会话，由 CONTROL HELLO / HELLO_ACK 建立 |
+| Session | 逻辑通信会话，由 CONTROL OPEN / ACCEPT 建立 |
 | Control Plane | 协议运行时控制面，使用 PayloadType = CONTROL |
 | RPC Plane | 业务控制面，使用 PayloadType = RPC |
 | Stream Plane | 业务数据面，使用 PayloadType = STREAM |
@@ -215,6 +213,8 @@ AXTP 支持两类运行模式：
 Framed Mode
 Unframed Mode
 ```
+
+不同传输组合下的完整调用流程见 05《AXTP 连接场景与调用流程规范》。本节只定义 Core Protocol 层的模式边界。
 
 ### 5.1 Framed Mode
 
@@ -266,6 +266,8 @@ HTTP Debug API
 
 Unframed Mode 只能直接承载 DS-RPC Text Profile 语义，不承载 AXTP Frame Header。
 
+同一条连接不得同时使用 Unframed Mode 和 Framed Mode。AXTP v1 的正式生产路径是 Framed Mode：WebSocket Binary、HID、BLE、TCP、USB Bulk 等连接均使用 AXTP Frame Header，并由 `PayloadType=CONTROL` 承载 Hello、Heartbeat、Close、ACK/NACK。WebSocket Text / HTTP JSON 只作为 Debug 或 Legacy Adapter，不参与正式 STREAM、ACK/NACK、RESUME 流程。
+
 在 Unframed Mode 中：
 
 ```text
@@ -294,7 +296,6 @@ Compact Profile   — 4B Header  + CRC8(1B)  Footer
 | --- | --- | --- | --- |
 | Magic | 2B `0x41 0x58`（ASCII `AX`） | 无 | Compact 依赖底层传输帧边界（HID Report / BLE ATT） |
 | Version | 1B uint8 | 高 4 bit（in VT） | Standard 独立字段；Compact 与 PayloadType 合并 |
-| Flags | 无 | 无 | v1 两个 Profile 均无 Flags |
 | PayloadType | 1B enum | 低 4 bit（in VT） | |
 | PayloadLength | 2B uint16（最大 65535B） | 1B uint8（最大 255B） | |
 | SourceId | 1B uint8 | 无 | Compact 点对点，无需路由 |
@@ -305,8 +306,8 @@ Compact Profile   — 4B Header  + CRC8(1B)  Footer
 | **Header 合计** | **12B** | **4B** | |
 | CRC | CRC16（2B Footer） | CRC8（1B Footer） | |
 | **总帧开销** | **14B** | **5B** | |
-| HID 64B 可用 Payload | — | 58B（64-4-1-1 ReportID） | |
-| BLE 185B MTU 可用 Payload | — | 179B（185-4-1-1 ATT） | |
+| HID 64B 可用 Payload | 49B（64-12-2-1 ReportID） | 58B（64-4-1-1 ReportID） | |
+| BLE 185B MTU 可用 Payload | 170B（185-12-2-1 ATT） | 179B（185-4-1-1 ATT） | |
 | TCP 可用 Payload | 65521B（65535-14） | — | |
 
 **Compact Profile 不包含 Magic 的理由：** HID Report 和 BLE ATT 均有固定帧边界，接收端无需扫描字节流找帧头，Magic 的同步作用在这里没有意义。UART 场景应在传输层使用 COBS/SLIP 编码解决帧边界，而不是依赖 Magic。
@@ -321,6 +322,7 @@ Standard Profile 适用于高带宽或需要路由能力的传输。
 TCP
 WebSocket Binary
 USB Bulk
+USB HID
 网关 / 中继
 多设备总线
 桌面端工具
@@ -344,7 +346,6 @@ Compact Profile 适用于低带宽、固定点对点链路。
 
 ```text
 BLE
-USB HID
 UART
 MCU
 低功耗设备
@@ -369,8 +370,8 @@ FrameIndex / FrameCount 紧凑编码
 | WebSocket Binary | Standard |
 | USB Bulk | Standard |
 | 网关转发多设备 | Standard |
+| USB HID Report | Standard/Compact |
 | BLE GATT | Compact |
-| USB HID Report | Compact |
 | UART 点对点 | Compact |
 | MCU 内存极小 | Compact |
 
@@ -597,9 +598,9 @@ PayloadType 编码规则变化
 如果未来 v2 需要扩展 Header（例如增加 Priority、QoS 字段），迭代方式如下：
 
 ```text
-1. 在 HELLO 阶段协商双方支持的 Version 列表：
-   Client HELLO: supportedVersions = [0x01, 0x02]
-   Server HELLO_ACK: selectedVersion = 0x01  ← 取双方最高公共版本
+1. 在 OPEN 阶段协商双方支持的 Version 列表：
+   Client OPEN: supportedVersions = [0x01, 0x02]
+   Server ACCEPT: selectedVersion = 0x01  ← 取双方最高公共版本
 
 2. 整个 Session 内统一使用协商后的 Version，不混用。
 
@@ -607,7 +608,7 @@ PayloadType 编码规则变化
    v1 接收端看到 Version=0x02 直接拒绝，不会误解析。
 ```
 
-这样 v1 和 v2 设备可以通过 HELLO 降级协商，互操作不受影响。
+这样 v1 和 v2 设备可以通过 OPEN 降级协商，互操作不受影响。
 
 ### 9.5 PayloadLength
 
@@ -646,14 +647,14 @@ FRAME_LENGTH_MISMATCH
 
 | ID | 逻辑端点 |
 |---:|---|
-| `0x01` | PC App |
-| `0x02` | Browser App |
-| `0x03` | Mobile App |
-| `0x10` | Main Device |
-| `0x11` | Camera Module |
-| `0x12` | Audio Module |
-| `0x20` | Gateway |
-| `0x7F` | Broadcast / Reserved |
+| `0x01<<0` | PC App |
+| `0x01<<1` | 级连设备1 |
+| `0x01<<2` | 级连设备2 |
+| `0x01<<3` | 级连设备3 |
+| `0x01<<4` | 级连设备4 |
+| `0x01<<5` | 级连设备5 |
+| `0x01<<6` | 级连设备6 |
+| `0xFF` | Broadcast |
 
 MVP 中，如果是点对点链路，可固定：
 
@@ -893,9 +894,9 @@ AXTP v1 的 Standard Profile 和 Compact Profile 均不包含 Flags 字段。
 **去掉 Flags 的理由：**
 
 - `RESPONSE` / `ERROR`：下沉到 Control Payload 的 statusCode 和 RPC Payload 的 rpcOp，Frame 层不需要重复表达
-- `COMPRESSED` / `ENCRYPTED`：属于 Payload 编码方式，在 bodyEncoding 或 HELLO 协商中表达，Frame 层的 1 个 bit 无法携带算法参数
-- `NEED_ACK`：通过 HELLO 协商全局 ackMode，或在 Stream Context 中 per-stream 协商，不需要 per-frame 标志
-- `EXT_CRC`：CRC 算法在 HELLO 协商时确定，整个 Session 内固定，不需要 per-frame 标志
+- `COMPRESSED` / `ENCRYPTED`：属于 Payload 编码方式，在 bodyEncoding 或 OPEN 协商中表达，Frame 层的 1 个 bit 无法携带算法参数
+- `NEED_ACK`：通过 OPEN 协商全局 ackMode，或在 Stream Context 中 per-stream 协商，不需要 per-frame 标志
+- `EXT_CRC`：CRC 算法在 OPEN 协商时确定，整个 Session 内固定，不需要 per-frame 标志
 
 如果未来需要 per-frame 行为标志，应通过升级 Version 在新版本 Header 中引入，而不是在 v1 中预留占位字节。
 
@@ -977,7 +978,7 @@ CRC8 在 HID/BLE 场景下节省 1B Footer 开销，且对 4B Header + 最大 25
 例如：
 
 ```text
-一个 CONTROL HELLO
+一个 CONTROL OPEN
 一个 RPC Request
 一个 RPC Response
 一个 RPC Event
@@ -1065,7 +1066,7 @@ PayloadLength 字段宽度
 | WebSocket Binary | Standard | 4KB - 64KB |
 | USB Bulk | Standard | 16KB - 64KB |
 
-实际值必须在 CONTROL HELLO / HELLO_ACK 中协商。
+实际值必须在 CONTROL OPEN / ACCEPT 中协商。
 
 无论底层传输允许多大的包，v1 单个 Frame 的 `MaxPayloadSize` 都不得超过 `65535`，因为 `PayloadLength` 固定为 `uint16`。更大的业务对象必须通过 Frame 分片或 STREAM 业务分块传输。
 
@@ -1114,14 +1115,14 @@ AXTP Framed Mode 推荐使用 CONTROL 信令建立 Session。
 ```text
 Transport Connected
     ↓
-Client -> CONTROL HELLO
+Client -> CONTROL OPEN
     ↓
-Server -> CONTROL HELLO_ACK
+Server -> CONTROL ACCEPT
     ↓
 SESSION READY
 ```
 
-HELLO 用于协商：
+OPEN 用于协商：
 
 ```text
 protocolVersion
@@ -1138,7 +1139,7 @@ heartbeatInterval
 注意：
 
 ```text
-HELLO 只协商协议运行时能力；
+OPEN 只协商协议运行时能力；
 业务能力和具体 Stream Profile 支持列表通过 RPC capability.* 或 stream.profile.* 查询。
 ```
 
@@ -1157,7 +1158,7 @@ CONTROL ACK/NACK
 但建议业务初始化顺序为：
 
 ```text
-CONTROL HELLO / HELLO_ACK
+CONTROL OPEN / ACCEPT
     ↓
 RPC capability.getAll
     ↓
@@ -1178,7 +1179,7 @@ HID / UART: 1s - 5s
 TCP / WebSocket: 10s - 60s
 ```
 
-具体值由 CONTROL HELLO 协商。
+具体值由 CONTROL OPEN 协商。
 
 ### 16.4 Session 恢复
 
@@ -1386,7 +1387,7 @@ WebSocket Text 不使用 AXTP Frame。
 DS-RPC Text Profile
 ```
 
-不能承载 AXTP STREAM 二进制数据。
+不能承载 AXTP STREAM 二进制数据，也不能在同一条 WebSocket Text 连接中混入 AXTP Binary Frame。若需要 STREAM、CRC、ACK/NACK 或 Frame 分片，应使用 WebSocket Binary 的 AXTP Framed Mode。
 
 ---
 
@@ -1511,7 +1512,7 @@ MVP 阶段可以不实现加密，但必须保留：
 
 ```text
 ENCRYPTED flag
-HELLO 中的 encryption capability
+OPEN 中的 encryption capability
 错误码 UNSUPPORTED_ENCRYPTION
 ```
 
@@ -1567,7 +1568,7 @@ AXTP Core MVP 必须实现：
 7. MessageId 生成；
 8. 未分片 Message 收发；
 9. 基础 Fragment 重组；
-10. CONTROL HELLO / HELLO_ACK 的承载能力；
+10. CONTROL OPEN / ACCEPT 的承载能力；
 11. RPC Request / Response / Event 的承载能力；
 12. STREAM chunk 的承载能力；
 13. 基础错误码返回；
@@ -1598,9 +1599,9 @@ AXTP MVP 应至少跑通以下流程：
 ```text
 Transport Connected
     ↓
-CONTROL HELLO
+CONTROL OPEN
     ↓
-CONTROL HELLO_ACK
+CONTROL ACCEPT
     ↓
 RPC capability.getAll
     ↓
@@ -1650,9 +1651,10 @@ CRC
 
 | 文档 | 负责内容 |
 |---|---|
-| 02《AXTP Control 信令协议规范》 | CONTROL Payload、Opcode、HELLO、ACK/NACK、RESUME、CLOSE |
+| 02《AXTP Control 信令协议规范》 | CONTROL Payload、Opcode、OPEN、ACK/NACK、RESUME、CLOSE |
 | 03《AXTP RPC 协议与二进制映射规范》 | RPC Payload、JSON/Binary 映射、requestId、methodId、eventId |
 | 04《AXTP Stream 流式传输协议规范》 | Stream L2 Header（streamId/seqId/cursor）、Stream Context、ACK/NACK、窗口、断点续传 |
+| 05《AXTP 连接场景与调用流程规范》 | 不同传输组合下的 Wire Profile 选择、两阶段状态机、建连流程、桥接方式 |
 | Type System | 基础类型、字节序、数组、对象、enum、bitmap |
 | TLV Schema | TLV 编码、字段 ID、嵌套、扩展长度 |
 | Registry | Method / Event / Error / Capability 单一事实源 |

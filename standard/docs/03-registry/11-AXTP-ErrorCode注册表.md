@@ -45,7 +45,7 @@ C++ SDK Result.code
 
 | 位置 | 用途 |
 |---|---|
-| `Control.statusCode` | 表达 HELLO / ACK / NACK / RESUME / CLOSE 等控制信令结果 |
+| `Control.statusCode` | 表达 OPEN / ACK / NACK / RESUME / CLOSE 等控制信令结果 |
 | `RPC Response.statusCode` | 表达一次方法调用是否成功 |
 | `STREAM NACK.reasonCode` | 表达流数据包失败原因 |
 | `Event.data.errorCode` | 表达异步错误事件 |
@@ -117,7 +117,7 @@ enum class AxtpErrorCode : uint16_t
 |---:|---|---|
 | `0x0000-0x00FF` | Common | 通用成功与通用错误 |
 | `0x0100-0x01FF` | Frame / Transport | 帧、Header、长度、CRC、分片、传输错误 |
-| `0x0200-0x02FF` | Control | HELLO、ACK、NACK、RESUME、Session 控制错误 |
+| `0x0200-0x02FF` | Control | OPEN、ACK、NACK、RESUME、Session 控制错误 |
 | `0x0300-0x03FF` | RPC | RPC 解析、方法、参数、响应错误 |
 | `0x0400-0x04FF` | Stream | Stream 数据面、分块、窗口、续传错误 |
 | `0x0500-0x05FF` | Capability | 能力发现、协商、不支持错误 |
@@ -184,8 +184,8 @@ enum class AxtpErrorCode : uint16_t
 | `0x0201` | `CONTROL_OPCODE_INVALID` | Control opcode 非法 | 是 |
 | `0x0202` | `CONTROL_PAYLOAD_INVALID` | Control Payload 结构非法 | 是 |
 | `0x0203` | `CONTROL_BODY_ENCODING_UNSUPPORTED` | Control bodyEncoding 不支持 | 是 |
-| `0x0204` | `CONTROL_HELLO_REQUIRED` | 会话尚未 HELLO | 是 |
-| `0x0205` | `CONTROL_HELLO_REJECTED` | HELLO 被拒绝 | 是 |
+| `0x0204` | `CONTROL_OPEN_REQUIRED` | 会话尚未 CONNECT | 是 |
+| `0x0205` | `CONTROL_OPEN_REJECTED` | CONNECT 被拒绝 | 是 |
 | `0x0206` | `CONTROL_PROFILE_UNSUPPORTED` | Header Profile 不支持 | 是 |
 | `0x0207` | `CONTROL_NEGOTIATION_FAILED` | 协商失败 | 是 |
 | `0x0208` | `CONTROL_SESSION_INVALID` | SessionId 无效 | 是 |
@@ -445,8 +445,8 @@ TRANSPORT_DISCONNECTED
 
 CONTROL_OPCODE_INVALID
 CONTROL_PAYLOAD_INVALID
-CONTROL_HELLO_REQUIRED
-CONTROL_HELLO_REJECTED
+CONTROL_OPEN_REQUIRED
+CONTROL_OPEN_REJECTED
 CONTROL_SESSION_INVALID
 CONTROL_ACK_TARGET_INVALID
 CONTROL_HEARTBEAT_TIMEOUT
@@ -684,7 +684,7 @@ C++ Demo v1 必须覆盖以下错误路径：
 非法 Magic -> FRAME_MAGIC_INVALID
 非法 PayloadType -> FRAME_PAYLOAD_TYPE_INVALID
 CRC 错误 -> FRAME_CRC_ERROR
-未 HELLO 直接 RPC -> CONTROL_HELLO_REQUIRED
+未 CONNECT 直接 RPC -> CONTROL_OPEN_REQUIRED
 未知 methodId -> RPC_METHOD_NOT_FOUND
 参数缺失 -> RPC_PARAM_MISSING
 参数越界 -> RPC_PARAM_OUT_OF_RANGE

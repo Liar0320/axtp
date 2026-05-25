@@ -1,0 +1,26 @@
+legacy_mappings:
+  - legacy_protocol: axdp_hid
+    legacy_cmd_value: 0x000B0002
+    legacy_name: BetaDeviceInfo
+    axtp_method_id: 0x0101
+    axtp_method_name: device.getInfo
+    direction: request_response
+    request_adapter: BetaDeviceInfoRequestAdapter
+    response_adapter: BetaDeviceInfoResponseAdapter
+    status_mapping:
+      0x00: SUCCESS
+      0x01: RPC_INVALID_PARAMS
+      0x02: DEVICE_BUSY
+
+  - legacy_protocol: axdp_hid
+    legacy_cmd_value: 0x000B0042
+    legacy_name: BetaBrightnessSet
+    axtp_method_id: 0x0602
+    axtp_method_name: brightness.set
+    direction: request_response
+    request_adapter: BetaBrightnessSetRequestAdapter
+    response_adapter: BetaBrightnessSetResponseAdapter
+    status_mapping:
+      0x00: SUCCESS
+      0x01: RPC_INVALID_PARAMS
+      0x02: DEVICE_BUSY

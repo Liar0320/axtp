@@ -586,8 +586,8 @@ CONTROL / RPC / STREAM
 MVP Control Opcode：
 
 ```text
-HELLO
-HELLO_ACK
+OPEN
+ACCEPT
 HEARTBEAT
 HEARTBEAT_ACK
 ACK
@@ -986,7 +986,7 @@ capabilities:
 
 ### 13.3 Capability 规则
 
-- 协议能力可在 `CONTROL HELLO / HELLO_ACK` 中协商。
+- 协议能力可在 `CONTROL OPEN / ACCEPT` 中协商。
 - 业务能力必须通过 RPC 查询，例如 `capability.getAll`。
 - Capability 不等于 Method。
 - Method 是否可调用，应由 Capability 与 Method Registry 共同判断。
@@ -1345,8 +1345,8 @@ PayloadType:
   STREAM
 
 Control Opcode:
-  HELLO
-  HELLO_ACK
+  OPEN
+  ACCEPT
   HEARTBEAT
   HEARTBEAT_ACK
   ACK

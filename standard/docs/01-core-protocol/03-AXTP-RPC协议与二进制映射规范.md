@@ -124,8 +124,8 @@ RPC 不负责协议运行时控制。
 以下内容属于 `PayloadType = CONTROL`：
 
 ```text
-HELLO
-HELLO_ACK
+OPEN
+ACCEPT
 HEARTBEAT
 ACK
 NACK
@@ -308,7 +308,7 @@ RPC Payload 重组完成后：
 RPC Payload 分为两类表示：
 
 ```text
-1. DS-RPC Text Profile
+1. JSON RPC Payload / DS-RPC Debug Adapter
 2. Binary RPC Payload
 ```
 
@@ -318,8 +318,8 @@ RPC Payload 分为两类表示：
 
 | 场景 | 推荐 rpcEncoding |
 |---|---|
-| WebSocket Text / HTTP / CLI / 浏览器 | `JSON`（DS-RPC Text Profile） |
-| TCP / WebSocket Binary / USB Bulk | `BINARY` 或 `CBOR` |
+| WebSocket Text / HTTP / CLI / 浏览器调试 | `JSON`（DS-RPC Debug Adapter，非生产路径） |
+| TCP / WebSocket Binary / USB Bulk 生产路径 | `BINARY` 或 `CBOR`；调试时可用 JSON body |
 | BLE / HID / UART / MCU | `BINARY` + `bodyEncoding=TLV` |
 | 动态字段较多 | `CBOR` |
 | 固定字段、高频命令 | `BINARY` + `FIXED_STRUCT` |
@@ -332,7 +332,7 @@ RPC Payload 分为两类表示：
 | rpcEncoding | 名称 | 说明 | MVP |
 |---:|---|---|---|
 | `0x00` | `UNSPECIFIED` | 未指定，仅用于错误检测 | 否 |
-| `0x01` | `JSON` | DS-RPC Text Profile 对象 | 是 |
+| `0x01` | `JSON` | JSON RPC payload/body；Framed Mode 不得承载完整 DS-RPC Envelope | 是 |
 | `0x02` | `BINARY` | AXTP Binary RPC Header + Body | 是 |
 | `0x03` | `CBOR` | CBOR 编码对象 | 可选 |
 | `0x04` | `MSGPACK` | MessagePack 编码对象 | 可选 |
@@ -572,9 +572,40 @@ methodOrEventId
 
 ## 13. DS-RPC Text Profile 表达规范
 
-DS-RPC（Digital Signage RPC）是 AXTP 的正式 Text RPC Profile，适用于 WebSocket Text、HTTP API、CLI、浏览器调试工具等文本链路。它参考 obs-websocket 消息结构设计，使用统一 Envelope 表达 Hello、Heartbeat、Subscribe、Request、Response、Event、Batch 和 Bye 等流程。
+DS-RPC（Digital Signage RPC）是 AXTP 的 Debug / Legacy Text Adapter，适用于 WebSocket Text、HTTP API、CLI、浏览器调试工具等文本链路。它参考 obs-websocket 消息结构设计，使用 JSON Envelope 表达调试请求、响应、事件，以及兼容模式下的 Hello、Heartbeat、Bye 等流程。
 
-DS-RPC Text Profile 不使用 AXTP Frame Header，也不改变 Framed Mode 中 `CONTROL / RPC / STREAM` 的三分法。
+DS-RPC Text Adapter 不使用 AXTP Frame Header，也不改变 Framed Mode 中 `CONTROL / RPC / STREAM` 的三分法。AXTP v1 的正式生产路径是 Framed Mode；WebSocket 生产连接应使用 WebSocket Binary + AXTP Frame Header。
+
+### 定位：可选的调试与浏览器层，不是生产必须路径
+
+**AXTP Framed Mode 是唯一的生产路径。** 所有正式客户端——native app、嵌入式设备、服务端——都应使用 AXTP Frame Header，走 WebSocket Binary、TCP、BLE、HID 或 UART。这条路径实现统一，只有一套 Parser 和一套状态机，没有模式切换。
+
+DS-RPC Text Profile 存在的理由是服务特定客户端场景，而非协议本身的完整性需求：
+
+| 场景 | 说明 |
+| --- | --- |
+| 浏览器 JS 客户端 | 原生处理 JSON，解析二进制帧需要额外实现 |
+| curl / Postman / DevTools 调试 | 工具链天然支持 JSON，不支持自定义二进制帧 |
+| HTTP REST API 兼容 | JSON 可直接映射到 HTTP 请求体 |
+| 人工排查问题 | JSON 可读，二进制帧不可读 |
+
+如果所有客户端都是你控制的 native app 或嵌入式设备，DS-RPC Text Profile 对该项目没有价值，可以不实现。
+
+推荐的实现策略：
+
+```text
+生产路径（必须实现）：
+  AXTP Framed Mode
+  WebSocket Binary / TCP / BLE / HID / UART
+  CONTROL + RPC + STREAM 完整三层
+
+调试层（按需实现）：
+  DS-RPC Text Adapter
+  WebSocket Text
+  优先覆盖 Request / Response / Event / Batch
+  Legacy 模式可覆盖 Hello / Heartbeat / Bye
+  不承载高吞吐 STREAM 数据面
+```
 
 使用边界：
 
@@ -582,13 +613,17 @@ DS-RPC Text Profile 不使用 AXTP Frame Header，也不改变 Framed Mode 中 `
 Framed Mode:
   使用 AXTP Frame Header
   PayloadType = CONTROL / RPC / STREAM
-  RPC JSON 只表达业务 RPC Payload
+  RPC JSON 只表达业务 RPC Payload，不承载完整 DS-RPC Envelope
+  Hello / Heartbeat / Bye 必须使用 PayloadType=CONTROL
 
-Text Profile:
+Text Adapter:
   不使用 AXTP Frame Header
-  使用 DS-RPC Envelope 承载 Hello / Heartbeat / Request / Response / Event
+  使用 DS-RPC Envelope 承载调试 RPC
+  Legacy 模式可承载 Hello / Heartbeat / Bye
   不承载高吞吐 STREAM 数据面
 ```
+
+DS-RPC Text Adapter 与 AXTP Framed Mode 是两个 Wire Profile。它们解码后可以映射到同一套内部 `ProtocolMessage`，但不得在同一条连接中混用。不同传输组合的完整流程见 05《AXTP 连接场景与调用流程规范》。
 
 所有 DS-RPC JSON 消息使用统一的三字段 Envelope：
 
@@ -602,20 +637,220 @@ Text Profile:
 
 | 字段 | 类型 | 必须 | 说明 |
 | --- | --- | --- | --- |
-| `sid` | string | 是 | Session ID，由 Server 在 HelloAck 阶段生成并返回；Hello 阶段可为空字符串 |
+| `sid` | string | 是 | Transport-level session routing key，见 §13.0 |
 | `op` | number | 是 | Opcode，标识消息类型，见 §13.1 Opcode 表 |
 | `d` | object | 是 | 消息数据体，内容由 op 决定 |
 
 ---
 
-### 13.1 JSON Opcode 表
+### 13.0 sid 的语义与 Binary 模式的对称性
+
+`sid` 是 DS-RPC Text Profile 的 **transport-level session routing key**，不是业务消息字段。
+
+#### 为什么 Binary 模式不携带 sessionId
+
+Binary/Framed Mode 中，**连接本身就是 session 的载体**。ACCEPT 把 sessionId 写入两端的 Session Context，后续所有 RPC / STREAM 帧都不再携带它——解析器直接从当前连接的 Session Context 读取：
+
+```text
+连接建立
+  → CONTROL ACCEPT  (sessionId 写入 Session Context)
+  → RPC Request        (不携带 sessionId，从连接上下文读)
+  → RPC Response       (不携带 sessionId)
+```
+
+#### 为什么 DS-RPC 每条消息都携带 sid
+
+WebSocket Text 连接同样是连接级 session，`sid` 并非用于路由，而是在 codec 层完成两件事：
+
+1. 从 sessionMap 中查找对应的 Session Context
+2. 做一次 session 合法性校验，防止消息混淆或重放
+
+`sid` 的角色等价于 HTTP Cookie——每个请求都携带，但应用逻辑不需要在每个 handler 里处理它。
+
+#### 统一内部模型中的处理规则
+
+`sid` 不属于 `ProtocolMessage`，在 TextCodec 边界被消费和注入：
+
+```text
+TextCodec.decode(json):
+  sid     = json["sid"]
+  session = sessionMap.lookup(sid)      ← codec 层处理，不透传给上层
+  message = parseMessage(json["op"], json["d"])
+  return (session, message)             ← message 中不含 sid
+
+TextCodec.encode(session, message):
+  return { "sid": session.id, "op": ..., "d": ... }   ← codec 层注入
+
+FramedCodec.decode(bytes):
+  session = connectionContext.session   ← 从连接上下文读，不从消息读
+  message = parsePayload(bytes)
+  return (session, message)
+```
+
+两个 codec 的输出结构完全一致：`(session, ProtocolMessage)`，Session 状态机和业务逻辑对 wire format 无感知。
+
+#### 两种模式的对称关系
+
+| | DS-RPC Text | Binary Framed |
+| --- | --- | --- |
+| sessionId 在哪里 | 每条消息的 `sid` 字段 | 连接上下文（Session Context） |
+| 谁处理它 | TextCodec | FramedCodec（隐式，从连接读） |
+| ProtocolMessage 里有吗 | 否 | 否 |
+| 语义是否等价 | 是 | 是 |
+
+不对称只存在于 wire format 层，语义模型完全同步。
+
+---
+
+### 13.0.1 DS-RPC op 与 CONTROL opcode 的关系
+
+DS-RPC 的 `op` 字段把 Framed Mode 中 CONTROL 和 RPC 两层的职责折叠进了同一个 Envelope。理解这个折叠关系有助于实现统一的内部模型。
+
+#### CONTROL 的两类操作
+
+CONTROL 的操作可以分为两类，性质不同：
+
+**第一类：会话管理**——与 DS-RPC session ops 一一对应：
+
+| CONTROL opcode | DS-RPC op | 语义 |
+| --- | --- | --- |
+| CONNECT / ACCEPT | op=0 Hello / op=1 HelloAck (Legacy) | 会话建立与能力协商 |
+| HEARTBEAT / HEARTBEAT_ACK | op=2 Heartbeat / op=3 HeartbeatAck | 心跳保活 |
+| CLOSE / CLOSE_ACK | op=14 Bye / op=15 ByeAck | 有序关闭会话 |
+
+**第二类：传输控制**——DS-RPC 中无对应物：
+
+| CONTROL opcode | 说明 | DS-RPC 为何不需要 |
+| --- | --- | --- |
+| ACK / NACK | 帧级确认与重传 | TCP/WebSocket 保证可靠传输 |
+| WINDOW_UPDATE | 接收窗口流控 | 同上 |
+| RESUME / RESUME_ACK | 断线后逻辑会话恢复 | WebSocket 重连即重新握手 |
+| SESSION_RESET | 强制重置状态机 | 同上 |
+
+DS-RPC 运行在 TCP/WebSocket 之上，可靠性由传输层保证，因此第二类操作完全不需要。Binary Framed Mode 需要支持 BLE、UART 等不可靠传输，第二类操作是必须的。
+
+#### 为什么会话管理也不能合并进 Binary RPC
+
+即使只看第一类操作，在 Binary Framed Mode 中也不能把它们合并进 `PayloadType=RPC`，原因有二：
+
+**Bootstrap 问题**：CONNECT 必须在 RPC 层就绪之前完成。RpcParser 依赖 SESSION_READY 状态才能工作，而 SESSION_READY 由 CONNECT/ACCEPT 建立。如果 CONNECT 变成 RPC 操作，两者互相依赖，形成死锁：
+
+```text
+当前设计（正确）：
+  payloadType=CONTROL → ControlParser 处理 OPEN（RpcParser 尚未启动）
+  → SESSION_READY → RpcParser 启动，开始处理业务 RPC
+
+合并后的问题：
+  payloadType=RPC → RpcParser 处理 OPEN
+  → 但 RpcParser 需要 SESSION_READY 才能工作 → 死锁
+```
+
+**优先级问题**：HEARTBEAT、ACK、NACK 必须在 RPC 队列拥塞时仍能被及时处理。独立的 `PayloadType=CONTROL` 允许实现为其分配更高的处理优先级，不受业务 RPC 积压影响。
+
+#### 总结
+
+```text
+DS-RPC session ops（op=0/1/2/3/14/15）
+  ≡  CONTROL 会话管理子集（OPEN/HEARTBEAT/CLOSE 及其 ACK）
+
+DS-RPC 无对应
+  ≡  CONTROL 传输控制子集（ACK/NACK/WINDOW_UPDATE/RESUME/SESSION_RESET）
+```
+
+两种模式在会话管理语义上完全等价，差异仅在于 Binary Framed Mode 额外承载了 DS-RPC 不需要的传输控制职责。
+
+---
+
+### 13.0.2 为什么在所有传输层（包括 WebSocket）都应始终携带 AXTP Frame
+
+#### 核心洞察
+
+在所有传输层——包括 WebSocket Binary——始终携带 AXTP Frame Header，是比"按传输层选择是否携带 Frame"更简单的实现策略。
+
+#### 双模式的隐藏成本
+
+如果允许 WebSocket 在不带 AXTP Frame Header 的情况下运行（即 Unframed/DS-RPC-only 模式），实现端需要维护两套独立的协议逻辑：
+
+```text
+Framed Mode（TCP / BLE / HID / UART）：
+  FramedCodec → ControlParser → RpcParser → StreamParser
+  Session 状态机由 CONTROL OPEN/ACCEPT 驱动
+
+Unframed Mode（WebSocket Text/Binary）：
+  TextCodec → DS-RPC Envelope Parser
+  Session 状态机由 DS-RPC Hello/HelloAck 驱动
+  sid 在每条消息中显式携带
+```
+
+这意味着：
+
+- 两套 Codec（FramedCodec + TextCodec）
+- 两套 Session 状态机（CONTROL 驱动 vs DS-RPC 驱动）
+- 两套测试向量
+- 两套调试路径
+- 传输层切换时需要模式判断逻辑
+
+#### 始终携带 Frame 的优势
+
+如果 WebSocket Binary 也始终携带 AXTP Frame Header，整个协议栈收敛为单一路径：
+
+```text
+所有传输层（WebSocket Binary / TCP / BLE / HID / UART）：
+  FramedCodec → ControlParser → RpcParser → StreamParser
+  Session 状态机统一由 CONTROL OPEN/ACCEPT 驱动
+  sessionId 隐式绑定到连接上下文，不在消息中携带
+```
+
+优势：
+
+- **单一实现栈**：一套 Parser、一套状态机、一套测试向量
+- **行为一致性**：WebSocket Binary 与 TCP 行为完全相同，无需模式切换
+- **调试路径统一**：抓包格式一致，工具链复用
+- **传输层透明**：业务逻辑对传输层无感知，换传输层不改代码
+
+#### 推荐策略
+
+```text
+生产路径（所有传输层，包括 WebSocket Binary）：
+  始终携带 AXTP Frame Header
+  PayloadType = CONTROL / RPC / STREAM
+  WebSocket Binary 与 TCP 使用相同的 Standard Profile（12B Header + CRC16）
+
+调试/浏览器层（按需，不进入生产）：
+  DS-RPC Text Profile（WebSocket Text）
+  仅用于 curl / Postman / 浏览器 DevTools / 人工排查
+  不承载 STREAM 数据面
+  不作为正式客户端的实现路径
+```
+
+#### 结论
+
+DS-RPC Text Profile 的存在价值是服务**无法处理二进制帧的调试工具和浏览器脚本**，而不是为了给 WebSocket 提供一种"更轻量"的运行模式。
+
+对于所有可控的客户端（native app、嵌入式设备、服务端、SDK），应始终使用 AXTP Frame Header。这不是限制，而是简化：一套实现，覆盖所有传输层。
+
+---
+
+### 13.1 DS-RPC Debug Adapter Opcode 表
+
+正式 AXTP RPC 语义只需要：
+
+```text
+Request
+Response
+Event
+BatchRequest
+BatchResponse
+```
+
+`Hello / HelloAck / Heartbeat / Bye` 只属于 DS-RPC Legacy Adapter。新实现如果已经支持 AXTP Framed Mode，不应把这些 op 作为正式连接生命周期；应用身份、认证和业务能力应使用普通 RPC 方法，例如 `session.identify`、`session.challenge`、`capability.getAll`。
 
 | op | 名称 | 方向 | 说明 |
 | --- | --- | --- | --- |
-| `0` | `Hello` | Server → Client | 连接建立，发起能力协商 |
-| `1` | `HelloAck` | Client → Server | 确认连接，返回 sid |
-| `2` | `Heartbeat` | 双向 | 心跳保活 |
-| `3` | `HeartbeatAck` | 双向 | 心跳响应 |
+| `0` | `Hello` | Server → Client | Legacy Adapter 连接建立，发起调试会话能力说明 |
+| `1` | `HelloAck` | Client → Server | Legacy Adapter 确认连接，返回 sid |
+| `2` | `Heartbeat` | 双向 | Legacy Adapter 心跳保活 |
+| `3` | `HeartbeatAck` | 双向 | Legacy Adapter 心跳响应 |
 | `5` | `Subscribe` | Client → Server | 订阅事件 |
 | `6` | `Event` | Server → Client | 服务端主动推送事件 |
 | `7` | `Request` | Client → Server | 发起 RPC 调用 |
@@ -624,12 +859,14 @@ Text Profile:
 | `11` | `BatchResponse` | Server → Client | 批量 RPC 响应 |
 | `12` | `RESERVED_STREAM_DATA` | - | 保留；AXTP v1 STREAM 数据必须使用 Framed Mode 的 16B L2 Header，不在 DS-RPC 中承载 |
 | `13` | `FragmentAck` | 双向 | 分片确认 |
-| `14` | `Bye` | 双向 | 主动断开连接 |
-| `15` | `ByeAck` | 双向 | 断开确认 |
+| `14` | `Bye` | 双向 | Legacy Adapter 主动断开连接 |
+| `15` | `ByeAck` | 双向 | Legacy Adapter 断开确认 |
 
 ---
 
-### 13.2 Hello / HelloAck
+### 13.2 Legacy Hello / HelloAck
+
+本节仅适用于 WebSocket Text / HTTP Debug 的 Legacy Adapter。Framed Mode 下，连接级握手只能使用 `PayloadType=CONTROL` 的 `CONNECT / ACCEPT`；如果在 Framed RPC 中收到 DS-RPC Hello，应拒绝或兼容映射为 `session.identify` 并返回 deprecated 警告。
 
 **Hello（op=0）**，Server → Client，发起协议协商：
 
@@ -1577,7 +1814,7 @@ RPC 层需要依赖 capability 判断：
 
 | 能力类型 | 获取方式 |
 |---|---|
-| 支持 PayloadType、Header Profile、MTU、窗口大小 | CONTROL HELLO / HELLO_ACK |
+| 支持 PayloadType、Header Profile、MTU、窗口大小 | CONTROL OPEN / ACCEPT |
 | 支持哪些业务方法、事件、参数范围、编解码能力 | RPC capability.* |
 
 ---

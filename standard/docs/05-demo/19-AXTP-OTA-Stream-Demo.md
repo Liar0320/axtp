@@ -158,7 +158,7 @@ BLE GATT + Compact Header
 
 | payloadType | 名称 | OTA 用途 |
 |---:|---|---|
-| `0x01` | `CONTROL` | HELLO、ACK、NACK、RESUME、WINDOW_UPDATE |
+| `0x01` | `CONTROL` | OPEN、ACK、NACK、RESUME、WINDOW_UPDATE |
 | `0x02` | `RPC` | firmware.begin / end / verify / apply / abort / resume |
 | `0x03` | `STREAM` | OTA 固件块传输 |
 
@@ -190,8 +190,8 @@ bodyEncoding = TLV
 ```text
 1. Transport Connected
 
-2. CONTROL HELLO
-3. CONTROL HELLO_ACK
+2. CONTROL OPEN
+3. CONTROL ACCEPT
 
 4. RPC capability.getAll
 5. RPC firmware.getInfo
@@ -612,7 +612,7 @@ P1 阶段可以启用 Sliding Window。
 窗口大小由以下来源确定：
 
 ```text
-CONTROL HELLO / HELLO_ACK windowSize
+CONTROL OPEN / ACCEPT windowSize
 firmware.begin windowSize
 CONTROL WINDOW_UPDATE
 ```
@@ -648,7 +648,7 @@ MVP 可以不实现 Sliding Window，但协议字段必须为后续保留。
 ```text
 1. BLE/HID/WebSocket 断开
 2. 重新连接 Transport
-3. CONTROL HELLO
+3. CONTROL OPEN
 4. CONTROL RESUME(sessionId, resumeToken)
 5. CONTROL RESUME_ACK(acceptedOffset, lastSeqId)
 6. RPC firmware.resume
@@ -1211,7 +1211,7 @@ public:
 OTA Stream Demo 通过标准：
 
 ```text
-1. 能完成 CONTROL HELLO / HELLO_ACK
+1. 能完成 CONTROL OPEN / ACCEPT
 2. 能通过 RPC firmware.begin 创建 OTA transfer
 3. 能通过 STREAM OTA chunk 传输完整固件
 4. 每个 chunk 能被 CONTROL ACK/NACK 确认

@@ -782,7 +782,7 @@ Generator 应在兼容层代码中保留该提示。
 
 Control TLV 应优先使用公共字段编号。
 
-示例：HELLO Body
+示例：OPEN Body
 
 ```yaml
 schemaId: control.hello.body

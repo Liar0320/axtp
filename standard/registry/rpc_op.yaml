@@ -1,0 +1,26 @@
+rpc_ops:
+  - id: 0x01
+    name: REQUEST
+    domain: rpc
+    status: mvp
+    description: RPC request.
+  - id: 0x02
+    name: RESPONSE
+    domain: rpc
+    status: mvp
+    description: RPC response.
+  - id: 0x03
+    name: EVENT
+    domain: rpc
+    status: mvp
+    description: RPC event.
+  - id: 0x04
+    name: BATCH_REQUEST
+    domain: rpc
+    status: draft
+    description: Batch RPC request.
+  - id: 0x05
+    name: BATCH_RESPONSE
+    domain: rpc
+    status: draft
+    description: Batch RPC response.

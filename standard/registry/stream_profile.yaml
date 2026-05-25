@@ -1,0 +1,11 @@
+stream_profiles:
+  - id: 0x0001
+    name: firmware.ota
+    domain: firmware
+    status: mvp
+    description: OTA firmware stream profile.
+  - id: 0x0002
+    name: file.transfer
+    domain: file
+    status: draft
+    description: File transfer stream profile.

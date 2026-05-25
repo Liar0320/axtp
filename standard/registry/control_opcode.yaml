@@ -1,0 +1,41 @@
+control_opcodes:
+  - id: 0x01
+    name: CONNECT
+    domain: control
+    status: mvp
+    description: Start AXTP link negotiation.
+  - id: 0x02
+    name: ACCEPT
+    domain: control
+    status: mvp
+    description: Accept AXTP link negotiation.
+  - id: 0x03
+    name: HEARTBEAT
+    domain: control
+    status: mvp
+    description: Keep session alive.
+  - id: 0x04
+    name: HEARTBEAT_ACK
+    domain: control
+    status: mvp
+    description: Heartbeat response.
+  - id: 0x05
+    name: ACK
+    domain: control
+    status: mvp
+    description: Positive transport acknowledgement.
+  - id: 0x06
+    name: NACK
+    domain: control
+    status: mvp
+    description: Negative transport acknowledgement.
+  - id: 0x09
+    name: CLOSE
+    domain: control
+    status: mvp
+    description: Close AXTP session.
+  - id: 0x0A
+    name: CLOSE_ACK
+    domain: control
+    status: mvp
+    description: Close acknowledgement.

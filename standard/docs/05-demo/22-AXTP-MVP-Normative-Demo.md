@@ -21,7 +21,7 @@
 本文示例覆盖：
 
 ```text
-CONTROL HELLO / HELLO_ACK
+CONTROL OPEN / ACCEPT
 RPC capability.getAll
 RPC device.getInfo
 RPC brightness.set
@@ -51,11 +51,11 @@ MVP Demo 必须支持以下两种运行方式：
 
 ## 3. Session 建立
 
-### 3.1 HELLO
+### 3.1 OPEN
 
-Client 发送 `PayloadType = CONTROL` 的 HELLO。
+Client 发送 `PayloadType = CONTROL` 的 OPEN。
 
-HELLO body 至少携带：
+OPEN body 至少携带：
 
 | 字段 | 来源 | 示例值 |
 |---|---|---|
@@ -68,11 +68,27 @@ HELLO body 至少携带：
 | `heartbeatIntervalMs` | 02 Control | `1000` |
 | `ackMode` | 02 Control | `MESSAGE_ACK` |
 
-### 3.2 HELLO_ACK
+### 3.2 ACCEPT
 
-Device 返回 HELLO_ACK，并分配 `sessionId`。
+Device 返回 ACCEPT，并分配 `sessionId`。
 
 `sessionId` 只绑定 Session Context。后续 RPC/STREAM Frame 不在 Header 或 Payload 中重复携带 `sessionId`。
+
+---
+
+## 3.5 应用层身份认证（Challenge / Identify / Identified）
+
+ACCEPT 完成后，Device 主动推送 `session.challenge` EVENT，Client 回应 `session.identify` REQUEST，Device 确认 `session.identified` EVENT。
+
+| 步骤 | 方向 | rpcOp | 方法 / 事件 | 关键字段 |
+| --- | --- | --- | --- | --- |
+| 1 | Server → Client | EVENT | `session.challenge` | `challengeString`、`authRequired`、`rpcVersion` |
+| 2 | Client → Server | REQUEST | `session.identify` | `clientName`、`clientVersion`、`rpcVersion`、`authResponse`（无密码时省略） |
+| 3 | Server → Client | EVENT | `session.identified` | `negotiatedRpcVersion` |
+
+三步完成后进入 `APP_READY` 状态。
+
+如果设备为免鉴权模式，`session.challenge` 中 `authRequired=false`，Client 发送 `session.identify` 时省略 `authResponse`，Device 直接回 `session.identified`。
 
 ---
 
@@ -226,7 +242,7 @@ Client -> Device: STREAM streamId=9 seqId=2 cursor=2N
 Device -> Client: CONTROL ACK targetType=STREAM_CHUNK streamId=9 seqId=2
 ```
 
-Frame Header 不携带确认请求标志。确认策略来自 HELLO ackMode 与 firmware.begin 建立的 Stream Context。
+Frame Header 不携带确认请求标志。确认策略来自 OPEN ackMode 与 firmware.begin 建立的 Stream Context。
 
 ---
 

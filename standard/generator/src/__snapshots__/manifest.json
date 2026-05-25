@@ -1,0 +1,65 @@
+{
+  "vectors": [
+    {
+      "name": "control_connect",
+      "payloadType": "CONTROL",
+      "encoding": "binary_tlv",
+      "hexFile": "control_connect.hex",
+      "expectDecode": {
+        "opcode": "CONNECT"
+      }
+    },
+    {
+      "name": "rpc_device_get_info_request",
+      "payloadType": "RPC",
+      "encoding": "binary_tlv",
+      "hexFile": "rpc_device_get_info.hex",
+      "expectDecode": {
+        "method": "device.getInfo"
+      }
+    },
+    {
+      "name": "rpc_brightness_set_request",
+      "payloadType": "RPC",
+      "encoding": "binary_tlv",
+      "hexFile": "rpc_brightness_set.hex",
+      "expectDecode": {
+        "method": "brightness.set",
+        "value": 80
+      }
+    },
+    {
+      "name": "event_brightness_changed",
+      "payloadType": "RPC",
+      "encoding": "binary_tlv",
+      "hexFile": "event_brightness_changed.hex",
+      "expectDecode": {
+        "event": "brightness.changed",
+        "value": 80
+      }
+    },
+    {
+      "name": "stream_ota_chunk",
+      "payloadType": "STREAM",
+      "encoding": "binary",
+      "hexFile": "stream_ota_chunk.hex",
+      "expectDecode": {
+        "streamProfile": "firmware.ota"
+      }
+    },
+    {
+      "name": "compact_crc8_error",
+      "payloadType": "RPC",
+      "encoding": "binary_tlv",
+      "hexFile": "compact_crc8_error.hex",
+      "expectError": "CRC_ERROR"
+    },
+    {
+      "name": "compact_message_id_overflow",
+      "payloadType": "RPC",
+      "encoding": "binary_tlv",
+      "hexFile": "compact_message_id_overflow.hex",
+      "expectError": "COMPACT_MESSAGE_ID_OVERFLOW"
+    }
+  ]
+}

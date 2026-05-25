@@ -1,0 +1,108 @@
+schemas:
+  FirmwareBeginRequest:
+    type: object
+    fields:
+      - id: 0x01
+        name: totalSize
+        type: uint32
+        required: true
+        deprecated: false
+      - id: 0x02
+        name: hashAlgo
+        type: string
+        required: true
+        max_length: 16
+        deprecated: false
+      - id: 0x03
+        name: hash
+        type: bytes
+        required: true
+        max_length: 64
+        deprecated: false
+      - id: 0x04
+        name: chunkSize
+        type: uint16
+        required: true
+        deprecated: false
+
+  FirmwareBeginResponse:
+    type: object
+    fields:
+      - id: 0x01
+        name: streamId
+        type: uint32
+        required: true
+        deprecated: false
+      - id: 0x02
+        name: ackMode
+        type: enum
+        required: true
+        deprecated: false
+
+  FirmwareEndRequest:
+    type: object
+    fields:
+      - id: 0x01
+        name: streamId
+        type: uint32
+        required: true
+        deprecated: false
+
+  FirmwareVerifyRequest:
+    type: object
+    fields:
+      - id: 0x01
+        name: streamId
+        type: uint32
+        required: true
+        deprecated: false
+
+  FirmwareApplyRequest:
+    type: object
+    fields:
+      - id: 0x01
+        name: streamId
+        type: uint32
+        required: true
+        deprecated: false
+
+  FirmwareUpdateProgressEvent:
+    type: object
+    fields:
+      - id: 0x01
+        name: streamId
+        type: uint32
+        required: true
+        deprecated: false
+      - id: 0x02
+        name: percent
+        type: uint8
+        required: true
+        min: 0
+        max: 100
+        deprecated: false
+
+  FirmwareUpdateCompletedEvent:
+    type: object
+    fields:
+      - id: 0x01
+        name: version
+        type: string
+        required: false
+        max_length: 32
+        deprecated: false
+
+  FirmwareUpdateFailedEvent:
+    type: object
+    fields:
+      - id: 0x01
+        name: errorCode
+        type: uint16
+        required: true
+        deprecated: false
+      - id: 0x02
+        name: message
+        type: string
+        required: false
+        max_length: 96
+        deprecated: false
