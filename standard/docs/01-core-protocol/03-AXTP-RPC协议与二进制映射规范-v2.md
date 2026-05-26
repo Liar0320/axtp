@@ -192,7 +192,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 ```json
 {
   "id": 1,
-  "method": "SetBrightness",
+  "method": "brightness.set",
   "params": {
     "value": 80
   }
@@ -202,7 +202,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
 | `id` | uint32 | 是 | 请求 ID，从 1 开始递增，uint32 自然回绕（跳过 0） |
-| `method` | string | 是 | 方法名，PascalCase，对应 Registry methodId |
+| `method` | string | 是 | 方法名，`domain.verbObject` 格式，对应 Registry methodId |
 | `params` | object | 否 | 请求参数，无参数时可省略 |
 
 `id` 规则：
@@ -213,7 +213,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 ### 9.2 示例
 
 ```json
-{ "sid": "28378462323", "op": 6, "d": { "id": 1, "method": "SetBrightness", "params": { "value": 80 } } }
+{ "sid": "28378462323", "op": 6, "d": { "id": 1, "method": "brightness.set", "params": { "value": 80 } } }
 ```
 
 ---
@@ -273,7 +273,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "event": "BrightnessChanged",
+  "event": "brightness.changed",
   "intent": 1,
   "data": {
     "value": 80,
@@ -293,7 +293,7 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 ### 11.1 示例
 
 ```json
-{ "sid": "28378462323", "op": 5, "d": { "event": "BrightnessChanged", "intent": 1, "data": { "value": 80, "source": "local" } } }
+{ "sid": "28378462323", "op": 5, "d": { "event": "brightness.changed", "intent": 1, "data": { "value": 80, "source": "local" } } }
 ```
 
 ---
@@ -306,7 +306,7 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
   "haltOnFailure": true,
   "executionType": 0,
   "requests": [
-    { "method": "SetBrightness", "params": { "value": 80 } },
+    { "method": "brightness.set", "params": { "value": 80 } },
     { "method": "SetDisplayContent", "params": { "content": "hello" } }
   ]
 }
@@ -369,25 +369,25 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 
 ### 16.1 方法名
 
-格式：PascalCase，动词开头
+格式：`domain.verbObject`，camelCase
 
-推荐动词：`Get / Set / List / Open / Close / Start / Stop / Begin / End / Verify / Apply / Abort / Resume / Subscribe / Unsubscribe`
+推荐动词：`get / set / list / open / close / start / stop / begin / end / verify / apply / abort / resume / subscribe / unsubscribe`
 
-示例：`GetDeviceInfo / SetBrightness / BeginFirmwareUpdate / OpenStream`
+示例：`device.getInfo / brightness.set / firmware.begin / stream.open`
 
 ### 16.2 事件名
 
-格式：PascalCase，名词+状态后缀
+格式：`domain.objectChanged / domain.actionCompleted / domain.actionFailed / domain.error`
 
-示例：`BrightnessChanged / FirmwareUpdateCompleted / StreamError`
+示例：`brightness.changed / firmware.updateCompleted / stream.error`
 
 ### 16.3 与 Binary methodId/eventId 的映射
 
 方法名和事件名与 Binary 中的 uint32 ID 一一对应，由 Registry 统一管理：
 
 ```text
-"SetBrightness"      ↔ methodId = 0x0602
-"BrightnessChanged"  ↔ eventId  = 0x8601
+"brightness.set"      ↔ methodId = 0x0602
+"brightness.changed"  ↔ eventId  = 0x8601
 ```
 
 ---
@@ -577,7 +577,7 @@ TLV body:    01 01 50
 Request：
 
 ```json
-{ "sid": "28378462323", "op": 6, "d": { "id": 1, "method": "SetBrightness", "params": { "value": 80 } } }
+{ "sid": "28378462323", "op": 6, "d": { "id": 1, "method": "brightness.set", "params": { "value": 80 } } }
 ```
 
 Response 成功：
@@ -595,7 +595,7 @@ Response 失败：
 ### 19.2 BrightnessChanged（JSON Event）
 
 ```json
-{ "sid": "28378462323", "op": 5, "d": { "event": "BrightnessChanged", "intent": 1, "data": { "value": 80, "source": "local" } } }
+{ "sid": "28378462323", "op": 5, "d": { "event": "brightness.changed", "intent": 1, "data": { "value": 80, "source": "local" } } }
 ```
 
 ### 19.3 SetBrightness（Binary Compact）
@@ -622,7 +622,7 @@ Request：
   "op": 6,
   "d": {
     "id": 2,
-    "method": "OpenStream",
+    "method": "stream.open",
     "params": {
       "profile": "firmware.ota",
       "direction": "upload",
@@ -659,7 +659,7 @@ Response：
   "sid": "28378462323",
   "op": 5,
   "d": {
-    "event": "FirmwareUpdateCompleted",
+    "event": "firmware.updateCompleted",
     "intent": 4,
     "data": {
       "imageType": "mcu",
@@ -678,7 +678,7 @@ Client → Server: { "sid": "", "op": 1, "d": { "rpcVersion": 1, "eventSubscript
 Server → Client: { "sid": "28378462323", "op": 2, "d": { "negotiatedRpcVersion": 1 } }
 
 [业务调用]
-Client → Server: { "sid": "28378462323", "op": 6, "d": { "id": 1, "method": "GetDeviceInfo" } }
+Client → Server: { "sid": "28378462323", "op": 6, "d": { "id": 1, "method": "device.getInfo" } }
 Server → Client: { "sid": "28378462323", "op": 7, "d": { "id": 1, "result": { "model": "AX100", "version": "1.0.0" } } }
 
 [断线重连]
@@ -770,18 +770,18 @@ result / error.code / error.message / error.data 结构
 ### 24.2 MVP 方法范围
 
 ```text
-GetDeviceInfo / GetCapabilities
-GetBrightness / SetBrightness
-BeginFirmwareUpdate / VerifyFirmware / ApplyFirmware
-OpenStream / CloseStream
+device.getInfo / capability.getAll
+brightness.get / brightness.set
+firmware.begin / firmware.verify / firmware.apply
+stream.open / stream.close
 ```
 
 ### 24.3 MVP 事件范围
 
 ```text
-DeviceStatusChanged / BrightnessChanged
-FirmwareUpdateProgress / FirmwareUpdateCompleted / FirmwareUpdateFailed
-StreamOpened / StreamClosed / StreamError
+device.statusChanged / brightness.changed
+firmware.updateProgress / firmware.updateCompleted / firmware.updateFailed
+stream.opened / stream.closed / stream.error
 ```
 
 ### 24.4 可暂不实现
