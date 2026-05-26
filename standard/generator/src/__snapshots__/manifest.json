@@ -1,12 +1,12 @@
 {
   "vectors": [
     {
-      "name": "control_connect",
+      "name": "control_open",
       "payloadType": "CONTROL",
       "encoding": "binary_tlv",
-      "hexFile": "control_connect.hex",
+      "hexFile": "control_open.hex",
       "expectDecode": {
-        "opcode": "CONNECT"
+        "opcode": "OPEN"
       }
     },
     {

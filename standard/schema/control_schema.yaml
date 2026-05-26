@@ -1,30 +1,58 @@
 schemas:
-  ControlConnectBody:
+  ControlOpenBody:
     type: object
     fields:
-      - id: 0x01
+      - id: 0x02
         name: protocolVersion
         type: uint8
         required: true
         min: 1
         max: 15
         deprecated: false
-      - id: 0x02
+      - id: 0x03
+        name: headerProfile
+        type: uint8
+        required: true
+        min: 1
+        max: 2
+        deprecated: false
+      - id: 0x04
         name: maxFrameSize
         type: uint16
         required: true
         min: 1
         max: 65535
         deprecated: false
-      - id: 0x03
+      - id: 0x06
+        name: mtu
+        type: uint16
+        required: true
+        min: 1
+        max: 65535
+        deprecated: false
+      - id: 0x07
         name: supportedPayloadTypes
         type: bitmap
         required: true
         deprecated: false
-      - id: 0x04
+      - id: 0x08
         name: supportedRpcEncodings
         type: bitmap
         required: true
+        deprecated: false
+      - id: 0x0A
+        name: heartbeatIntervalMs
+        type: uint32
+        required: true
+        min: 500
+        max: 60000
+        deprecated: false
+      - id: 0x0B
+        name: ackMode
+        type: uint8
+        required: true
+        min: 0
+        max: 4
         deprecated: false
 
   ControlAcceptBody:
@@ -36,16 +64,56 @@ schemas:
         required: true
         deprecated: false
       - id: 0x02
-        name: selectedVersion
+        name: protocolVersion
         type: uint8
         required: true
         min: 1
         max: 15
         deprecated: false
       - id: 0x03
+        name: headerProfile
+        type: uint8
+        required: true
+        min: 1
+        max: 2
+        deprecated: false
+      - id: 0x04
         name: maxFrameSize
         type: uint16
         required: true
         min: 1
         max: 65535
+        deprecated: false
+      - id: 0x06
+        name: mtu
+        type: uint16
+        required: true
+        min: 1
+        max: 65535
+        deprecated: false
+      - id: 0x07
+        name: supportedPayloadTypes
+        type: bitmap
+        required: true
+        deprecated: false
+      - id: 0x0A
+        name: heartbeatIntervalMs
+        type: uint32
+        required: true
+        min: 500
+        max: 60000
+        deprecated: false
+      - id: 0x0B
+        name: ackMode
+        type: uint8
+        required: true
+        min: 0
+        max: 4
+        deprecated: false
+      - id: 0x1E
+        name: selectedRpcEncoding
+        type: uint8
+        required: true
+        min: 1
+        max: 4
         deprecated: false

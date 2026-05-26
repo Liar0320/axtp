@@ -30,30 +30,6 @@
       "idHex": "0x0101"
     },
     {
-      "id": 513,
-      "name": "session.identify",
-      "domain": "session",
-      "status": "mvp",
-      "deprecated": false,
-      "rpcOp": "request_response",
-      "requestSchema": "SessionIdentifyRequest",
-      "responseSchema": "SessionIdentifyResponse",
-      "recommendedEncoding": [
-        "json",
-        "binary_tlv"
-      ],
-      "capabilities": [
-        "session.identify"
-      ],
-      "events": [],
-      "errors": [
-        "SUCCESS",
-        "RPC_INVALID_PARAMS",
-        "AUTH_REQUIRED"
-      ],
-      "idHex": "0x0201"
-    },
-    {
       "id": 769,
       "name": "capability.getAll",
       "domain": "capability",

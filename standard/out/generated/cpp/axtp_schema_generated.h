@@ -46,17 +46,27 @@ inline constexpr FieldDescriptor kCommonEmptyResponseFields[] = {
 
 };
 
-inline constexpr FieldDescriptor kControlConnectBodyFields[] = {
-    { 0x01, "protocolVersion", FieldType::Uint8, true, 1, 15 },
-    { 0x02, "maxFrameSize", FieldType::Uint16, true, 1, 65535 },
-    { 0x03, "supportedPayloadTypes", FieldType::Bitmap, true, 0, 0 },
-    { 0x04, "supportedRpcEncodings", FieldType::Bitmap, true, 0, 0 },
+inline constexpr FieldDescriptor kControlOpenBodyFields[] = {
+    { 0x02, "protocolVersion", FieldType::Uint8, true, 1, 15 },
+    { 0x03, "headerProfile", FieldType::Uint8, true, 1, 2 },
+    { 0x04, "maxFrameSize", FieldType::Uint16, true, 1, 65535 },
+    { 0x06, "mtu", FieldType::Uint16, true, 1, 65535 },
+    { 0x07, "supportedPayloadTypes", FieldType::Bitmap, true, 0, 0 },
+    { 0x08, "supportedRpcEncodings", FieldType::Bitmap, true, 0, 0 },
+    { 0x0A, "heartbeatIntervalMs", FieldType::Uint32, true, 500, 60000 },
+    { 0x0B, "ackMode", FieldType::Uint8, true, 0, 4 },
 };
 
 inline constexpr FieldDescriptor kControlAcceptBodyFields[] = {
     { 0x01, "sessionId", FieldType::Uint32, true, 0, 0 },
-    { 0x02, "selectedVersion", FieldType::Uint8, true, 1, 15 },
-    { 0x03, "maxFrameSize", FieldType::Uint16, true, 1, 65535 },
+    { 0x02, "protocolVersion", FieldType::Uint8, true, 1, 15 },
+    { 0x03, "headerProfile", FieldType::Uint8, true, 1, 2 },
+    { 0x04, "maxFrameSize", FieldType::Uint16, true, 1, 65535 },
+    { 0x06, "mtu", FieldType::Uint16, true, 1, 65535 },
+    { 0x07, "supportedPayloadTypes", FieldType::Bitmap, true, 0, 0 },
+    { 0x0A, "heartbeatIntervalMs", FieldType::Uint32, true, 500, 60000 },
+    { 0x0B, "ackMode", FieldType::Uint8, true, 0, 4 },
+    { 0x1E, "selectedRpcEncoding", FieldType::Uint8, true, 1, 4 },
 };
 
 inline constexpr FieldDescriptor kDeviceGetInfoRequestFields[] = {
@@ -111,7 +121,12 @@ inline constexpr FieldDescriptor kFirmwareBeginRequestFields[] = {
 
 inline constexpr FieldDescriptor kFirmwareBeginResponseFields[] = {
     { 0x01, "streamId", FieldType::Uint32, true, 0, 0 },
-    { 0x02, "ackMode", FieldType::Enum, true, 0, 0 },
+    { 0x02, "profile", FieldType::String, true, 0, 0 },
+    { 0x03, "chunkSize", FieldType::Uint16, true, 0, 0 },
+    { 0x04, "ackMode", FieldType::Enum, true, 0, 0 },
+    { 0x05, "cursorUnit", FieldType::Enum, true, 0, 0 },
+    { 0x06, "streamHeaderProfile", FieldType::Enum, true, 0, 0 },
+    { 0x07, "maxDataSize", FieldType::Uint16, false, 0, 0 },
 };
 
 inline constexpr FieldDescriptor kFirmwareEndRequestFields[] = {
@@ -140,29 +155,10 @@ inline constexpr FieldDescriptor kFirmwareUpdateFailedEventFields[] = {
     { 0x02, "message", FieldType::String, false, 0, 0 },
 };
 
-inline constexpr FieldDescriptor kStreamOtaChunkFields[] = {
-    { 0x01, "streamId", FieldType::Uint32, true, 0, 0 },
-    { 0x02, "seqId", FieldType::Uint32, true, 0, 0 },
-    { 0x03, "cursor", FieldType::Uint64, true, 0, 0 },
-    { 0x04, "data", FieldType::Bytes, true, 0, 0 },
-};
-
-inline constexpr FieldDescriptor kSessionIdentifyRequestFields[] = {
-    { 0x01, "clientName", FieldType::String, true, 0, 0 },
-    { 0x02, "clientVersion", FieldType::String, false, 0, 0 },
-    { 0x03, "schemaVersion", FieldType::String, false, 0, 0 },
-    { 0x04, "authResponse", FieldType::Bytes, false, 0, 0 },
-};
-
-inline constexpr FieldDescriptor kSessionIdentifyResponseFields[] = {
-    { 0x01, "accepted", FieldType::Bool, true, 0, 0 },
-    { 0x02, "authRequired", FieldType::Bool, false, 0, 0 },
-};
-
 inline constexpr SchemaDescriptor kCommonEmptyRequestSchema = { "CommonEmptyRequest", kCommonEmptyRequestFields, 0 };
 inline constexpr SchemaDescriptor kCommonEmptyResponseSchema = { "CommonEmptyResponse", kCommonEmptyResponseFields, 0 };
-inline constexpr SchemaDescriptor kControlConnectBodySchema = { "ControlConnectBody", kControlConnectBodyFields, 4 };
-inline constexpr SchemaDescriptor kControlAcceptBodySchema = { "ControlAcceptBody", kControlAcceptBodyFields, 3 };
+inline constexpr SchemaDescriptor kControlOpenBodySchema = { "ControlOpenBody", kControlOpenBodyFields, 8 };
+inline constexpr SchemaDescriptor kControlAcceptBodySchema = { "ControlAcceptBody", kControlAcceptBodyFields, 9 };
 inline constexpr SchemaDescriptor kDeviceGetInfoRequestSchema = { "DeviceGetInfoRequest", kDeviceGetInfoRequestFields, 0 };
 inline constexpr SchemaDescriptor kDeviceGetInfoResponseSchema = { "DeviceGetInfoResponse", kDeviceGetInfoResponseFields, 4 };
 inline constexpr SchemaDescriptor kCapabilityGetAllRequestSchema = { "CapabilityGetAllRequest", kCapabilityGetAllRequestFields, 0 };
@@ -173,15 +169,12 @@ inline constexpr SchemaDescriptor kBrightnessGetResponseSchema = { "BrightnessGe
 inline constexpr SchemaDescriptor kBrightnessSetRequestSchema = { "BrightnessSetRequest", kBrightnessSetRequestFields, 2 };
 inline constexpr SchemaDescriptor kBrightnessChangedEventSchema = { "BrightnessChangedEvent", kBrightnessChangedEventFields, 2 };
 inline constexpr SchemaDescriptor kFirmwareBeginRequestSchema = { "FirmwareBeginRequest", kFirmwareBeginRequestFields, 4 };
-inline constexpr SchemaDescriptor kFirmwareBeginResponseSchema = { "FirmwareBeginResponse", kFirmwareBeginResponseFields, 2 };
+inline constexpr SchemaDescriptor kFirmwareBeginResponseSchema = { "FirmwareBeginResponse", kFirmwareBeginResponseFields, 7 };
 inline constexpr SchemaDescriptor kFirmwareEndRequestSchema = { "FirmwareEndRequest", kFirmwareEndRequestFields, 1 };
 inline constexpr SchemaDescriptor kFirmwareVerifyRequestSchema = { "FirmwareVerifyRequest", kFirmwareVerifyRequestFields, 1 };
 inline constexpr SchemaDescriptor kFirmwareApplyRequestSchema = { "FirmwareApplyRequest", kFirmwareApplyRequestFields, 1 };
 inline constexpr SchemaDescriptor kFirmwareUpdateProgressEventSchema = { "FirmwareUpdateProgressEvent", kFirmwareUpdateProgressEventFields, 2 };
 inline constexpr SchemaDescriptor kFirmwareUpdateCompletedEventSchema = { "FirmwareUpdateCompletedEvent", kFirmwareUpdateCompletedEventFields, 1 };
 inline constexpr SchemaDescriptor kFirmwareUpdateFailedEventSchema = { "FirmwareUpdateFailedEvent", kFirmwareUpdateFailedEventFields, 2 };
-inline constexpr SchemaDescriptor kStreamOtaChunkSchema = { "StreamOtaChunk", kStreamOtaChunkFields, 4 };
-inline constexpr SchemaDescriptor kSessionIdentifyRequestSchema = { "SessionIdentifyRequest", kSessionIdentifyRequestFields, 4 };
-inline constexpr SchemaDescriptor kSessionIdentifyResponseSchema = { "SessionIdentifyResponse", kSessionIdentifyResponseFields, 2 };
 
 } // namespace axtp

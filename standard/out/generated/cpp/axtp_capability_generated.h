@@ -18,7 +18,6 @@ inline constexpr CapabilityDescriptor kCapabilityRegistry[] = {
     { 0x0002, "protocol.payload.rpc", "protocol", "bool", "" },
     { 0x0003, "protocol.payload.stream", "protocol", "bool", "" },
     { 0x0101, "device.info", "device", "bool", "" },
-    { 0x0201, "session.identify", "session", "bool", "" },
     { 0x0301, "capability.get", "capability", "bool", "" },
     { 0x0309, "reserved.requestIdWidth", "reserved", "reserved", "" },
     { 0x0601, "brightness.get", "brightness", "bool", "" },
@@ -27,6 +26,6 @@ inline constexpr CapabilityDescriptor kCapabilityRegistry[] = {
     { 0x0B01, "firmware.ota", "firmware", "object", "FirmwareOtaCapability" },
 };
 
-inline constexpr std::size_t kCapabilityRegistryCount = 11;
+inline constexpr std::size_t kCapabilityRegistryCount = 10;
 
 } // namespace axtp

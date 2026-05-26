@@ -79,6 +79,7 @@ export interface SpecModel {
   payloadTypes: CommonRegistryItem[];
   controlOpcodes: CommonRegistryItem[];
   rpcEncodings: CommonRegistryItem[];
+  rpcBodyEncodings: CommonRegistryItem[];
   rpcOps: CommonRegistryItem[];
   streamProfiles: CommonRegistryItem[];
   methods: Method[];

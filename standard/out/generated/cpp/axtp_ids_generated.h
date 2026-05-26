@@ -11,7 +11,7 @@ enum class PayloadType : std::uint8_t {
 };
 
 enum class ControlOpcode : std::uint8_t {
-    Connect = 0x01,
+    Open = 0x01,
     Accept = 0x02,
     Heartbeat = 0x03,
     HeartbeatAck = 0x04,
@@ -25,19 +25,35 @@ enum class RpcEncoding : std::uint8_t {
     Json = 0x01,
     Binary = 0x02,
     Cbor = 0x03,
+    Msgpack = 0x04,
+};
+
+enum class RpcBodyEncoding : std::uint8_t {
+    None = 0x00,
+    Tlv8 = 0x01,
+    Tlv16 = 0x02,
+    RawBytes = 0x03,
+    CborBody = 0x04,
 };
 
 enum class RpcOp : std::uint8_t {
-    Request = 0x01,
-    Response = 0x02,
-    Event = 0x03,
-    BatchRequest = 0x04,
-    BatchResponse = 0x05,
+    Hello = 0x00,
+    HelloAck = 0x01,
+    Identify = 0x02,
+    Identified = 0x03,
+    Reidentify = 0x04,
+    Subscribe = 0x05,
+    Event = 0x06,
+    Request = 0x07,
+    RequestResponse = 0x08,
+    RequestBatch = 0x09,
+    RequestBatchResponse = 0x0A,
+    Bye = 0x0E,
+    ByeAck = 0x0F,
 };
 
 enum class MethodId : std::uint16_t {
     DeviceGetInfo = 0x0101,
-    SessionIdentify = 0x0201,
     CapabilityGetAll = 0x0301,
     BrightnessGet = 0x0601,
     BrightnessSet = 0x0602,
@@ -70,7 +86,6 @@ enum class CapabilityId : std::uint16_t {
     ProtocolPayloadRpc = 0x0002,
     ProtocolPayloadStream = 0x0003,
     DeviceInfo = 0x0101,
-    SessionIdentify = 0x0201,
     CapabilityGet = 0x0301,
     ReservedRequestIdWidth = 0x0309,
     BrightnessGet = 0x0601,

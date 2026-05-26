@@ -89,7 +89,7 @@ Generator v1 必须优先覆盖 13《AXTP MVP 最小实现注册表》中的 P0 
 P0 包括：
 
 ```text
-CONTROL CONNECT / ACCEPT / ACK / NACK / HEARTBEAT / CLOSE
+CONTROL OPEN / ACCEPT / ACK / NACK / HEARTBEAT / CLOSE
 RPC device.getInfo
 RPC capability.getAll
 RPC brightness.get
@@ -683,7 +683,7 @@ generated/
 │   └── legacy_mapping.generated.json
 │
 └── test_vectors/
-    ├── control_connect.hex
+    ├── control_open.hex
     ├── rpc_device_get_info.hex
     ├── rpc_brightness_set.hex
     ├── event_brightness_changed.hex
@@ -1154,7 +1154,7 @@ manifest.json
 至少 5 个测试向量：
 
 ```text
-CONTROL CONNECT
+CONTROL OPEN
 RPC device.getInfo request
 RPC brightness.set request
 EVENT brightness.changed

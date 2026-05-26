@@ -20,13 +20,6 @@ capabilities:
     type: bool
     description: Device supports STREAM payload.
 
-  - id: 0x0201
-    name: session.identify
-    domain: session
-    status: mvp
-    type: bool
-    description: Device supports application identity handshake.
-
   - id: 0x0101
     name: device.info
     domain: device

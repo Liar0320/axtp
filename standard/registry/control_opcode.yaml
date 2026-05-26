@@ -1,6 +1,6 @@
 control_opcodes:
   - id: 0x01
-    name: CONNECT
+    name: OPEN
     domain: control
     status: mvp
     description: Start AXTP link negotiation.

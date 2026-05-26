@@ -235,7 +235,7 @@ MVP 必须实现的状态码：
 | 1 | BINARY |
 | 2 | CBOR |
 | 3 | MSGPACK |
-| 4 | FIXED_STRUCT |
+| 4-31 | RESERVED |
 
 示例：`0x03` = JSON/BINARY。TLV/RAW_BYTES 属于 RPC Body Encoding，不属于此 bitmap。
 

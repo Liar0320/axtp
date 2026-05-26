@@ -34,9 +34,35 @@ schemas:
         required: true
         deprecated: false
       - id: 0x02
+        name: profile
+        type: string
+        required: true
+        max_length: 32
+        deprecated: false
+      - id: 0x03
+        name: chunkSize
+        type: uint16
+        required: true
+        deprecated: false
+      - id: 0x04
         name: ackMode
         type: enum
         required: true
+        deprecated: false
+      - id: 0x05
+        name: cursorUnit
+        type: enum
+        required: true
+        deprecated: false
+      - id: 0x06
+        name: streamHeaderProfile
+        type: enum
+        required: true
+        deprecated: false
+      - id: 0x07
+        name: maxDataSize
+        type: uint16
+        required: false
         deprecated: false
 
   FirmwareEndRequest:

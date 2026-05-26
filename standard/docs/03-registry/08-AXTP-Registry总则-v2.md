@@ -236,19 +236,27 @@ MVP Control Opcode：`OPEN / ACCEPT / HEARTBEAT / HEARTBEAT_ACK / ACK / NACK / C
 | `0x06-0x7E` | `RESERVED` | 保留 |
 | `0x7F` | `VENDOR` | 厂商私有 |
 
-MVP 必须实现：`JSON / BINARY`。二进制 Body 的 TLV / RAW_BYTES / FIXED_STRUCT 由 `bodyEncoding` 表达，不占用 `rpcEncoding` 枚举。
+MVP 必须实现：`JSON / BINARY`。二进制 Body 的 TLV8 / TLV16 / RAW_BYTES / CBOR_BODY 由 `bodyEncoding` 表达，不占用 `rpcEncoding` 枚举。
 
 ### 8.4 RPC Operation
 
 | ID | 名称 | 说明 |
 |---:|---|---|
-| `0x01` | `REQUEST` | 请求 |
-| `0x02` | `RESPONSE` | 响应 |
-| `0x03` | `EVENT` | 事件 |
-| `0x04` | `BATCH_REQUEST` | 批量请求 |
-| `0x05` | `BATCH_RESPONSE` | 批量响应 |
+| `0x00` | `HELLO` | 服务端问候 / 认证挑战 |
+| `0x01` | `HELLO_ACK` | 保留 |
+| `0x02` | `IDENTIFY` | 客户端身份确认 |
+| `0x03` | `IDENTIFIED` | 服务端确认会话就绪 |
+| `0x04` | `REIDENTIFY` | 会话参数更新 |
+| `0x05` | `SUBSCRIBE` | 保留 |
+| `0x06` | `EVENT` | 事件通知 |
+| `0x07` | `REQUEST` | 请求 |
+| `0x08` | `REQUEST_RESPONSE` | 请求响应 |
+| `0x09` | `REQUEST_BATCH` | 批量请求 |
+| `0x0A` | `REQUEST_BATCH_RESPONSE` | 批量响应 |
+| `0x0E` | `BYE` | 关闭请求 |
+| `0x0F` | `BYE_ACK` | 关闭确认 |
 
-MVP 必须实现：`REQUEST / RESPONSE / EVENT`。Batch 可延后。
+MVP 必须实现：`HELLO / IDENTIFY / IDENTIFIED / EVENT / REQUEST / REQUEST_RESPONSE`。Batch 可延后。
 
 ### 8.5 Stream Profile
 
@@ -535,7 +543,7 @@ required 字段必须无 default 或具有明确 default 策略
 ```text
 PayloadType:    CONTROL / RPC / STREAM
 Control Opcode: OPEN / ACCEPT / HEARTBEAT / HEARTBEAT_ACK / ACK / NACK / CLOSE / CLOSE_ACK
-RPC Op:         REQUEST / RESPONSE / EVENT
+RPC Op:         HELLO / IDENTIFY / IDENTIFIED / EVENT / REQUEST / REQUEST_RESPONSE
 RPC Encoding:   JSON / BINARY
 Stream Profile: firmware.ota
 ```

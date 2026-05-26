@@ -99,8 +99,8 @@
 | `0x0201` | `CONTROL_OPCODE_INVALID` | Control opcode 非法 | 是 |
 | `0x0202` | `CONTROL_PAYLOAD_INVALID` | Control Payload 结构非法 | 是 |
 | `0x0203` | `CONTROL_BODY_ENCODING_UNSUPPORTED` | Control bodyEncoding 不支持 | 是 |
-| `0x0204` | `CONTROL_OPEN_REQUIRED` | 会话尚未 CONNECT | 是 |
-| `0x0205` | `CONTROL_OPEN_REJECTED` | CONNECT 被拒绝 | 是 |
+| `0x0204` | `CONTROL_OPEN_REQUIRED` | 会话尚未 OPEN | 是 |
+| `0x0205` | `CONTROL_OPEN_REJECTED` | OPEN 被拒绝 | 是 |
 | `0x0206` | `CONTROL_PROFILE_UNSUPPORTED` | Header Profile 不支持 | 是 |
 | `0x0207` | `CONTROL_NEGOTIATION_FAILED` | 协商失败 | 是 |
 | `0x0208` | `CONTROL_SESSION_INVALID` | SessionId 无效 | 是 |

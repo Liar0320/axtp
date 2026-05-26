@@ -15,7 +15,6 @@ struct MethodDescriptor {
 
 inline constexpr MethodDescriptor kMethodRegistry[] = {
     { 0x0101, "device.getInfo", "device", "DeviceGetInfoRequest", "DeviceGetInfoResponse" },
-    { 0x0201, "session.identify", "session", "SessionIdentifyRequest", "SessionIdentifyResponse" },
     { 0x0301, "capability.getAll", "capability", "CapabilityGetAllRequest", "CapabilityGetAllResponse" },
     { 0x0601, "brightness.get", "brightness", "BrightnessGetRequest", "BrightnessGetResponse" },
     { 0x0602, "brightness.set", "brightness", "BrightnessSetRequest", "CommonEmptyResponse" },
@@ -25,6 +24,6 @@ inline constexpr MethodDescriptor kMethodRegistry[] = {
     { 0x0B05, "firmware.apply", "firmware", "FirmwareApplyRequest", "CommonEmptyResponse" },
 };
 
-inline constexpr std::size_t kMethodRegistryCount = 9;
+inline constexpr std::size_t kMethodRegistryCount = 8;
 
 } // namespace axtp

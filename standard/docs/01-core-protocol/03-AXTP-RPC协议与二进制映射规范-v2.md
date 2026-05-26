@@ -234,26 +234,45 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ## 10. RequestResponse（op=8）
 
-### 10.1 成功 d-block
+每个 RequestResponse 必须携带 `status` 对象，`result` 仅在有业务数据时出现。
+
+### 10.1 成功 d-block（有返回值）
 
 ```json
 {
   "id": 1,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
   "result": {
     "value": 80
   }
 }
 ```
 
-### 10.2 失败 d-block
+### 10.2 成功 d-block（无返回值）
 
 ```json
 {
   "id": 1,
-  "error": {
+  "status": {
+    "ok": true,
+    "code": 0
+  }
+}
+```
+
+### 10.3 失败 d-block
+
+```json
+{
+  "id": 1,
+  "status": {
+    "ok": false,
     "code": 603,
-    "message": "Value out of range",
-    "data": {
+    "msg": "Value out of range",
+    "details": {
       "max": 100
     }
   }
@@ -263,15 +282,18 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
 | `id` | uint32 | 是 | 对应 Request 的 id |
-| `result` | object | 条件 | 成功时返回，与 `error` 互斥 |
-| `error` | object | 条件 | 失败时返回，与 `result` 互斥 |
-| `error.code` | uint16 | 是 | 错误码，来自 ErrorCode Registry |
-| `error.message` | string | 是 | 人类可读错误描述 |
-| `error.data` | object | 否 | 附加错误上下文 |
+| `status` | object | 是 | 每个响应必须携带，描述执行结果 |
+| `status.ok` | bool | 是 | 请求是否成功完成 |
+| `status.code` | uint32 | 是 | 状态码或错误码；`0` 表示成功，非 0 表示失败或异常状态 |
+| `status.msg` | string | 否 | 可选但推荐的人类可读提示，不得作为程序分支判断依据；`ok=true` 时通常省略 |
+| `status.details` | object | 否 | 机器可读的错误上下文 |
+| `result` | object | 否 | 业务返回数据，无返回值时省略 |
 
-`result` 和 `error` 不得同时出现。无返回值的成功响应使用 `"result": {}`。
+`status` 和业务 `result` 可同时出现（成功且有数据）。`status.ok=false` 或 `status.code != 0` 时不得携带业务 `result`。
 
-### 10.3 示例
+文本编码中的 `status.code` 使用 uint32，便于与 JSON-RPC / MCP / 外部系统错误码适配；当前 AXTP ErrorCode Registry 的规范码值仍位于 uint16 范围内。
+
+### 10.4 示例
 
 ```json
 {
@@ -279,6 +301,10 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
   "op": 8,
   "d": {
     "id": 1,
+    "status": {
+      "ok": true,
+      "code": 0
+    },
     "result": {
       "value": 80
     }
@@ -292,9 +318,10 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
   "op": 8,
   "d": {
     "id": 1,
-    "error": {
+    "status": {
+      "ok": false,
       "code": 603,
-      "message": "Value out of range"
+      "msg": "Value out of range"
     }
   }
 }
@@ -371,8 +398,8 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 {
   "id": 100,
   "results": [
-    { "result": { "value": 80 } },
-    { "error": { "code": 603, "message": "Content too long" } }
+    { "status": { "ok": true, "code": 0 }, "result": { "value": 80 } },
+    { "status": { "ok": false, "code": 603, "msg": "Content too long" } }
   ]
 }
 ```
@@ -542,7 +569,7 @@ MVP 必须实现 `NONE` 和 `TLV8`。`bodyEncoding` 只在 `rpcEncoding=BINARY` 
 - Response 成功：必须填 `0x0000`
 - Response 失败：填 ErrorCode Registry 中的非 0 错误码
 
-Binary RESPONSE 中 `statusCode` 与 JSON/MessagePack 中 `error.code` 直接对应，不再维护独立 RPC statusCode 表。
+Binary RESPONSE 中 `statusCode` 与 JSON/CBOR/MSGPACK 中 `status.code` 对应，不再维护独立 RPC statusCode 表。当前 Binary Header 的 `statusCode` 为 uint16，映射到文本 `status.code:uint32` 时零扩展；`statusCode == 0` 等价于 `status.ok=true`；`statusCode != 0` 等价于 `status.ok=false`。
 
 ### 19.5 Binary 与 op+d 语义映射
 
@@ -554,7 +581,8 @@ Binary RESPONSE 中 `statusCode` 与 JSON/MessagePack 中 `error.code` 直接对
 | `d.event` | `methodOrEventId` | 事件名映射到 uint16 eventId |
 | `d.intent` | body 或本地订阅上下文 | Binary 固定头不携带 intent |
 | `d.params` / `d.result` / `d.data` | `body` | JSON object ↔ TLV |
-| `d.error.code` | `statusCode` | 错误码 |
+| `d.status.ok` | `statusCode == 0` | bool 不单独入 Binary Header，由 statusCode 推导 |
+| `d.status.code` | `statusCode` | 状态码，0=成功，非 0=错误码 |
 
 ---
 
@@ -602,6 +630,10 @@ Response 成功：
   "op": 8,
   "d": {
     "id": 1,
+    "status": {
+      "ok": true,
+      "code": 0
+    },
     "result": {
       "value": 80
     }
@@ -617,10 +649,11 @@ Response 失败：
   "op": 8,
   "d": {
     "id": 1,
-    "error": {
+    "status": {
+      "ok": false,
       "code": 603,
-      "message": "Value out of range",
-      "data": {
+      "msg": "Value out of range",
+      "details": {
         "max": 100
       }
     }
@@ -688,6 +721,10 @@ Response：
   "op": 8,
   "d": {
     "id": 2,
+    "status": {
+      "ok": true,
+      "code": 0
+    },
     "result": {
       "streamId": 33,
       "profile": "firmware.ota",
@@ -734,7 +771,7 @@ Client → Server:
   { "sid": "28378462323", "op": 7, "d": { "id": 1, "method": "device.getInfo" } }
 
 Server → Client:
-  { "sid": "28378462323", "op": 8, "d": { "id": 1, "result": { "model": "AX100", "version": "1.0.0" } } }
+  { "sid": "28378462323", "op": 8, "d": { "id": 1, "status": { "ok": true, "code": 0 }, "result": { "model": "AX100", "version": "1.0.0" } } }
 
 [断线重连]
 Client → Server:
@@ -748,19 +785,31 @@ Server → Client:
 
 ## 22. 与 MCP 的兼容性
 
-AXTP RPC 的 `method / id / params / result / error` 字段与 JSON-RPC 2.0 / MCP 高度兼容，后期适配 MCP Server 时：
+AXTP RPC 使用 `status` 对象描述执行结果，与 JSON-RPC 2.0 / MCP 的 `result / error` 互斥模式不同，但可通过适配层转换：
 
 ```text
 AXTP Request (op=7)          → MCP tool call      (method, params)
-AXTP RequestResponse (op=8)  → MCP tool result    (result / error)
+AXTP RequestResponse (op=8)  → MCP tool result    (status.ok=true → result; status.ok=false → error)
 AXTP Event (op=6)            → MCP notification   (event, data)
+```
+
+适配层转换规则：
+
+```text
+AXTP → MCP:
+  status.ok == true   → { "result": d.result }
+  status.ok == false  → { "error": { "code": <mapped>, "message": status.msg, "data": status.details } }
+
+MCP → AXTP:
+  result present    → { "status": { "ok": true, "code": 0 }, "result": result }
+  error present     → { "status": { "ok": false, "code": <mapped>, "msg": error.message, "details": error.data } }
 ```
 
 主要差异：
 
 - AXTP `id` 为 uint32，MCP `id` 为 string/number（可直接转换）
 - AXTP `sid` 无 MCP 对应物，适配层在 MCP 边界消费
-- AXTP `error.code` 使用 AXTP ErrorCode Registry，MCP 使用 JSON-RPC 错误码（需映射）
+- AXTP `status.code` 使用 AXTP ErrorCode Registry，MCP 使用 JSON-RPC 错误码（需映射）
 
 ---
 
@@ -773,7 +822,7 @@ legacyMappings:
   - legacyCmdValue: 0xC0021
     axtpMethodId: 0x0B02
     axtpMethodName: SetVideoMode
-    bodyEncoding: FIXED_STRUCT
+    bodyEncoding: RAW_BYTES
 ```
 
 Binary Payload 使用 uint16 methodOrEventId。超出 0xFFFF 的旧 CmdValue 必须通过 `legacy_mapping.yaml` 建立唯一映射，不得改变 AXTP MethodId 宽度。
@@ -804,7 +853,7 @@ RPC Parser 必须满足：
 - 不支持的 rpcEncoding 返回 UNSUPPORTED_ENCODING
 - requestId 必须原样返回，RequestResponse 必须匹配已有 pending request
 - Event 不得被当作 RequestResponse 处理
-- Identified 之前收到 Request 必须返回 error，不得处理业务请求
+- Identified 之前收到 Request 必须返回 `status.ok=false, status.code=SESSION_NOT_READY`，不得处理业务请求
 - 所有整数解析必须显式处理字节序，不允许直接 reinterpret_cast 网络字节流为 C++ struct
 
 ---
@@ -822,7 +871,7 @@ TLV body encode/decode
 uint16 methodId / eventId
 uint32 id（requestId）
 method ↔ methodId 映射 / event ↔ eventId 映射
-result / error.code / error.message / error.data 结构
+业务 result / status.ok / status.code / status.msg / status.details 结构
 ```
 
 ### 26.2 MVP 方法范围

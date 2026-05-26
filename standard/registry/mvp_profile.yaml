@@ -1,6 +1,5 @@
 mvp:
   methods:
-    - session.identify
     - device.getInfo
     - capability.getAll
     - brightness.get
@@ -25,7 +24,6 @@ mvp:
     - protocol.payload.control
     - protocol.payload.rpc
     - protocol.payload.stream
-    - session.identify
     - device.info
     - capability.get
     - brightness.get

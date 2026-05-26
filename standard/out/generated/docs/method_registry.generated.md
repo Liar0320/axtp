@@ -3,7 +3,6 @@
 | methodId | name | domain | status | request | response | legacy |
 |---:|---|---|---|---|---|---|
 | `0x0101` | `device.getInfo` | device | mvp | DeviceGetInfoRequest | DeviceGetInfoResponse | 720898 |
-| `0x0201` | `session.identify` | session | mvp | SessionIdentifyRequest | SessionIdentifyResponse | - |
 | `0x0301` | `capability.getAll` | capability | mvp | CapabilityGetAllRequest | CapabilityGetAllResponse | - |
 | `0x0601` | `brightness.get` | brightness | mvp | BrightnessGetRequest | BrightnessGetResponse | - |
 | `0x0602` | `brightness.set` | brightness | mvp | BrightnessSetRequest | CommonEmptyResponse | 720962 |

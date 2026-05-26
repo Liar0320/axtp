@@ -11,11 +11,11 @@
       "fields": []
     },
     {
-      "name": "ControlConnectBody",
+      "name": "ControlOpenBody",
       "type": "object",
       "fields": [
         {
-          "id": 1,
+          "id": 2,
           "name": "protocolVersion",
           "type": "uint8",
           "required": true,
@@ -24,7 +24,16 @@
           "max": 15
         },
         {
-          "id": 2,
+          "id": 3,
+          "name": "headerProfile",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "id": 4,
           "name": "maxFrameSize",
           "type": "uint16",
           "required": true,
@@ -33,18 +42,45 @@
           "max": 65535
         },
         {
-          "id": 3,
+          "id": 6,
+          "name": "mtu",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false,
+          "min": 1,
+          "max": 65535
+        },
+        {
+          "id": 7,
           "name": "supportedPayloadTypes",
           "type": "bitmap",
           "required": true,
           "deprecated": false
         },
         {
-          "id": 4,
+          "id": 8,
           "name": "supportedRpcEncodings",
           "type": "bitmap",
           "required": true,
           "deprecated": false
+        },
+        {
+          "id": 10,
+          "name": "heartbeatIntervalMs",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false,
+          "min": 500,
+          "max": 60000
+        },
+        {
+          "id": 11,
+          "name": "ackMode",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 0,
+          "max": 4
         }
       ]
     },
@@ -61,7 +97,7 @@
         },
         {
           "id": 2,
-          "name": "selectedVersion",
+          "name": "protocolVersion",
           "type": "uint8",
           "required": true,
           "deprecated": false,
@@ -70,12 +106,64 @@
         },
         {
           "id": 3,
+          "name": "headerProfile",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 1,
+          "max": 2
+        },
+        {
+          "id": 4,
           "name": "maxFrameSize",
           "type": "uint16",
           "required": true,
           "deprecated": false,
           "min": 1,
           "max": 65535
+        },
+        {
+          "id": 6,
+          "name": "mtu",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false,
+          "min": 1,
+          "max": 65535
+        },
+        {
+          "id": 7,
+          "name": "supportedPayloadTypes",
+          "type": "bitmap",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 10,
+          "name": "heartbeatIntervalMs",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false,
+          "min": 500,
+          "max": 60000
+        },
+        {
+          "id": 11,
+          "name": "ackMode",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 0,
+          "max": 4
+        },
+        {
+          "id": 30,
+          "name": "selectedRpcEncoding",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "min": 1,
+          "max": 4
         }
       ]
     },
@@ -284,9 +372,45 @@
         },
         {
           "id": 2,
+          "name": "profile",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 32
+        },
+        {
+          "id": 3,
+          "name": "chunkSize",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 4,
           "name": "ackMode",
           "type": "enum",
           "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 5,
+          "name": "cursorUnit",
+          "type": "enum",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 6,
+          "name": "streamHeaderProfile",
+          "type": "enum",
+          "required": true,
+          "deprecated": false
+        },
+        {
+          "id": 7,
+          "name": "maxDataSize",
+          "type": "uint16",
+          "required": false,
           "deprecated": false
         }
       ]
@@ -384,98 +508,6 @@
           "required": false,
           "deprecated": false,
           "maxLength": 96
-        }
-      ]
-    },
-    {
-      "name": "StreamOtaChunk",
-      "type": "object",
-      "fields": [
-        {
-          "id": 1,
-          "name": "streamId",
-          "type": "uint32",
-          "required": true,
-          "deprecated": false
-        },
-        {
-          "id": 2,
-          "name": "seqId",
-          "type": "uint32",
-          "required": true,
-          "deprecated": false
-        },
-        {
-          "id": 3,
-          "name": "cursor",
-          "type": "uint64",
-          "required": true,
-          "deprecated": false
-        },
-        {
-          "id": 4,
-          "name": "data",
-          "type": "bytes",
-          "required": true,
-          "deprecated": false
-        }
-      ]
-    },
-    {
-      "name": "SessionIdentifyRequest",
-      "type": "object",
-      "fields": [
-        {
-          "id": 1,
-          "name": "clientName",
-          "type": "string",
-          "required": true,
-          "deprecated": false,
-          "maxLength": 64
-        },
-        {
-          "id": 2,
-          "name": "clientVersion",
-          "type": "string",
-          "required": false,
-          "deprecated": false,
-          "maxLength": 32
-        },
-        {
-          "id": 3,
-          "name": "schemaVersion",
-          "type": "string",
-          "required": false,
-          "deprecated": false,
-          "maxLength": 32
-        },
-        {
-          "id": 4,
-          "name": "authResponse",
-          "type": "bytes",
-          "required": false,
-          "deprecated": false,
-          "maxLength": 64
-        }
-      ]
-    },
-    {
-      "name": "SessionIdentifyResponse",
-      "type": "object",
-      "fields": [
-        {
-          "id": 1,
-          "name": "accepted",
-          "type": "bool",
-          "required": true,
-          "deprecated": false
-        },
-        {
-          "id": 2,
-          "name": "authRequired",
-          "type": "bool",
-          "required": false,
-          "deprecated": false
         }
       ]
     }

@@ -9,15 +9,19 @@ enum class PayloadType : std::uint8_t {
 };
 
 enum class ControlOpcode : std::uint8_t {
-    Connect = 0x01,
+    Open = 0x01,
 };
 
 enum class RpcEncoding : std::uint8_t {
     Binary = 0x02,
 };
 
+enum class RpcBodyEncoding : std::uint8_t {
+    Tlv8 = 0x01,
+};
+
 enum class RpcOp : std::uint8_t {
-    Request = 0x01,
+    Request = 0x07,
 };
 
 enum class MethodId : std::uint16_t {

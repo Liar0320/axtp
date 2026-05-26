@@ -50,7 +50,7 @@ uint64 0x0102030405060708 → 08 07 06 05 04 03 02 01
 |---|---:|---:|---|
 | `uint8` | 1B | 0–255 | 小枚举、flags、profile id |
 | `uint16` | 2B | 0–65535 | 长度、methodId、eventId、errorCode |
-| `uint32` | 4B | 0–4294967295 | requestId、messageId、streamId、seqId |
+| `uint32` | 4B | 0–4294967295 | requestId、streamId、seqId |
 | `uint64` | 8B | 0–2^64-1 | offset、timestamp、objectSize |
 
 ### 4.2 有符号整数
@@ -225,7 +225,7 @@ fields:
 | `errorCode` | `uint16` | 错误码 |
 | `capabilityId` | `uint16` | 能力编号 |
 | `requestId` | `uint32` | RPC 请求编号 |
-| `messageId` | `uint16` / `uint32` | Frame 层消息编号 |
+| `messageId` | `uint16` / `uint8` | Frame 层消息编号：Standard=uint16，Compact=uint8 |
 | `streamId` | `uint32` | 流编号 |
 | `transferId` | `uint32` | 文件 / OTA 传输编号 |
 | `seqId` | `uint32` | Stream 分块序号 |

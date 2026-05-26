@@ -716,34 +716,39 @@ ack.body = body.bytes();
 namespace axtp {
 
 enum class RpcOp : uint8_t {
-    REQUEST        = 0x01,
-    RESPONSE       = 0x02,
-    EVENT          = 0x03,
-    BATCH_REQUEST  = 0x04,
-    BATCH_RESPONSE = 0x05,
+    HELLO                  = 0x00,
+    IDENTIFY               = 0x02,
+    IDENTIFIED             = 0x03,
+    REIDENTIFY             = 0x04,
+    EVENT                  = 0x06,
+    REQUEST                = 0x07,
+    REQUEST_RESPONSE       = 0x08,
+    REQUEST_BATCH          = 0x09,
+    REQUEST_BATCH_RESPONSE = 0x0A,
 };
 
-enum RpcFlags : uint8_t {
-    RPC_FLAG_NONE     = 0x00,
-    RPC_FLAG_SUCCESS  = 0x01,
-    RPC_FLAG_ERROR    = 0x02,
-    RPC_FLAG_HAS_BODY = 0x04,
+enum class RpcEncoding : uint8_t {
+    JSON    = 0x01,
+    BINARY  = 0x02,
+    CBOR    = 0x03,
+    MSGPACK = 0x04,
 };
 
 enum class RpcBodyEncoding : uint8_t {
-    NONE = 0x00,
-    TLV  = 0x01,
-    JSON = 0x02,
-    CBOR = 0x03,
+    NONE      = 0x00,
+    TLV8      = 0x01,
+    TLV16     = 0x02,
+    RAW_BYTES = 0x03,
+    CBOR_BODY = 0x04,
 };
 
 struct RpcMessage {
+    RpcEncoding encoding = RpcEncoding::BINARY;
     RpcOp op = RpcOp::REQUEST;
-    uint8_t flags = 0;
     RequestId requestId = 0;
     uint16_t methodOrEventId = 0;
     ErrorCode statusCode = ErrorCode::OK;
-    RpcBodyEncoding bodyEncoding = RpcBodyEncoding::TLV;
+    RpcBodyEncoding bodyEncoding = RpcBodyEncoding::TLV8;
     Bytes body;
 };
 
@@ -761,7 +766,6 @@ public:
 ```cpp
 RpcMessage req;
 req.op = RpcOp::REQUEST;
-req.flags = RPC_FLAG_NONE;
 req.requestId = 0x00000001;
 req.methodOrEventId = static_cast<uint16_t>(MethodId::DEVICE_GET_INFO);
 req.statusCode = ErrorCode::OK;
@@ -776,10 +780,10 @@ body.putU8(0x01, 80);      // brightness value
 
 RpcMessage req;
 req.op = RpcOp::REQUEST;
-req.flags = RPC_FLAG_HAS_BODY;
 req.requestId = 0x00000002;
 req.methodOrEventId = static_cast<uint16_t>(MethodId::BRIGHTNESS_SET);
-req.bodyEncoding = RpcBodyEncoding::TLV;
+req.statusCode = ErrorCode::OK;
+req.bodyEncoding = RpcBodyEncoding::TLV8;
 req.body = body.bytes();
 ```
 
@@ -791,10 +795,10 @@ body.putU8(0x01, 80);
 
 RpcMessage evt;
 evt.op = RpcOp::EVENT;
-evt.flags = RPC_FLAG_HAS_BODY;
 evt.requestId = 0x00000000;
 evt.methodOrEventId = static_cast<uint16_t>(EventId::BRIGHTNESS_CHANGED);
-evt.bodyEncoding = RpcBodyEncoding::TLV;
+evt.statusCode = ErrorCode::OK;
+evt.bodyEncoding = RpcBodyEncoding::TLV8;
 evt.body = body.bytes();
 ```
 
@@ -905,7 +909,7 @@ Session MVP 必须负责：
 生成 requestId
 生成 controlId
 维护 pending request table
-处理 CONNECT / ACCEPT
+处理 OPEN / ACCEPT
 处理 ACK / NACK
 路由 Frame 到 Control/RPC/Stream Parser
 ```
@@ -1438,7 +1442,7 @@ C++ Demo v1 通过验收必须满足：
 4. Frame Standard 编解码测试通过
 5. Frame Compact 编解码测试通过
 6. TLV 编解码测试通过
-7. Control CONNECT / ACCEPT 测试通过
+7. Control OPEN / ACCEPT 测试通过
 8. RPC device.getInfo / brightness.set 测试通过
 9. Event brightness.changed 测试通过
 10. Stream OTA chunk + ACK 测试通过

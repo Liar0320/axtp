@@ -78,17 +78,17 @@ Device 返回 ACCEPT，并分配 `sessionId`。
 
 ## 3.5 应用层身份认证（Challenge / Identify / Identified）
 
-ACCEPT 完成后，Device 主动推送 `session.challenge` EVENT，Client 回应 `session.identify` REQUEST，Device 确认 `session.identified` EVENT。
+ACCEPT 完成后，Device 主动发送 RPC Hello(op=0)，Client 回应 Identify(op=2)，Device 发送 Identified(op=3) 确认应用层就绪。
 
 | 步骤 | 方向 | rpcOp | 方法 / 事件 | 关键字段 |
 | --- | --- | --- | --- | --- |
-| 1 | Server → Client | EVENT | `session.challenge` | `challengeString`、`authRequired`、`rpcVersion` |
-| 2 | Client → Server | REQUEST | `session.identify` | `clientName`、`clientVersion`、`rpcVersion`、`authResponse`（无密码时省略） |
-| 3 | Server → Client | EVENT | `session.identified` | `negotiatedRpcVersion` |
+| 1 | Server → Client | Hello(op=0) | - | `challengeString`、`authRequired`、`rpcVersion` |
+| 2 | Client → Server | Identify(op=2) | - | `clientName`、`clientVersion`、`rpcVersion`、`authResponse`（无密码时省略） |
+| 3 | Server → Client | Identified(op=3) | - | `sid`、`negotiatedRpcVersion` |
 
 三步完成后进入 `APP_READY` 状态。
 
-如果设备为免鉴权模式，`session.challenge` 中 `authRequired=false`，Client 发送 `session.identify` 时省略 `authResponse`，Device 直接回 `session.identified`。
+如果设备为免鉴权模式，Hello 中 `authRequired=false`，Client 发送 Identify 时省略 `authResponse`，Device 直接回 Identified。
 
 ---
 

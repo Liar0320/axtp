@@ -6,7 +6,6 @@
 | `0x0002` | `protocol.payload.rpc` | protocol | mvp | bool | - |
 | `0x0003` | `protocol.payload.stream` | protocol | mvp | bool | - |
 | `0x0101` | `device.info` | device | mvp | bool | - |
-| `0x0201` | `session.identify` | session | mvp | bool | - |
 | `0x0301` | `capability.get` | capability | mvp | bool | - |
 | `0x0309` | `reserved.requestIdWidth` | reserved | reserved | reserved | - |
 | `0x0601` | `brightness.get` | brightness | mvp | bool | - |

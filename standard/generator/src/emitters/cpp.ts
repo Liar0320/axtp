@@ -74,6 +74,8 @@ ${enumBlock("ControlOpcode", "std::uint8_t", spec.controlOpcodes)}
 
 ${enumBlock("RpcEncoding", "std::uint8_t", spec.rpcEncodings)}
 
+${enumBlock("RpcBodyEncoding", "std::uint8_t", spec.rpcBodyEncodings)}
+
 ${enumBlock("RpcOp", "std::uint8_t", spec.rpcOps)}
 
 ${enumBlock("MethodId", "std::uint16_t", spec.methods)}

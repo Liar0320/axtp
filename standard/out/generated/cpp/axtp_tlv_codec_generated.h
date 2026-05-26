@@ -16,17 +16,27 @@ namespace fields::common_empty_response {
 
 }
 
-namespace fields::control_connect_body {
-constexpr std::uint8_t PROTOCOL_VERSION = 0x01;
-constexpr std::uint8_t MAX_FRAME_SIZE = 0x02;
-constexpr std::uint8_t SUPPORTED_PAYLOAD_TYPES = 0x03;
-constexpr std::uint8_t SUPPORTED_RPC_ENCODINGS = 0x04;
+namespace fields::control_open_body {
+constexpr std::uint8_t PROTOCOL_VERSION = 0x02;
+constexpr std::uint8_t HEADER_PROFILE = 0x03;
+constexpr std::uint8_t MAX_FRAME_SIZE = 0x04;
+constexpr std::uint8_t MTU = 0x06;
+constexpr std::uint8_t SUPPORTED_PAYLOAD_TYPES = 0x07;
+constexpr std::uint8_t SUPPORTED_RPC_ENCODINGS = 0x08;
+constexpr std::uint8_t HEARTBEAT_INTERVAL_MS = 0x0A;
+constexpr std::uint8_t ACK_MODE = 0x0B;
 }
 
 namespace fields::control_accept_body {
 constexpr std::uint8_t SESSION_ID = 0x01;
-constexpr std::uint8_t SELECTED_VERSION = 0x02;
-constexpr std::uint8_t MAX_FRAME_SIZE = 0x03;
+constexpr std::uint8_t PROTOCOL_VERSION = 0x02;
+constexpr std::uint8_t HEADER_PROFILE = 0x03;
+constexpr std::uint8_t MAX_FRAME_SIZE = 0x04;
+constexpr std::uint8_t MTU = 0x06;
+constexpr std::uint8_t SUPPORTED_PAYLOAD_TYPES = 0x07;
+constexpr std::uint8_t HEARTBEAT_INTERVAL_MS = 0x0A;
+constexpr std::uint8_t ACK_MODE = 0x0B;
+constexpr std::uint8_t SELECTED_RPC_ENCODING = 0x1E;
 }
 
 namespace fields::device_get_info_request {
@@ -81,7 +91,12 @@ constexpr std::uint8_t CHUNK_SIZE = 0x04;
 
 namespace fields::firmware_begin_response {
 constexpr std::uint8_t STREAM_ID = 0x01;
-constexpr std::uint8_t ACK_MODE = 0x02;
+constexpr std::uint8_t PROFILE = 0x02;
+constexpr std::uint8_t CHUNK_SIZE = 0x03;
+constexpr std::uint8_t ACK_MODE = 0x04;
+constexpr std::uint8_t CURSOR_UNIT = 0x05;
+constexpr std::uint8_t STREAM_HEADER_PROFILE = 0x06;
+constexpr std::uint8_t MAX_DATA_SIZE = 0x07;
 }
 
 namespace fields::firmware_end_request {
@@ -110,25 +125,6 @@ constexpr std::uint8_t ERROR_CODE = 0x01;
 constexpr std::uint8_t MESSAGE = 0x02;
 }
 
-namespace fields::stream_ota_chunk {
-constexpr std::uint8_t STREAM_ID = 0x01;
-constexpr std::uint8_t SEQ_ID = 0x02;
-constexpr std::uint8_t CURSOR = 0x03;
-constexpr std::uint8_t DATA = 0x04;
-}
-
-namespace fields::session_identify_request {
-constexpr std::uint8_t CLIENT_NAME = 0x01;
-constexpr std::uint8_t CLIENT_VERSION = 0x02;
-constexpr std::uint8_t SCHEMA_VERSION = 0x03;
-constexpr std::uint8_t AUTH_RESPONSE = 0x04;
-}
-
-namespace fields::session_identify_response {
-constexpr std::uint8_t ACCEPTED = 0x01;
-constexpr std::uint8_t AUTH_REQUIRED = 0x02;
-}
-
 struct CommonEmptyRequest {
 
 };
@@ -137,17 +133,27 @@ struct CommonEmptyResponse {
 
 };
 
-struct ControlConnectBody {
+struct ControlOpenBody {
     std::uint8_t protocolVersion = 0;
+    std::uint8_t headerProfile = 0;
     std::uint16_t maxFrameSize = 0;
+    std::uint16_t mtu = 0;
     std::uint32_t supportedPayloadTypes = 0;
     std::uint32_t supportedRpcEncodings = 0;
+    std::uint32_t heartbeatIntervalMs = 0;
+    std::uint8_t ackMode = 0;
 };
 
 struct ControlAcceptBody {
     std::uint32_t sessionId = 0;
-    std::uint8_t selectedVersion = 0;
+    std::uint8_t protocolVersion = 0;
+    std::uint8_t headerProfile = 0;
     std::uint16_t maxFrameSize = 0;
+    std::uint16_t mtu = 0;
+    std::uint32_t supportedPayloadTypes = 0;
+    std::uint32_t heartbeatIntervalMs = 0;
+    std::uint8_t ackMode = 0;
+    std::uint8_t selectedRpcEncoding = 0;
 };
 
 struct DeviceGetInfoRequest {
@@ -209,7 +215,13 @@ struct FirmwareBeginRequest {
 
 struct FirmwareBeginResponse {
     std::uint32_t streamId = 0;
+    const char* profile = nullptr;
+    std::uint16_t chunkSize = 0;
     std::uint32_t ackMode = 0;
+    std::uint32_t cursorUnit = 0;
+    std::uint32_t streamHeaderProfile = 0;
+    std::uint16_t maxDataSize = 0;
+    bool has_maxDataSize = false;
 };
 
 struct FirmwareEndRequest {
@@ -240,37 +252,14 @@ struct FirmwareUpdateFailedEvent {
     bool has_message = false;
 };
 
-struct StreamOtaChunk {
-    std::uint32_t streamId = 0;
-    std::uint32_t seqId = 0;
-    std::uint64_t cursor = 0;
-    const std::uint8_t* data = nullptr;
-};
-
-struct SessionIdentifyRequest {
-    const char* clientName = nullptr;
-    const char* clientVersion = nullptr;
-    bool has_clientVersion = false;
-    const char* schemaVersion = nullptr;
-    bool has_schemaVersion = false;
-    const std::uint8_t* authResponse = nullptr;
-    bool has_authResponse = false;
-};
-
-struct SessionIdentifyResponse {
-    bool accepted = false;
-    bool authRequired = false;
-    bool has_authRequired = false;
-};
-
 bool EncodeCommonEmptyRequest(const CommonEmptyRequest& input, TlvWriter& writer, ErrorCode* error);
 bool DecodeCommonEmptyRequest(TlvReader& reader, CommonEmptyRequest* output, ErrorCode* error);
 
 bool EncodeCommonEmptyResponse(const CommonEmptyResponse& input, TlvWriter& writer, ErrorCode* error);
 bool DecodeCommonEmptyResponse(TlvReader& reader, CommonEmptyResponse* output, ErrorCode* error);
 
-bool EncodeControlConnectBody(const ControlConnectBody& input, TlvWriter& writer, ErrorCode* error);
-bool DecodeControlConnectBody(TlvReader& reader, ControlConnectBody* output, ErrorCode* error);
+bool EncodeControlOpenBody(const ControlOpenBody& input, TlvWriter& writer, ErrorCode* error);
+bool DecodeControlOpenBody(TlvReader& reader, ControlOpenBody* output, ErrorCode* error);
 
 bool EncodeControlAcceptBody(const ControlAcceptBody& input, TlvWriter& writer, ErrorCode* error);
 bool DecodeControlAcceptBody(TlvReader& reader, ControlAcceptBody* output, ErrorCode* error);
@@ -325,14 +314,5 @@ bool DecodeFirmwareUpdateCompletedEvent(TlvReader& reader, FirmwareUpdateComplet
 
 bool EncodeFirmwareUpdateFailedEvent(const FirmwareUpdateFailedEvent& input, TlvWriter& writer, ErrorCode* error);
 bool DecodeFirmwareUpdateFailedEvent(TlvReader& reader, FirmwareUpdateFailedEvent* output, ErrorCode* error);
-
-bool EncodeStreamOtaChunk(const StreamOtaChunk& input, TlvWriter& writer, ErrorCode* error);
-bool DecodeStreamOtaChunk(TlvReader& reader, StreamOtaChunk* output, ErrorCode* error);
-
-bool EncodeSessionIdentifyRequest(const SessionIdentifyRequest& input, TlvWriter& writer, ErrorCode* error);
-bool DecodeSessionIdentifyRequest(TlvReader& reader, SessionIdentifyRequest* output, ErrorCode* error);
-
-bool EncodeSessionIdentifyResponse(const SessionIdentifyResponse& input, TlvWriter& writer, ErrorCode* error);
-bool DecodeSessionIdentifyResponse(TlvReader& reader, SessionIdentifyResponse* output, ErrorCode* error);
 
 } // namespace axtp

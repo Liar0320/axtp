@@ -14,9 +14,10 @@ function baseSpec(): SpecModel {
     config: {},
     version: {},
     payloadTypes: [{ id: 1, value: 1, name: "CONTROL", domain: "protocol", status: "mvp" }],
-    controlOpcodes: [{ id: 1, value: 1, name: "CONNECT", domain: "control", status: "mvp" }],
+    controlOpcodes: [{ id: 1, value: 1, name: "OPEN", domain: "control", status: "mvp" }],
     rpcEncodings: [{ id: 2, value: 2, name: "BINARY", domain: "rpc", status: "mvp" }],
-    rpcOps: [{ id: 1, value: 1, name: "REQUEST", domain: "rpc", status: "mvp" }],
+    rpcBodyEncodings: [{ id: 1, value: 1, name: "TLV8", domain: "rpc", status: "mvp" }],
+    rpcOps: [{ id: 7, value: 7, name: "REQUEST", domain: "rpc", status: "mvp" }],
     streamProfiles: [{ id: 1, value: 1, name: "firmware.ota", domain: "firmware", status: "mvp" }],
     methods: [{
       id: 0x0602,

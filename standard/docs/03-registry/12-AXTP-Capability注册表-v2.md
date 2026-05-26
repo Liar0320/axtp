@@ -215,10 +215,10 @@ CapabilityId 使用 `uint16`：
 | Bit | 名称 |
 |---:|---|
 | 0 | `NONE` |
-| 1 | `TLV` |
-| 2 | `FIXED_STRUCT` |
-| 3 | `CBOR` |
-| 4 | `RAW_BYTES` |
+| 1 | `TLV8` |
+| 2 | `TLV16` |
+| 3 | `RAW_BYTES` |
+| 4 | `CBOR_BODY` |
 
 ---
 ## 9. STREAM 能力注册表

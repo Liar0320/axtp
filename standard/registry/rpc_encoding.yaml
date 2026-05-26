@@ -14,3 +14,8 @@ rpc_encodings:
     domain: rpc
     status: draft
     description: CBOR encoded RPC body.
+  - id: 0x04
+    name: MSGPACK
+    domain: rpc
+    status: draft
+    description: MessagePack encoded sid/op/d envelope.

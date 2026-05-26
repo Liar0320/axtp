@@ -1,16 +1,4 @@
 methods:
-  - id: 0x0201
-    name: session.identify
-    domain: session
-    status: mvp
-    rpc_op: request_response
-    request_schema: SessionIdentifyRequest
-    response_schema: SessionIdentifyResponse
-    recommended_encoding: [json, binary_tlv]
-    capabilities: [session.identify]
-    events: []
-    errors: [SUCCESS, RPC_INVALID_PARAMS, AUTH_REQUIRED]
-
   - id: 0x0101
     name: device.getInfo
     domain: device
