@@ -24,8 +24,8 @@
 CONTROL OPEN / ACCEPT
 RPC capability.getAll
 RPC device.getInfo
-RPC brightness.set
-RPC Event brightness.changed
+RPC display.setBrightness
+RPC Event display.brightnessChanged
 RPC firmware.begin
 STREAM OTA chunk
 CONTROL ACK / NACK
@@ -141,12 +141,12 @@ firmwareVersion
 protocolVersion
 ```
 
-### 5.2 brightness.set
+### 5.2 display.setBrightness
 
 Client 发送 RPC Request：
 
 ```text
-methodId = brightness.set
+methodId = display.setBrightness
 body:
   level = 80
 ```
@@ -162,7 +162,7 @@ body:
 随后 Device 可以发送 RPC Event：
 
 ```text
-eventId = brightness.changed
+eventId = display.brightnessChanged
 body:
   level = 80
   reason = user_request

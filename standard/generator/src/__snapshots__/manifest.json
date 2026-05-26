@@ -19,22 +19,22 @@
       }
     },
     {
-      "name": "rpc_brightness_set_request",
+      "name": "rpc_display_brightness_set_request",
       "payloadType": "RPC",
       "encoding": "binary_tlv",
-      "hexFile": "rpc_brightness_set.hex",
+      "hexFile": "rpc_display_brightness_set.hex",
       "expectDecode": {
-        "method": "brightness.set",
+        "method": "display.setBrightness",
         "value": 80
       }
     },
     {
-      "name": "event_brightness_changed",
+      "name": "event_display_brightness_changed",
       "payloadType": "RPC",
       "encoding": "binary_tlv",
-      "hexFile": "event_brightness_changed.hex",
+      "hexFile": "event_display_brightness_changed.hex",
       "expectDecode": {
-        "event": "brightness.changed",
+        "event": "display.brightnessChanged",
         "value": 80
       }
     },

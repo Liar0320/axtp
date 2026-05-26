@@ -145,7 +145,7 @@ Server → Client: RPC Identified (op=3)
 ```text
 Client → Server: RPC REQUEST capability.getAll (requestId=0x00000001)
 Server → Client: RPC REQUEST_RESPONSE capability.getAll
-  body: capabilities=[{domain:"device",...},{domain:"brightness",...},...]
+  body: capabilities=[{domain:"device",...},{domain:"display",...},...]
 
 Client → Server: RPC REQUEST device.getInfo (requestId=0x00000002)
 Server → Client: RPC REQUEST_RESPONSE device.getInfo
@@ -155,10 +155,10 @@ Server → Client: RPC REQUEST_RESPONSE device.getInfo
 **阶段 4：业务 RPC（亮度控制）**
 
 ```text
-Client → Server: RPC REQUEST brightness.set (requestId=0x00000003)
+Client → Server: RPC REQUEST display.setBrightness (requestId=0x00000003)
   body: value=80 (TLV)
-Server → Client: RPC REQUEST_RESPONSE brightness.set, status.ok=true, status.code=SUCCESS
-Server → Client: RPC EVENT brightness.changed
+Server → Client: RPC REQUEST_RESPONSE display.setBrightness, status.ok=true, status.code=SUCCESS
+Server → Client: RPC EVENT display.brightnessChanged
   body: value=80, previousValue=60
 ```
 
@@ -530,12 +530,12 @@ Gateway → App: WS Binary CONTROL ACCEPT
 **RPC 转发（亮度控制）：**
 
 ```text
-App → Gateway: Standard RPC REQUEST brightness.set (requestId=0x00000003, value=80)
-Gateway → Device: Compact RPC REQUEST brightness.set (requestId=0x00000003, value=80)
+App → Gateway: Standard RPC REQUEST display.setBrightness (requestId=0x00000003, value=80)
+Gateway → Device: Compact RPC REQUEST display.setBrightness (requestId=0x00000003, value=80)
 Device → Gateway: Compact RPC REQUEST_RESPONSE status.ok=true, status.code=SUCCESS
 Gateway → App: Standard RPC REQUEST_RESPONSE status.ok=true, status.code=SUCCESS
-Device → Gateway: Compact RPC EVENT brightness.changed
-Gateway → App: Standard RPC EVENT brightness.changed
+Device → Gateway: Compact RPC EVENT display.brightnessChanged
+Gateway → App: Standard RPC EVENT display.brightnessChanged
 ```
 
 requestId 在转发时保持不变，确保 App 能正确匹配 Request/Response。
@@ -606,8 +606,8 @@ Gateway → App: ACCEPT (body: connectedDevices=[0x10, 0x11])
 **定向 RPC（App → Device A）：**
 
 ```text
-App → Gateway: RPC brightness.set (SrcId=0x01, DstId=0x10)
-Gateway → Device A: RPC brightness.set (SrcId=0x01, DstId=0x10)
+App → Gateway: RPC display.setBrightness (SrcId=0x01, DstId=0x10)
+Gateway → Device A: RPC display.setBrightness (SrcId=0x01, DstId=0x10)
 Device A → Gateway: RPC REQUEST_RESPONSE (SrcId=0x10, DstId=0x01)
 Gateway → App: RPC REQUEST_RESPONSE (SrcId=0x10, DstId=0x01)
 ```
@@ -615,9 +615,9 @@ Gateway → App: RPC REQUEST_RESPONSE (SrcId=0x10, DstId=0x01)
 **广播 RPC（App → 所有设备）：**
 
 ```text
-App → Gateway: RPC brightness.set (DstId=0x7F)
-Gateway → Device A: RPC brightness.set
-Gateway → Device B: RPC brightness.set
+App → Gateway: RPC display.setBrightness (DstId=0x7F)
+Gateway → Device A: RPC display.setBrightness
+Gateway → Device B: RPC display.setBrightness
 Device A → Gateway: RESPONSE
 Device B → Gateway: RESPONSE
 Gateway → App: RESPONSE (A)
@@ -695,12 +695,12 @@ Device → Browser: DS-RPC Identified
 **业务 RPC：**
 
 ```text
-Browser → Device: DS-RPC REQUEST brightness.set
-  {"sid":"a1b2c3d4","op":7,"d":{"id":"00000002","method":"brightness.set","params":{"value":80}}}
-Device → Browser: DS-RPC RESPONSE brightness.set
+Browser → Device: DS-RPC REQUEST display.setBrightness
+  {"sid":"a1b2c3d4","op":7,"d":{"id":"00000002","method":"display.setBrightness","params":{"value":80}}}
+Device → Browser: DS-RPC RESPONSE display.setBrightness
   {"sid":"a1b2c3d4","op":8,"d":{"id":"00000002","status":{"ok":true,"code":0}}}
-Device → Browser: DS-RPC EVENT brightness.changed
-  {"sid":"a1b2c3d4","op":6,"d":{"event":"brightness.changed","data":{"value":80,"previous":60}}}
+Device → Browser: DS-RPC EVENT display.brightnessChanged
+  {"sid":"a1b2c3d4","op":6,"d":{"event":"display.brightnessChanged","data":{"value":80,"previous":60}}}
 ```
 
 **关闭：**
@@ -766,9 +766,9 @@ Legacy 兼容：旧版 Debug Adapter 中的 `session.identify` 方法必须在�
 **旧 HID CmdValue 适配：**
 
 ```text
-Legacy Client → Adapter: 旧 HID Report (CmdValue=0x0042, Payload=[brightness=80])
-Adapter: 查 legacyMapping: CmdValue=0x0042 → methodId=brightness.set, params={value:80}
-Adapter → Device: AXTP RPC REQUEST brightness.set, body: value=80 (TLV)
+Legacy Client → Adapter: 旧 HID Report (CmdValue=0x0042, Payload=[displayBrightness=80])
+Adapter: 查 legacyMapping: CmdValue=0x0042 → methodId=display.setBrightness, params={value:80}
+Adapter → Device: AXTP RPC REQUEST display.setBrightness, body: value=80 (TLV)
 Device → Adapter: AXTP RPC REQUEST_RESPONSE status.ok=true, status.code=SUCCESS
 Adapter: 反向映射 SUCCESS → 旧 ACK 格式
 Adapter → Legacy Client: 旧 HID ACK (CmdValue=0x0042 OK)
@@ -778,8 +778,8 @@ Adapter → Legacy Client: 旧 HID ACK (CmdValue=0x0042 OK)
 
 ```text
 Legacy Client → Adapter: {"method":"setBrightness","params":{"level":80},"id":1}
-Adapter: 字段映射: setBrightness → brightness.set, params.level → params.value
-Adapter → Device: AXTP RPC REQUEST brightness.set, body: value=80
+Adapter: 字段映射: setBrightness → display.setBrightness, params.level → params.value
+Adapter → Device: AXTP RPC REQUEST display.setBrightness, body: value=80
 Device → Adapter: AXTP RPC REQUEST_RESPONSE
 Adapter → Legacy Client: {"result":{"ok":true},"id":1}
 ```

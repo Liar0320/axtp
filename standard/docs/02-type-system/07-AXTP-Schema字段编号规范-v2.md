@@ -100,7 +100,7 @@ MVP 阶段建议只使用 `0x01-0x5F` 和 `0x7F`，暂不使用 `0x80-0xFF`。
 业务字段推荐使用 `0x20-0x5F`，用于当前 method、event 或 metadata schema 的普通字段。
 
 ```yaml
-schema: brightness.set.params
+schema: display.setBrightness.params
 fields:
   - id: 0x20
     name: value
@@ -139,9 +139,9 @@ MVP 支持两种模式：
 
 | 类型 | 格式 | 示例 |
 |---|---|---|
-| Method Params | `<methodName>.params` | `brightness.set.params` |
+| Method Params | `<methodName>.params` | `display.setBrightness.params` |
 | Method Result | `<methodName>.result` | `firmware.begin.result` |
-| Event Data | `<eventName>.data` | `brightness.changed.data` |
+| Event Data | `<eventName>.data` | `display.brightnessChanged.data` |
 | Stream Profile Context | `stream.<profileName>.context` | `stream.firmware.ota.context` |
 
 ---
@@ -149,10 +149,10 @@ MVP 支持两种模式：
 ## 9. Schema YAML 描述格式
 
 ```yaml
-schemaId: brightness.set.params
+schemaId: display.setBrightness.params
 version: 1
 scope: method
-owner: brightness
+owner: display
 encoding: tlv
 mode: strict
 fields:

@@ -94,8 +94,8 @@ firmware
 video
 audio
 log
-factory test
-brightness
+diagnostic / factory test
+display brightness
 ```
 
 旧协议的业务语义必须下沉到：
@@ -150,7 +150,7 @@ AXTP Core Runtime
 ```text
 +--------------------------------------------------+
 | Business API                                     |
-| device.getInfo / brightness.set / firmware.begin |
+| device.getInfo / display.setBrightness / firmware.begin |
 +--------------------------------------------------+
 | AXTP Registry                                    |
 | MethodId / EventId / ErrorCode / Capability      |
@@ -292,7 +292,7 @@ firmware.begin
 firmware.verify
 device.getInfo
 video.setMode
-brightness.set
+display.setBrightness
 ```
 
 对应旧协议来源写入 legacy 字段：
@@ -313,7 +313,7 @@ legacy:
 | Beta Device | `device.*` | 设备信息、版本、状态 |
 | Common Video | `video.*` | 视频模式、分辨率、帧率、编码 |
 | Common Display | `display.*` | 屏幕、电源、输入源、布局 |
-| Common Brightness | `brightness.*` | 亮度、自动亮度、范围 |
+| Common Brightness | `display.*` | 亮度、自动亮度、范围 |
 | Factory / Production Test | `diagnostic.*` | 产测、自检、报告、指标 |
 | HID Raw / KVM | `input.*` + `profile=control.hid_raw` | 低频走 RPC，高频走 STREAM |
 | OTA Chunk | `firmware.*` + `profile=firmware.ota` | 控制面 RPC，数据面 STREAM |
@@ -788,7 +788,7 @@ AXTP 拆成两类能力：
 | 支持事件列表 | `supportedEvents` |
 | 支持升级 | `firmware.supported` |
 | 支持断点续传 | `firmware.resumeSupported` |
-| 支持亮度范围 | `brightness.range` |
+| 支持亮度范围 | `display.brightnessMin / display.brightnessMax / display.brightnessStep` |
 | 支持视频模式 | `video.modes` |
 | 支持日志导出 | `log.exportSupported` |
 | 支持产测 | `diagnostic.supportedTests` |
@@ -1195,13 +1195,13 @@ payload 格式
 ```text
 device.getInfo
 capability.getAll
-brightness.get
-brightness.set
+display.getBrightness
+display.setBrightness
 firmware.begin
 STREAM OTA chunk
 firmware.verify
-event.subscribe
-event.unsubscribe
+IDENTIFY.eventSubscriptions
+REIDENTIFY.eventSubscriptions
 ```
 
 ### 20.3 Phase 2：Dual Stack
@@ -1338,12 +1338,12 @@ MVP 阶段只迁移最小闭环，不要求覆盖所有旧命令。
 | `device.getInfo` | 验证旧设备信息查询 |
 | `device.getStatus` | 验证状态查询 |
 | `capability.getAll` | 验证旧能力表转换 |
-| `brightness.get` | 验证简单查询 |
-| `brightness.set` | 验证简单设置 |
+| `display.getBrightness` | 验证简单查询 |
+| `display.setBrightness` | 验证简单设置 |
 | `firmware.begin` | 验证 OTA 控制面 |
 | `firmware.verify` | 验证 OTA 校验 |
-| `event.subscribe` | 验证事件订阅 |
-| `event.unsubscribe` | 验证事件取消 |
+| `IDENTIFY.eventSubscriptions` | 验证初始事件订阅 |
+| `REIDENTIFY.eventSubscriptions` | 验证事件订阅更新 |
 
 ### 23.2 必须迁移的 Stream Profile
 
@@ -1382,8 +1382,8 @@ legacy_device_get_info_request.hex
 legacy_device_get_info_response.hex
 axtp_device_get_info_request.hex
 axtp_device_get_info_response.hex
-legacy_brightness_set_request.hex
-axtp_brightness_set_request.hex
+legacy_display_brightness_set_request.hex
+axtp_display_brightness_set_request.hex
 legacy_status_to_axtp_error.json
 legacy_ota_chunk_to_axtp_stream.hex
 legacy_event_to_axtp_event.hex
@@ -1412,7 +1412,7 @@ AXTP 请求 -> 旧请求
 1. legacy_mapping.yaml 能描述至少 8 个 MVP method
 2. Generator 能生成 C++ legacy mapping table
 3. C++ Demo 能通过 Adapter 调用旧 device.getInfo
-4. C++ Demo 能通过 Adapter 调用旧 brightness.set
+4. C++ Demo 能通过 Adapter 调用旧 display.setBrightness
 5. C++ Demo 能把旧 OTA chunk 映射为 AXTP STREAM OTA
 6. 旧 status 能映射为 AXTP ErrorCode
 7. 旧事件能映射为 AXTP RPC EVENT

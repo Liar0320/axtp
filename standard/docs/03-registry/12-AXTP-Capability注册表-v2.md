@@ -15,7 +15,7 @@ Capability 是对设备能力、协议能力、传输能力和业务功能的声
 | 机制 | 职责 |
 |---|---|
 | `CONTROL OPEN / ACCEPT` | 协议运行时能力协商（protocolVersion、headerProfile、maxFrameSize、mtu、supportedPayloadTypes、supportedRpcEncodings、heartbeatIntervalMs、ackMode、windowSize） |
-| `RPC capability.*` | 业务能力查询（brightness 范围、OTA 支持、firmware imageType、video stream、methodId 支持、eventId 支持、codec、文件类型） |
+| `RPC capability.*` | 业务能力查询（display 亮度范围、OTA 支持、firmware imageType、video stream、methodId 支持、eventId 支持、codec、文件类型） |
 
 规则：
 - 影响 Frame/Control/RPC/Stream Parser 工作方式的能力必须在 CONTROL OPEN 阶段协商
@@ -33,7 +33,7 @@ Capability 是对设备能力、协议能力、传输能力和业务功能的声
 | transport capability | MTU、最大包长、窗口、ACK 模式 | CONTROL OPEN + RPC |
 | rpc capability | RPC 编码、bodyEncoding、methodId 支持 | CONTROL OPEN + RPC |
 | stream capability | Stream Profile ID、窗口、断点续传、CRC | RPC |
-| business capability | brightness、firmware、file、video 等业务能力 | RPC |
+| business capability | display、firmware、file、video 等业务能力 | RPC |
 | vendor capability | 厂商私有能力 | RPC |
 
 ---
@@ -49,7 +49,7 @@ CapabilityId 使用 `uint16`：
 0x0300-0x03FF  RPC 能力
 0x0400-0x04FF  STREAM 能力
 0x0500-0x05FF  设备基础能力
-0x0600-0x06FF  显示 / 亮度能力
+0x0600-0x06FF  显示能力
 0x0700-0x07FF  视频能力
 0x0800-0x08FF  音频能力
 0x0900-0x09FF  文件能力
@@ -59,6 +59,9 @@ CapabilityId 使用 `uint16`：
 0x0D00-0x0DFF  输入 / KVM 能力
 0x0E00-0x0EFF  网络能力
 0x0F00-0x0FFF  存储能力
+0x1000-0x10FF  传感器能力
+0x1100-0x11FF  认证能力
+0x1200-0x12FF  隐私能力
 0x7000-0x7FFF  厂商私有能力
 0x8000-0xFFFF  保留
 ```
@@ -269,16 +272,16 @@ Stream Profile 是具体可建流协议档案，存在于 Registry/Capability/St
 
 ---
 
-## 11. 显示与亮度能力注册表
+## 11. 显示能力注册表
 
 | capabilityId | name | 类型 | 状态 | 说明 |
 |---:|---|---|---|---|
-| `0x0601` | `brightness.supported` | bool | mvp | 是否支持亮度控制 |
-| `0x0602` | `brightness.min` | uint16 | mvp | 最小亮度 |
-| `0x0603` | `brightness.max` | uint16 | mvp | 最大亮度 |
-| `0x0604` | `brightness.step` | uint16 | mvp | 亮度步进 |
-| `0x0605` | `brightness.autoMode` | bool | mvp | 是否支持自动亮度 |
-| `0x0606` | `brightness.schedule` | bool | draft | 是否支持亮度计划 |
+| `0x0601` | `display.brightness` | bool | mvp | 是否支持亮度控制 |
+| `0x0602` | `display.brightnessMin` | uint16 | mvp | 最小亮度 |
+| `0x0603` | `display.brightnessMax` | uint16 | mvp | 最大亮度 |
+| `0x0604` | `display.brightnessStep` | uint16 | mvp | 亮度步进 |
+| `0x0605` | `display.brightnessAutoMode` | bool | mvp | 是否支持自动亮度 |
+| `0x0606` | `display.brightnessSchedule` | bool | draft | 是否支持亮度计划 |
 | `0x0610` | `display.supported` | bool | draft | 是否支持显示控制 |
 | `0x0611` | `display.inputSources` | bitmap | draft | 支持的输入源 |
 | `0x0612` | `display.resolutions` | array | draft | 支持的分辨率 |
@@ -420,7 +423,37 @@ MVP 推荐：`CRC32 + SHA256`
 
 ---
 
-## 21. Vendor Capability
+## 21. 传感器能力注册表
+
+| capabilityId | name | 类型 | 状态 | 说明 |
+|---:|---|---|---|---|
+| `0x1001` | `sensor.supported` | bool | draft | 是否支持传感器能力 |
+| `0x1002` | `sensor.types` | bitmap | draft | 支持的传感器类型 |
+| `0x1003` | `sensor.stream` | bool | draft | 是否支持传感器采样流 |
+
+---
+
+## 22. 认证能力注册表
+
+| capabilityId | name | 类型 | 状态 | 说明 |
+|---:|---|---|---|---|
+| `0x1101` | `auth.supported` | bool | draft | 是否支持认证 |
+| `0x1102` | `auth.token` | bool | draft | 是否支持 token |
+| `0x1103` | `auth.permission` | bool | draft | 是否支持权限查询 |
+
+---
+
+## 23. 隐私能力注册表
+
+| capabilityId | name | 类型 | 状态 | 说明 |
+|---:|---|---|---|---|
+| `0x1201` | `privacy.supported` | bool | draft | 是否支持隐私控制 |
+| `0x1202` | `privacy.mode` | bool | draft | 是否支持隐私模式 |
+| `0x1203` | `privacy.mask` | bool | draft | 是否支持隐私遮挡区域 |
+
+---
+
+## 24. Vendor Capability
 
 厂商私有能力范围：`0x7000-0x7FFF`
 
@@ -444,7 +477,7 @@ MVP 推荐：`CRC32 + SHA256`
 
 ---
 
-## 22. Capability 查询方法
+## 25. Capability 查询方法
 
 MVP 必须实现：
 
@@ -466,7 +499,7 @@ MVP 必须实现：
 
 ---
 
-## 23. capability.getAll 返回结构
+## 26. capability.getAll 返回结构
 
 ### 23.1 JSON 表达
 
@@ -499,7 +532,7 @@ MVP 必须实现：
     "chunkCrc32": true
   },
   "business": {
-    "brightness": { "supported": true, "min": 0, "max": 100, "step": 1 },
+    "display": { "brightness": { "supported": true, "min": 0, "max": 100, "step": 1 } },
     "firmware": { "supported": true, "imageTypes": ["MCU_FIRMWARE"], "verify": ["CRC32", "SHA256"], "resume": true }
   }
 }
@@ -515,12 +548,12 @@ capability.getAll.result
   transport.mtu / transport.maxFrameSize
   rpc.encodings / rpc.bodyEncodings
   stream.profiles
-  brightness.supported / firmware.supported
+  display.brightness / firmware.supported
 ```
 
 ---
 
-## 24. capability.getDomain 参数
+## 27. capability.getDomain 参数
 
 参数：
 
@@ -528,11 +561,11 @@ capability.getAll.result
 |---|---:|---|---|
 | domain | `0x01` | enum/string | 能力域 |
 
-支持 domain：`protocol / transport / rpc / stream / device / brightness / video / audio / file / firmware / log / diagnostic / input / network / storage / vendor`
+支持 domain：`protocol / transport / rpc / stream / device / display / camera / video / audio / file / firmware / log / diagnostic / input / network / storage / sensor / auth / privacy / vendor`
 
 ---
 
-## 25. capability.hasMethod 参数与结果
+## 28. capability.hasMethod 参数与结果
 
 参数：
 
@@ -550,7 +583,7 @@ capability.getAll.result
 
 ---
 
-## 26. Capability 与 Method / Event / Stream 的关系
+## 29. Capability 与 Method / Event / Stream 的关系
 
 - Method Registry 表示协议定义了哪些方法；Capability 表示当前设备实际支持哪些方法
 - Event Registry 表示协议定义了哪些事件；Capability 表示当前设备是否会上报该事件
@@ -558,7 +591,7 @@ capability.getAll.result
 
 ---
 
-## 27. 老协议适配
+## 30. 老协议适配
 
 老协议能力（设备信息命令、能力矩阵命令、Feature bitmap、CmdValue 支持表）必须统一转换为 Capability Registry，不得继续让上层直接判断旧字段。
 
@@ -566,7 +599,7 @@ capability.getAll.result
 |---|---|---|
 | `CmdValue 0xC0021 exists` | `video.supported = true` | 支持视频模式设置 |
 | `AlphaUpgradeInfo exists` | `firmware.supported = true` | 支持升级 |
-| `FeatureBitmap.bit0` | `brightness.supported = true` | 支持亮度 |
+| `FeatureBitmap.bit0` | `display.brightness = true` | 支持亮度 |
 | `FeatureBitmap.bit1` | `firmware.resume = true` | 支持续传 |
 
 legacyMapping 字段：
@@ -586,7 +619,7 @@ legacyMapping 字段：
 
 ---
 
-## 28. MVP Capability 集合
+## 31. MVP Capability 集合
 
 ### 28.1 Protocol MVP
 
@@ -621,7 +654,7 @@ stream.resume / stream.windowSize / stream.chunkCrc32
 ```text
 common.deviceClass / common.vendorId / common.productId / common.model
 common.serialNumber / common.hardwareVersion / common.firmwareVersion
-brightness.supported / brightness.min / brightness.max / brightness.step / brightness.autoMode
+display.brightness / display.brightnessMin / display.brightnessMax / display.brightnessStep / display.brightnessAutoMode
 firmware.supported / firmware.imageTypes / firmware.maxImageSize / firmware.chunkSize
 firmware.resume / firmware.verify / firmware.applyRequiresReboot
 log.supported / log.stream
@@ -630,7 +663,7 @@ diagnostic.supported / diagnostic.selfTest
 
 ---
 
-## 29. Generator v1 校验规则
+## 32. Generator v1 校验规则
 
 ```text
 CapabilityId 唯一性 / name 唯一性 / ID 范围合法性

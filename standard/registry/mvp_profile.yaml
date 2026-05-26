@@ -2,14 +2,14 @@ mvp:
   methods:
     - device.getInfo
     - capability.getAll
-    - brightness.get
-    - brightness.set
+    - display.getBrightness
+    - display.setBrightness
     - firmware.begin
     - firmware.end
     - firmware.verify
     - firmware.apply
   events:
-    - brightness.changed
+    - display.brightnessChanged
     - firmware.updateProgress
     - firmware.updateCompleted
     - firmware.updateFailed
@@ -26,7 +26,8 @@ mvp:
     - protocol.payload.stream
     - device.info
     - capability.get
-    - brightness.get
-    - brightness.set
-    - brightness.event
+    - display.brightness
+    - display.brightnessMin
+    - display.brightnessMax
+    - display.brightnessStep
     - firmware.ota

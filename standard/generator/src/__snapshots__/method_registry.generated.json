@@ -1,26 +1,26 @@
 {
   "methods": [
     {
-      "id": 1538,
-      "name": "brightness.set",
-      "domain": "brightness",
+      "id": 1282,
+      "name": "display.setBrightness",
+      "domain": "display",
       "status": "mvp",
       "rpcOp": "request_response",
-      "requestSchema": "BrightnessSetRequest",
+      "requestSchema": "DisplaySetBrightnessRequest",
       "responseSchema": "CommonEmptyResponse",
       "recommendedEncoding": [
         "binary_tlv"
       ],
       "capabilities": [
-        "brightness.set"
+        "display.brightness"
       ],
       "events": [
-        "brightness.changed"
+        "display.brightnessChanged"
       ],
       "errors": [
         "SUCCESS"
       ],
-      "idHex": "0x0602"
+      "idHex": "0x0502"
     }
   ]
 }

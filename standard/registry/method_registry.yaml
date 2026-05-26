@@ -27,28 +27,28 @@ methods:
     events: []
     errors: [SUCCESS, RPC_UNKNOWN_METHOD]
 
-  - id: 0x0601
-    name: brightness.get
-    domain: brightness
+  - id: 0x0501
+    name: display.getBrightness
+    domain: display
     status: mvp
     rpc_op: request_response
-    request_schema: BrightnessGetRequest
-    response_schema: BrightnessGetResponse
+    request_schema: DisplayGetBrightnessRequest
+    response_schema: DisplayGetBrightnessResponse
     recommended_encoding: [json, binary_tlv]
-    capabilities: [brightness.get]
+    capabilities: [display.brightness]
     events: []
     errors: [SUCCESS, RPC_UNKNOWN_METHOD]
 
-  - id: 0x0602
-    name: brightness.set
-    domain: brightness
+  - id: 0x0502
+    name: display.setBrightness
+    domain: display
     status: mvp
     rpc_op: request_response
-    request_schema: BrightnessSetRequest
+    request_schema: DisplaySetBrightnessRequest
     response_schema: CommonEmptyResponse
     recommended_encoding: [json, binary_tlv]
-    capabilities: [brightness.set]
-    events: [brightness.changed]
+    capabilities: [display.brightness]
+    events: [display.brightnessChanged]
     errors: [SUCCESS, RPC_INVALID_PARAMS, DEVICE_BUSY]
     legacy:
       cmd_value: 0x000B0042

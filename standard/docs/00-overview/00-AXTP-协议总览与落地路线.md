@@ -185,8 +185,8 @@ video frame          -> STREAM
 file.beginTransfer   -> RPC
 file chunk           -> STREAM
 
-brightness.set       -> RPC
-brightness.changed   -> RPC Event
+display.setBrightness       -> RPC
+display.brightnessChanged   -> RPC Event
 ```
 
 ---
@@ -198,7 +198,7 @@ AXTP 推荐分层如下：
 ```text
 +--------------------------------------------------+
 | Business Layer                                   |
-| device / display / brightness / video / ota ...  |
+| device / display / video / firmware / stream ... |
 +--------------------------------------------------+
 | Registry Layer                                   |
 | Method / Event / Error / Capability              |
@@ -326,7 +326,7 @@ PONG
 
 ```text
 device.getInfo
-brightness.set
+display.setBrightness
 firmware.begin
 video.startPreview
 file.beginTransfer
@@ -353,8 +353,8 @@ batch response
 ```text
 device.getInfo
 capability.getAll
-brightness.set
-brightness.get
+display.setBrightness
+display.getBrightness
 firmware.begin
 firmware.verify
 stream.open
@@ -756,11 +756,10 @@ MVP 第一阶段只建议实现以下 domain：
 ```text
 device.*
 capability.*
+system.*
+display.*
 firmware.*
 stream.*
-event.*
-video.*
-audio.*
 ```
 
 暂缓完整实现：
@@ -772,7 +771,9 @@ diagnostic.*
 input.*
 network.*
 storage.*
-ai.*
+sensor.*
+auth.*
+privacy.*
 vendor.*
 ```
 
@@ -790,6 +791,11 @@ MVP MethodId 建议先实现：
 | device | `device.getVersion` | 获取版本信息 |
 | capability | `capability.getAll` | 获取完整能力集 |
 | capability | `capability.getDomain` | 获取指定域能力 |
+| system | `system.getTime` | 获取系统时间 |
+| system | `system.reboot` | 重启设备 |
+| display | `display.getBrightness` | 获取亮度 |
+| display | `display.setBrightness` | 设置亮度 |
+| display | `display.getBrightnessRange` | 获取亮度范围 |
 | firmware | `firmware.getInfo` | 获取固件信息 |
 | firmware | `firmware.begin` | 开始升级 |
 | firmware | `firmware.verify` | 校验固件 |
@@ -798,8 +804,8 @@ MVP MethodId 建议先实现：
 | stream | `stream.open` | 打开流 |
 | stream | `stream.close` | 关闭流 |
 | stream | `stream.getStatus` | 获取流状态 |
-| event | `event.subscribe` | 订阅事件 |
-| event | `event.unsubscribe` | 取消订阅事件 |
+| rpc | `IDENTIFY.eventSubscriptions` | 初始事件订阅集合 |
+| rpc | `REIDENTIFY.eventSubscriptions` | 更新事件订阅集合 |
 
 ---
 
@@ -959,7 +965,7 @@ Old CmdValue -> AXTP methodId
 示例：
 
 ```text
-Old payload byte[0] -> fieldId 0x01 brightness
+Old payload byte[0] -> fieldId 0x20 displayBrightnessValue
 Old payload byte[1] -> fieldId 0x02 mode
 ```
 
@@ -1081,8 +1087,8 @@ src/
 1. CONTROL OPEN / ACCEPT
 2. RPC capability.getAll
 3. RPC device.getInfo
-4. RPC brightness.set
-5. RPC Event brightness.changed
+4. RPC display.setBrightness
+5. RPC Event display.brightnessChanged
 6. RPC firmware.begin
 7. STREAM OTA chunk
 8. CONTROL ACK / NACK
@@ -1105,9 +1111,9 @@ CONTROL ACK hex
 CONTROL NACK hex
 RPC device.getInfo JSON example
 RPC device.getInfo binary hex
-RPC brightness.set JSON example
-RPC brightness.set binary hex
-RPC Event brightness.changed binary hex
+RPC display.setBrightness JSON example
+RPC display.setBrightness binary hex
+RPC Event display.brightnessChanged binary hex
 STREAM OTA chunk hex
 CRC error example
 fragment example

@@ -92,14 +92,14 @@ P0 包括：
 CONTROL OPEN / ACCEPT / ACK / NACK / HEARTBEAT / CLOSE
 RPC device.getInfo
 RPC capability.getAll
-RPC brightness.get
-RPC brightness.set
+RPC display.getBrightness
+RPC display.setBrightness
 RPC firmware.begin
 RPC firmware.end
 RPC firmware.verify
 RPC firmware.apply
 STREAM OTA chunk
-EVENT brightness.changed
+EVENT display.brightnessChanged
 EVENT firmware.updateProgress
 EVENT firmware.updateCompleted
 EVENT firmware.updateFailed
@@ -149,7 +149,7 @@ standard/
 │   ├── control_schema.yaml
 │   ├── device_schema.yaml
 │   ├── capability_schema.yaml
-│   ├── brightness_schema.yaml
+│   ├── display_schema.yaml
 │   ├── firmware_schema.yaml
 │   ├── stream_schema.yaml
 │   └── event_schema.yaml
@@ -300,20 +300,20 @@ methods:
       name: BetaDeviceInfo
       payload_format: fixed_struct
 
-  - id: 0x0602
-    name: brightness.set
-    domain: brightness
+  - id: 0x0502
+    name: display.setBrightness
+    domain: display
     status: mvp
     rpc_op: request_response
-    request_schema: BrightnessSetRequest
+    request_schema: DisplaySetBrightnessRequest
     response_schema: CommonEmptyResponse
     recommended_encoding:
       - json
       - binary_tlv
     capabilities:
-      - brightness.set
+      - display.brightness
     events:
-      - brightness.changed
+      - display.brightnessChanged
     errors:
       - SUCCESS
       - RPC_INVALID_PARAMS
@@ -328,17 +328,17 @@ methods:
 
 ```yaml
 events:
-  - id: 0x8601
-    name: brightness.changed
-    domain: brightness
+  - id: 0x8507
+    name: display.brightnessChanged
+    domain: display
     status: mvp
-    event_schema: BrightnessChangedEvent
+    event_schema: DisplayBrightnessChangedEvent
     severity: info
     trigger:
-      - brightness.set
+      - display.setBrightness
       - device_local_change
     capabilities:
-      - brightness.event
+      - display.brightness
 ```
 
 ---
@@ -386,12 +386,12 @@ capabilities:
     type: bool
     description: Device supports CONTROL payload.
 
-  - id: 0x0602
-    name: brightness.set
-    domain: brightness
+  - id: 0x0601
+    name: display.brightness
+    domain: display
     status: mvp
     type: bool
-    description: Device supports setting brightness.
+    description: Device supports display brightness control.
 
   - id: 0x0B01
     name: firmware.ota
@@ -602,9 +602,9 @@ MVP 缺失示例：
 ```text
 missing method: device.getInfo
 missing method: capability.getAll
-missing method: brightness.set
+missing method: display.setBrightness
 missing method: firmware.begin
-missing event: brightness.changed
+missing event: display.brightnessChanged
 missing error: SUCCESS
 missing capability: protocol.payload.rpc
 ```
@@ -685,8 +685,8 @@ generated/
 └── test_vectors/
     ├── control_open.hex
     ├── rpc_device_get_info.hex
-    ├── rpc_brightness_set.hex
-    ├── event_brightness_changed.hex
+    ├── rpc_display_brightness_set.hex
+    ├── event_display_brightness_changed.hex
     ├── stream_ota_chunk.hex
     └── manifest.json
 ```
@@ -714,8 +714,8 @@ constexpr uint8_t PAYLOAD_TYPE_STREAM  = 0x03;
 enum class MethodId : uint16_t {
     DeviceGetInfo      = 0x0101,
     CapabilityGetAll   = 0x0301,
-    BrightnessGet      = 0x0601,
-    BrightnessSet      = 0x0602,
+    DisplayGetBrightness      = 0x0501,
+    DisplaySetBrightness      = 0x0502,
     FirmwareBegin      = 0x0B02,
     FirmwareEnd        = 0x0B03,
     FirmwareVerify     = 0x0B04,
@@ -724,7 +724,7 @@ enum class MethodId : uint16_t {
 
 // EventId
 enum class EventId : uint16_t {
-    BrightnessChanged       = 0x8601,
+    DisplayBrightnessChanged       = 0x8507,
     FirmwareUpdateProgress  = 0x8B02,
     FirmwareUpdateCompleted = 0x8B03,
     FirmwareUpdateFailed    = 0x8B04,
@@ -783,7 +783,7 @@ struct SchemaDescriptor {
     size_t field_count;
 };
 
-extern const SchemaDescriptor kBrightnessSetRequestSchema;
+extern const SchemaDescriptor kDisplaySetBrightnessRequestSchema;
 extern const SchemaDescriptor kDeviceGetInfoResponseSchema;
 
 } // namespace axtp
@@ -844,7 +844,7 @@ Generator v1 可生成两类 TLV 辅助代码。
 ### 10.1 Field 常量
 
 ```cpp
-namespace axtp::fields::brightness_set {
+namespace axtp::fields::display_set_brightness {
 constexpr uint8_t VALUE = 0x01;
 constexpr uint8_t TRANSITION_MS = 0x02;
 }
@@ -853,7 +853,7 @@ constexpr uint8_t TRANSITION_MS = 0x02;
 ### 10.2 Struct Skeleton
 
 ```cpp
-struct BrightnessSetRequest {
+struct DisplaySetBrightnessRequest {
     uint8_t value = 0;
     uint16_t transition_ms = 0;
     bool has_transition_ms = false;
@@ -865,14 +865,14 @@ struct BrightnessSetRequest {
 Generator v1 可以只生成声明和简单实现。
 
 ```cpp
-bool EncodeBrightnessSetRequest(
-    const BrightnessSetRequest& input,
+bool EncodeDisplaySetBrightnessRequest(
+    const DisplaySetBrightnessRequest& input,
     TlvWriter& writer,
     ErrorCode* error);
 
-bool DecodeBrightnessSetRequest(
+bool DecodeDisplaySetBrightnessRequest(
     TlvReader& reader,
-    BrightnessSetRequest* output,
+    DisplaySetBrightnessRequest* output,
     ErrorCode* error);
 ```
 
@@ -899,7 +899,7 @@ Method 表示例：
 | methodId | name | domain | status | request | response | legacy |
 |---:|---|---|---|---|---|---|
 | `0x0101` | `device.getInfo` | device | mvp | DeviceGetInfoRequest | DeviceGetInfoResponse | `0xB0002` |
-| `0x0602` | `brightness.set` | brightness | mvp | BrightnessSetRequest | CommonEmptyResponse | - |
+| `0x0502` | `display.setBrightness` | display | mvp | DisplaySetBrightnessRequest | CommonEmptyResponse | - |
 
 ---
 
@@ -935,11 +935,11 @@ Generator v1 应至少生成以下测试向量 manifest。
 {
   "vectors": [
     {
-      "name": "rpc_brightness_set_request",
+      "name": "rpc_display_brightness_set_request",
       "payloadType": "RPC",
-      "methodId": "0x0602",
+      "methodId": "0x0502",
       "encoding": "binary_tlv",
-      "hexFile": "rpc_brightness_set.hex",
+      "hexFile": "rpc_display_brightness_set.hex",
       "expectDecode": {
         "value": 80
       }
@@ -990,7 +990,7 @@ pnpm --dir standard/generator axtp-gen test-vector --spec ./standard --out ./sta
 [OK] method_registry.yaml: 18 methods checked
 [OK] event_registry.yaml: 9 events checked
 [OK] schema: 24 schemas checked
-[ERROR] duplicate methodId 0x0602: brightness.set / display.setBrightness
+[ERROR] duplicate methodId 0x0502: display.setBrightness / display.setPower
 ```
 
 ### 14.2 generate
@@ -1052,9 +1052,9 @@ Generator 错误必须可定位到文件、条目和字段。
 ```text
 ERROR AXTP-GEN-1002
 file: registry/method_registry.yaml
-entry: brightness.set
+entry: display.setBrightness
 field: id
-message: duplicate methodId 0x0602, already used by display.setBrightness
+message: duplicate methodId 0x0502, already used by display.setBrightness
 ```
 
 错误码建议：
@@ -1156,8 +1156,8 @@ manifest.json
 ```text
 CONTROL OPEN
 RPC device.getInfo request
-RPC brightness.set request
-EVENT brightness.changed
+RPC display.setBrightness request
+EVENT display.brightnessChanged
 STREAM OTA chunk
 Compact CRC8 error
 Compact MessageId overflow

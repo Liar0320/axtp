@@ -25,11 +25,11 @@ enum class RpcOp : std::uint8_t {
 };
 
 enum class MethodId : std::uint16_t {
-    BrightnessSet = 0x0602,
+    DisplaySetBrightness = 0x0502,
 };
 
 enum class EventId : std::uint16_t {
-    BrightnessChanged = 0x8601,
+    DisplayBrightnessChanged = 0x8507,
 };
 
 enum class ErrorCode : std::uint16_t {
@@ -37,8 +37,7 @@ enum class ErrorCode : std::uint16_t {
 };
 
 enum class CapabilityId : std::uint16_t {
-    BrightnessSet = 0x0602,
-    BrightnessEvent = 0x0603,
+    DisplayBrightness = 0x0601,
 };
 
 } // namespace axtp

@@ -20,67 +20,66 @@ function baseSpec(): SpecModel {
     rpcOps: [{ id: 7, value: 7, name: "REQUEST", domain: "rpc", status: "mvp" }],
     streamProfiles: [{ id: 1, value: 1, name: "firmware.ota", domain: "firmware", status: "mvp" }],
     methods: [{
-      id: 0x0602,
-      name: "brightness.set",
-      domain: "brightness",
+      id: 0x0502,
+      name: "display.setBrightness",
+      domain: "display",
       status: "mvp",
       rpcOp: "request_response",
-      requestSchema: "BrightnessSetRequest",
+      requestSchema: "DisplaySetBrightnessRequest",
       responseSchema: "CommonEmptyResponse",
       recommendedEncoding: ["binary_tlv"],
-      capabilities: ["brightness.set"],
-      events: ["brightness.changed"],
+      capabilities: ["display.brightness"],
+      events: ["display.brightnessChanged"],
       errors: ["SUCCESS"]
     }],
     events: [{
-      id: 0x8601,
-      name: "brightness.changed",
-      domain: "brightness",
+      id: 0x8507,
+      name: "display.brightnessChanged",
+      domain: "display",
       status: "mvp",
-      eventSchema: "BrightnessChangedEvent",
-      trigger: ["brightness.set"],
-      capabilities: ["brightness.event"]
+      eventSchema: "DisplayBrightnessChangedEvent",
+      trigger: ["display.setBrightness"],
+      capabilities: ["display.brightness"]
     }],
     errors: [{ id: 0, name: "SUCCESS", domain: "common", status: "mvp", retryable: false }],
     capabilities: [
-      { id: 0x0602, name: "brightness.set", domain: "brightness", status: "mvp", type: "bool" },
-      { id: 0x0603, name: "brightness.event", domain: "brightness", status: "mvp", type: "bool" }
+      { id: 0x0601, name: "display.brightness", domain: "display", status: "mvp", type: "bool" }
     ],
     legacyMappings: [{
       legacyProtocol: "axdp_hid",
       legacyCmdValue: 0x42,
-      legacyName: "BetaBrightnessSet",
-      axtpMethodId: 0x0602,
-      axtpMethodName: "brightness.set",
+      legacyName: "BetaDisplaySetBrightness",
+      axtpMethodId: 0x0502,
+      axtpMethodName: "display.setBrightness",
       direction: "request_response",
       statusMapping: { "0x00": "SUCCESS" }
     }],
     schemas: [
       { name: "CommonEmptyResponse", type: "object", fields: [] },
       {
-        name: "BrightnessSetRequest",
+        name: "DisplaySetBrightnessRequest",
         type: "object",
         fields: [{ id: 1, name: "value", type: "uint8", required: true, deprecated: false, min: 0, max: 100 }]
       },
       {
-        name: "BrightnessChangedEvent",
+        name: "DisplayBrightnessChangedEvent",
         type: "object",
         fields: [{ id: 1, name: "value", type: "uint8", required: true, deprecated: false, min: 0, max: 100 }]
       }
     ],
     mvpProfile: {
-      methods: ["brightness.set"],
-      events: ["brightness.changed"],
+      methods: ["display.setBrightness"],
+      events: ["display.brightnessChanged"],
       errors: ["SUCCESS"],
-      capabilities: ["brightness.set", "brightness.event"]
+      capabilities: ["display.brightness"]
     }
   };
 }
 
 describe("normalizeId", () => {
   it("normalizes decimal and hex ids", () => {
-    expect(normalizeId("0x0602", "test")).toBe(0x0602);
-    expect(normalizeId(1538, "test")).toBe(0x0602);
+    expect(normalizeId("0x0502", "test")).toBe(0x0502);
+    expect(normalizeId(1282, "test")).toBe(0x0502);
   });
 });
 
@@ -91,7 +90,7 @@ describe("validateSpec", () => {
 
   it("rejects duplicate method ids", () => {
     const spec = baseSpec();
-    spec.methods.push({ ...spec.methods[0], name: "brightness.duplicate" });
+    spec.methods.push({ ...spec.methods[0], name: "display.duplicate" });
     expect(() => validateSpec(spec)).toThrow(/AXTP-GEN-1002|duplicate methodId/);
   });
 

@@ -35,25 +35,32 @@ capabilities:
     description: Device supports capability.getAll.
 
   - id: 0x0601
-    name: brightness.get
-    domain: brightness
+    name: display.brightness
+    domain: display
     status: mvp
     type: bool
-    description: Device supports reading brightness.
+    description: Device supports display brightness control.
 
   - id: 0x0602
-    name: brightness.set
-    domain: brightness
+    name: display.brightnessMin
+    domain: display
     status: mvp
-    type: bool
-    description: Device supports setting brightness.
+    type: uint16
+    description: Minimum display brightness value.
 
   - id: 0x0603
-    name: brightness.event
-    domain: brightness
+    name: display.brightnessMax
+    domain: display
     status: mvp
-    type: bool
-    description: Device supports brightness.changed event.
+    type: uint16
+    description: Maximum display brightness value.
+
+  - id: 0x0604
+    name: display.brightnessStep
+    domain: display
+    status: mvp
+    type: uint16
+    description: Display brightness step.
 
   - id: 0x0B01
     name: firmware.ota

@@ -240,8 +240,8 @@ axtp-cpp-demo/
     ├── control_hello.hex
     ├── control_hello_ack.hex
     ├── rpc_device_get_info.hex
-    ├── rpc_brightness_set.hex
-    ├── event_brightness_changed.hex
+    ├── rpc_display_brightness_set.hex
+    ├── event_display_brightness_changed.hex
     ├── stream_ota_chunk.hex
     └── control_ack.hex
 ```
@@ -772,7 +772,7 @@ req.statusCode = ErrorCode::OK;
 req.bodyEncoding = RpcBodyEncoding::NONE;
 ```
 
-### 11.3 `brightness.set` 请求示例
+### 11.3 `display.setBrightness` 请求示例
 
 ```cpp
 TlvWriter body;
@@ -781,13 +781,13 @@ body.putU8(0x01, 80);      // brightness value
 RpcMessage req;
 req.op = RpcOp::REQUEST;
 req.requestId = 0x00000002;
-req.methodOrEventId = static_cast<uint16_t>(MethodId::BRIGHTNESS_SET);
+req.methodOrEventId = static_cast<uint16_t>(MethodId::DISPLAY_SET_BRIGHTNESS);
 req.statusCode = ErrorCode::OK;
 req.bodyEncoding = RpcBodyEncoding::TLV8;
 req.body = body.bytes();
 ```
 
-### 11.4 `brightness.changed` 事件示例
+### 11.4 `display.brightnessChanged` 事件示例
 
 ```cpp
 TlvWriter body;
@@ -962,8 +962,8 @@ C++ Demo v1 必须注册：
 ```text
 capability.getAll
 device.getInfo
-brightness.get
-brightness.set
+display.getBrightness
+display.setBrightness
 firmware.begin
 firmware.end
 firmware.verify
@@ -1059,9 +1059,9 @@ Client Session <-> Memory Transport <-> Device Session
 4. Device 返回 capability 列表
 5. Client 发送 RPC device.getInfo
 6. Device 返回设备信息
-7. Client 发送 RPC brightness.set(value=80)
+7. Client 发送 RPC display.setBrightness(value=80)
 8. Device 返回 OK
-9. Device 发送 EVENT brightness.changed(value=80)
+9. Device 发送 EVENT display.brightnessChanged(value=80)
 10. Client 发送 RPC firmware.begin
 11. Device 返回 streamId / transferId
 12. Client 发送 STREAM OTA chunk
@@ -1170,8 +1170,8 @@ MVP 建议至少兼容：
 
 ```text
 BetaDeviceInfo      -> device.getInfo
-CommonGetBrightness -> brightness.get
-CommonSetBrightness -> brightness.set
+CommonGetBrightness -> display.getBrightness
+CommonSetBrightness -> display.setBrightness
 AlphaUpgradeInfo    -> firmware.getInfo / firmware.begin
 AlphaUpgradeData    -> STREAM OTA chunk
 ```
@@ -1208,12 +1208,12 @@ namespace axtp {
 enum class MethodId : uint16_t {
     CAPABILITY_GET_ALL = 0x0301,
     DEVICE_GET_INFO    = 0x0101,
-    BRIGHTNESS_GET     = 0x0601,
-    BRIGHTNESS_SET     = 0x0602,
-    FIRMWARE_BEGIN     = 0x0B03,
-    FIRMWARE_END       = 0x0B05,
-    FIRMWARE_VERIFY    = 0x0B06,
-    FIRMWARE_APPLY     = 0x0B07,
+    DISPLAY_GET_BRIGHTNESS = 0x0501,
+    DISPLAY_SET_BRIGHTNESS = 0x0502,
+    FIRMWARE_BEGIN         = 0x0B02,
+    FIRMWARE_END           = 0x0B03,
+    FIRMWARE_VERIFY        = 0x0B04,
+    FIRMWARE_APPLY         = 0x0B05,
 };
 
 } // namespace axtp
@@ -1231,7 +1231,7 @@ namespace axtp {
 enum class EventId : uint16_t {
     DEVICE_STATUS_CHANGED       = 0x8103,
     CAPABILITY_CHANGED          = 0x8301,
-    BRIGHTNESS_CHANGED          = 0x8601,
+    BRIGHTNESS_CHANGED          = 0x8507,
     STREAM_ERROR                = 0x8905,
     FIRMWARE_UPDATE_PROGRESS    = 0x8B02,
     FIRMWARE_UPDATE_COMPLETED   = 0x8B03,
@@ -1443,8 +1443,8 @@ C++ Demo v1 通过验收必须满足：
 5. Frame Compact 编解码测试通过
 6. TLV 编解码测试通过
 7. Control OPEN / ACCEPT 测试通过
-8. RPC device.getInfo / brightness.set 测试通过
-9. Event brightness.changed 测试通过
+8. RPC device.getInfo / display.setBrightness 测试通过
+9. Event display.brightnessChanged 测试通过
 10. Stream OTA chunk + ACK 测试通过
 11. Legacy CmdValue 映射测试通过
 12. Generator 产物可被 include 并编译
@@ -1554,7 +1554,7 @@ Demo 重点：
 10. session hello/hello_ack
 11. rpc dispatcher
 12. device.getInfo
-13. brightness.set + event
+13. display.setBrightness + event
 14. firmware.begin
 15. stream ota chunk + ack
 16. firmware.verify/apply
@@ -1584,10 +1584,10 @@ Demo 重点：
 [CLIENT] send RPC device.getInfo
 [DEVICE] send device info
 
-[CLIENT] send RPC brightness.set value=80
+[CLIENT] send RPC display.setBrightness value=80
 [DEVICE] brightness updated value=80
 [DEVICE] send RPC response OK
-[DEVICE] emit EVENT brightness.changed value=80
+[DEVICE] emit EVENT display.brightnessChanged value=80
 
 [CLIENT] send RPC firmware.begin
 [DEVICE] firmware transfer accepted streamId=1

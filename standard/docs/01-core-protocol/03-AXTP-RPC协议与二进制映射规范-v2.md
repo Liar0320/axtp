@@ -196,7 +196,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 ```json
 {
   "id": 1,
-  "method": "brightness.set",
+  "method": "display.setBrightness",
   "params": {
     "value": 80
   }
@@ -222,7 +222,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
   "op": 7,
   "d": {
     "id": 1,
-    "method": "brightness.set",
+    "method": "display.setBrightness",
     "params": {
       "value": 80
     }
@@ -333,7 +333,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "event": "brightness.changed",
+  "event": "display.brightnessChanged",
   "intent": 1,
   "data": {
     "value": 80,
@@ -357,7 +357,7 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
   "sid": "28378462323",
   "op": 6,
   "d": {
-    "event": "brightness.changed",
+    "event": "display.brightnessChanged",
     "intent": 1,
     "data": {
       "value": 80,
@@ -377,7 +377,7 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
   "haltOnFailure": true,
   "executionType": 0,
   "requests": [
-    { "method": "brightness.set", "params": { "value": 80 } },
+    { "method": "display.setBrightness", "params": { "value": 80 } },
     { "method": "SetDisplayContent", "params": { "content": "hello" } }
   ]
 }
@@ -416,21 +416,21 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 
 推荐动词：`get / set / list / open / close / start / stop / begin / end / verify / apply / abort / resume / subscribe / unsubscribe`
 
-示例：`device.getInfo / brightness.set / firmware.begin / stream.open`
+示例：`device.getInfo / display.setBrightness / firmware.begin / stream.open`
 
 ### 16.2 事件名
 
 格式：`domain.objectChanged / domain.actionCompleted / domain.actionFailed / domain.error`
 
-示例：`brightness.changed / firmware.updateCompleted / stream.error`
+示例：`display.brightnessChanged / firmware.updateCompleted / stream.error`
 
 ### 16.3 与 Binary methodId/eventId 的映射
 
 方法名和事件名与 Binary 中的 uint16 ID 一一对应，由 Registry 统一管理：
 
 ```text
-"brightness.set"      ↔ methodId = 0x0602
-"brightness.changed"  ↔ eventId  = 0x8601
+"display.setBrightness"      ↔ methodId = 0x0502
+"display.brightnessChanged"  ↔ eventId  = 0x8507
 ```
 
 ---
@@ -614,7 +614,7 @@ Request：
   "op": 7,
   "d": {
     "id": 1,
-    "method": "brightness.set",
+    "method": "display.setBrightness",
     "params": {
       "value": 80
     }
@@ -668,7 +668,7 @@ Response 失败：
   "sid": "28378462323",
   "op": 6,
   "d": {
-    "event": "brightness.changed",
+    "event": "display.brightnessChanged",
     "intent": 1,
     "data": {
       "value": 80,
@@ -683,12 +683,12 @@ Response 失败：
 ```text
 Request:
 02 07 01 00 00 00 02 06 00 00 01 01 01 50
-rpcEncoding=BINARY(2), rpcOp=Request(7), requestId=1, methodId=0x0602, statusCode=SUCCESS, bodyEncoding=TLV8
+rpcEncoding=BINARY(2), rpcOp=Request(7), requestId=1, methodId=0x0502, statusCode=SUCCESS, bodyEncoding=TLV8
 body: fieldId=1, len=1, value=80
 
 Response 成功:
 02 08 01 00 00 00 02 06 00 00 01 01 01 50
-rpcEncoding=BINARY(2), rpcOp=RequestResponse(8), requestId=1, methodId=0x0602, statusCode=SUCCESS, bodyEncoding=TLV8
+rpcEncoding=BINARY(2), rpcOp=RequestResponse(8), requestId=1, methodId=0x0502, statusCode=SUCCESS, bodyEncoding=TLV8
 body: fieldId=1, len=1, value=80
 ```
 
@@ -878,7 +878,7 @@ method ↔ methodId 映射 / event ↔ eventId 映射
 
 ```text
 device.getInfo / capability.getAll
-brightness.get / brightness.set
+display.getBrightness / display.setBrightness
 firmware.begin / firmware.verify / firmware.apply
 stream.open / stream.close
 ```
@@ -886,7 +886,7 @@ stream.open / stream.close
 ### 26.3 MVP 事件范围
 
 ```text
-device.statusChanged / brightness.changed
+device.statusChanged / display.brightnessChanged
 firmware.updateProgress / firmware.updateCompleted / firmware.updateFailed
 stream.opened / stream.closed / stream.error
 ```

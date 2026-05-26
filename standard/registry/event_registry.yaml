@@ -1,12 +1,12 @@
 events:
-  - id: 0x8601
-    name: brightness.changed
-    domain: brightness
+  - id: 0x8507
+    name: display.brightnessChanged
+    domain: display
     status: mvp
-    event_schema: BrightnessChangedEvent
+    event_schema: DisplayBrightnessChangedEvent
     severity: info
-    trigger: [brightness.set, device_local_change]
-    capabilities: [brightness.event]
+    trigger: [display.setBrightness, device_local_change]
+    capabilities: [display.brightness]
 
   - id: 0x8B02
     name: firmware.updateProgress

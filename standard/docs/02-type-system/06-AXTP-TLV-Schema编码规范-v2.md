@@ -186,7 +186,7 @@ Generator v1 使用 YAML 描述 TLV schema：
 
 ```yaml
 schemas:
-  brightness.set.params:
+  display.setBrightness.params:
     encoding: tlv
     fields:
       - fieldId: 0x01
