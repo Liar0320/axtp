@@ -191,9 +191,9 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "requestType": "SetBrightness",
-  "requestId": "00000001",
-  "requestData": {
+  "id": 1,
+  "method": "SetBrightness",
+  "params": {
     "value": 80
   }
 }
@@ -201,19 +201,19 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `requestType` | string | 是 | 方法名，PascalCase，对应 Registry methodId |
-| `requestId` | string | 是 | 固定 8 位十六进制字符串，对应 Binary uint32 requestId |
-| `requestData` | object | 否 | 请求参数，无参数时可省略 |
+| `id` | uint32 | 是 | 请求 ID，从 1 开始递增，uint32 自然回绕（跳过 0） |
+| `method` | string | 是 | 方法名，PascalCase，对应 Registry methodId |
+| `params` | object | 否 | 请求参数，无参数时可省略 |
 
-`requestId` 规则：
+`id` 规则：
 
-- 从 `"00000001"` 开始递增，按 uint32 自然回绕（跳过 `"00000000"`）
-- 同一 Session 内未收到 RequestResponse 的 `requestId` 不得复用
+- 保留值 `0`：Event 固定填此值，普通 Request 不得使用
+- 同一 Session 内未收到 RequestResponse 的 `id` 不得复用
 
 ### 9.2 示例
 
 ```json
-{ "sid": "28378462323", "op": 6, "d": { "requestType": "SetBrightness", "requestId": "00000001", "requestData": { "value": 80 } } }
+{ "sid": "28378462323", "op": 6, "d": { "id": 1, "method": "SetBrightness", "params": { "value": 80 } } }
 ```
 
 ---
@@ -224,13 +224,8 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "requestType": "SetBrightness",
-  "requestId": "00000001",
-  "requestStatus": {
-    "result": true,
-    "code": 100
-  },
-  "responseData": {
+  "id": 1,
+  "result": {
     "value": 80
   }
 }
@@ -240,29 +235,36 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "requestType": "SetBrightness",
-  "requestId": "00000001",
-  "requestStatus": {
-    "result": false,
+  "id": 1,
+  "error": {
     "code": 603,
-    "comment": "Value out of range"
+    "message": "Value out of range",
+    "data": {
+      "max": 100
+    }
   }
 }
 ```
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `requestType` | string | 是 | 对应 Request 的 requestType |
-| `requestId` | string | 是 | 对应 Request 的 requestId |
-| `requestStatus.result` | bool | 是 | true=成功，false=失败 |
-| `requestStatus.code` | uint16 | 是 | 状态码，成功时为 100，失败时为错误码 |
-| `requestStatus.comment` | string | 否 | 失败时的人类可读描述 |
-| `responseData` | object | 否 | 成功时的返回数据 |
+| `id` | uint32 | 是 | 对应 Request 的 id |
+| `result` | object | 条件 | 成功时返回，与 `error` 互斥 |
+| `error` | object | 条件 | 失败时返回，与 `result` 互斥 |
+| `error.code` | uint16 | 是 | 错误码，来自 ErrorCode Registry |
+| `error.message` | string | 是 | 人类可读错误描述 |
+| `error.data` | object | 否 | 附加错误上下文 |
+
+`result` 和 `error` 不得同时出现。无返回值的成功响应使用 `"result": {}`。
 
 ### 10.3 示例
 
 ```json
-{ "sid": "28378462323", "op": 7, "d": { "requestType": "SetBrightness", "requestId": "00000001", "requestStatus": { "result": true, "code": 100 }, "responseData": { "value": 80 } } }
+{ "sid": "28378462323", "op": 7, "d": { "id": 1, "result": { "value": 80 } } }
+```
+
+```json
+{ "sid": "28378462323", "op": 7, "d": { "id": 1, "error": { "code": 603, "message": "Value out of range" } } }
 ```
 
 ---
@@ -271,9 +273,8 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "eventType": "BrightnessChanged",
-  "eventIntent": 1,
-  "eventData": {
+  "event": "BrightnessChanged",
+  "data": {
     "value": 80,
     "source": "local"
   }
@@ -282,16 +283,15 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `eventType` | string | 是 | 事件名，PascalCase，对应 Registry eventId |
-| `eventIntent` | uint32 | 是 | 事件所属订阅位图分类 |
-| `eventData` | object | 否 | 事件数据，无数据时可省略 |
+| `event` | string | 是 | 事件名，PascalCase，对应 Registry eventId |
+| `data` | object | 否 | 事件数据，无数据时可省略 |
 
-Event 不携带 `requestId`（Binary 中 requestId 填 0）。
+Event 不携带 `id`（Binary 中 requestId 填 0）。
 
 ### 11.1 示例
 
 ```json
-{ "sid": "28378462323", "op": 5, "d": { "eventType": "BrightnessChanged", "eventIntent": 1, "eventData": { "value": 80, "source": "local" } } }
+{ "sid": "28378462323", "op": 5, "d": { "event": "BrightnessChanged", "data": { "value": 80, "source": "local" } } }
 ```
 
 ---
@@ -300,22 +300,22 @@ Event 不携带 `requestId`（Binary 中 requestId 填 0）。
 
 ```json
 {
-  "requestId": "00000064",
+  "id": 100,
   "haltOnFailure": true,
   "executionType": 0,
   "requests": [
-    { "requestType": "SetBrightness", "requestId": "00000065", "requestData": { "value": 80 } },
-    { "requestType": "SetDisplayContent", "requestId": "00000066", "requestData": { "content": "hello" } }
+    { "method": "SetBrightness", "params": { "value": 80 } },
+    { "method": "SetDisplayContent", "params": { "content": "hello" } }
   ]
 }
 ```
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `requestId` | string | 是 | 批量请求 ID |
+| `id` | uint32 | 是 | 批量请求 ID |
 | `haltOnFailure` | bool | 否 | 遇到失败是否停止，默认 false |
 | `executionType` | uint32 | 否 | 0=SerialRealtime，1=SerialFrame，2=Parallel |
-| `requests` | array | 是 | 请求列表，每项含独立 requestType/requestId/requestData |
+| `requests` | array | 是 | 请求列表，每项含 `method` 和可选 `params` |
 
 ---
 
@@ -323,10 +323,10 @@ Event 不携带 `requestId`（Binary 中 requestId 填 0）。
 
 ```json
 {
-  "requestId": "00000064",
+  "id": 100,
   "results": [
-    { "requestType": "SetBrightness", "requestId": "00000065", "requestStatus": { "result": true, "code": 100 }, "responseData": { "value": 80 } },
-    { "requestType": "SetDisplayContent", "requestId": "00000066", "requestStatus": { "result": false, "code": 603, "comment": "Content too long" } }
+    { "result": { "value": 80 } },
+    { "error": { "code": 603, "message": "Content too long" } }
   ]
 }
 ```
@@ -338,7 +338,7 @@ Event 不携带 `requestId`（Binary 中 requestId 填 0）。
 ## 14. Cancel（op=10）
 
 ```json
-{ "sid": "28378462323", "op": 10, "d": { "requestId": "00000001" } }
+{ "sid": "28378462323", "op": 10, "d": { "id": 1 } }
 ```
 
 取消 `requestId` 对应的进行中请求。服务端可忽略已完成的请求。
@@ -352,9 +352,9 @@ Event 不携带 `requestId`（Binary 中 requestId 填 0）。
   "sid": "28378462323",
   "op": 11,
   "d": {
-    "requestId": "00000001",
+    "id": 1,
     "progress": 45,
-    "comment": "Verifying firmware..."
+    "message": "Verifying firmware..."
   }
 }
 ```
@@ -541,13 +541,13 @@ Binary RESPONSE 中 statusCode 与 JSON/MessagePack 中 `error.code` 对应。
 | op+d 字段 | Binary 字段 | 说明 |
 | --- | --- | --- |
 | `op` | `rpcOp` | 直接对应 |
-| `d.requestId` | `requestId` | 8 位十六进制字符串 → uint32 |
-| `d.requestType` | `methodOrEventId` | 方法名映射到 uint32 methodId |
-| `d.eventType` | `methodOrEventId` | 事件名映射到 uint32 eventId |
-| `d.requestData` / `d.responseData` / `d.eventData` | `body` | JSON object ↔ TLV |
-| `d.requestStatus.result=true` | `flags.SUCCESS = 1` | 成功 |
-| `d.requestStatus.result=false` | `flags.ERROR = 1` | 失败 |
-| `d.requestStatus.code` | `statusCode` | 状态码 |
+| `d.id` | `requestId` | uint32，Event 填 0 |
+| `d.method` | `methodOrEventId` | 方法名映射到 uint32 methodId |
+| `d.event` | `methodOrEventId` | 事件名映射到 uint32 eventId |
+| `d.params` / `d.result` / `d.data` | `body` | JSON object ↔ TLV |
+| `d.result` 存在 | `flags.SUCCESS = 1` | 成功 |
+| `d.error` 存在 | `flags.ERROR = 1` | 失败 |
+| `d.error.code` | `statusCode` | 错误码 |
 
 ---
 
@@ -560,9 +560,9 @@ TLV 字段 ID 由 Method Registry 的 schema 定义，不在 RPC 协议中硬编
 示例（SetBrightness）：
 
 ```text
-JSON requestData: { "value": 80 }
-TLV body:         01 01 50
-                  fieldId=0x01, length=1, value=80
+JSON params: { "value": 80 }
+TLV body:    01 01 50
+             fieldId=0x01, length=1, value=80
 ```
 
 ---
@@ -574,38 +574,38 @@ TLV body:         01 01 50
 Request：
 
 ```json
-{ "sid": "28378462323", "op": 6, "d": { "requestType": "SetBrightness", "requestId": "000003E9", "requestData": { "value": 80 } } }
+{ "sid": "28378462323", "op": 6, "d": { "id": 1, "method": "SetBrightness", "params": { "value": 80 } } }
 ```
 
 Response 成功：
 
 ```json
-{ "sid": "28378462323", "op": 7, "d": { "requestType": "SetBrightness", "requestId": "000003E9", "requestStatus": { "result": true, "code": 100 }, "responseData": { "value": 80 } } }
+{ "sid": "28378462323", "op": 7, "d": { "id": 1, "result": { "value": 80 } } }
 ```
 
 Response 失败：
 
 ```json
-{ "sid": "28378462323", "op": 7, "d": { "requestType": "SetBrightness", "requestId": "000003E9", "requestStatus": { "result": false, "code": 603, "comment": "Value out of range" } } }
+{ "sid": "28378462323", "op": 7, "d": { "id": 1, "error": { "code": 603, "message": "Value out of range", "data": { "max": 100 } } } }
 ```
 
 ### 19.2 BrightnessChanged（JSON Event）
 
 ```json
-{ "sid": "28378462323", "op": 5, "d": { "eventType": "BrightnessChanged", "eventIntent": 1, "eventData": { "value": 80, "source": "local" } } }
+{ "sid": "28378462323", "op": 5, "d": { "event": "BrightnessChanged", "data": { "value": 80, "source": "local" } } }
 ```
 
 ### 19.3 SetBrightness（Binary Compact）
 
 ```text
 Request:
-06 04 E9 03 00 00 02 06 01 01 50
-rpcOp=Request(6), flags=HAS_BODY(4), requestId=0x000003E9, methodId=0x0602
+06 04 01 00 00 00 02 06 01 01 50
+rpcOp=Request(6), flags=HAS_BODY(4), requestId=1, methodId=0x0602
 body: fieldId=1, len=1, value=80
 
 Response 成功:
-07 05 E9 03 00 00 02 06 01 01 50
-rpcOp=RequestResponse(7), flags=SUCCESS|HAS_BODY(5), requestId=0x000003E9, methodId=0x0602
+07 05 01 00 00 00 02 06 01 01 50
+rpcOp=RequestResponse(7), flags=SUCCESS|HAS_BODY(5), requestId=1, methodId=0x0602
 body: fieldId=1, len=1, value=80
 ```
 
@@ -618,9 +618,9 @@ Request：
   "sid": "28378462323",
   "op": 6,
   "d": {
-    "requestType": "OpenStream",
-    "requestId": "000007D1",
-    "requestData": {
+    "id": 2,
+    "method": "OpenStream",
+    "params": {
       "profile": "firmware.ota",
       "direction": "upload",
       "totalSize": 1048576,
@@ -637,10 +637,8 @@ Response：
   "sid": "28378462323",
   "op": 7,
   "d": {
-    "requestType": "OpenStream",
-    "requestId": "000007D1",
-    "requestStatus": { "result": true, "code": 100 },
-    "responseData": {
+    "id": 2,
+    "result": {
       "streamId": 33,
       "profile": "firmware.ota",
       "chunkSize": 512,
@@ -658,9 +656,8 @@ Response：
   "sid": "28378462323",
   "op": 5,
   "d": {
-    "eventType": "FirmwareUpdateCompleted",
-    "eventIntent": 4,
-    "eventData": {
+    "event": "FirmwareUpdateCompleted",
+    "data": {
       "imageType": "mcu",
       "version": "2.1.0"
     }
@@ -677,8 +674,8 @@ Client → Server: { "sid": "", "op": 1, "d": { "rpcVersion": 1, "eventSubscript
 Server → Client: { "sid": "28378462323", "op": 2, "d": { "negotiatedRpcVersion": 1 } }
 
 [业务调用]
-Client → Server: { "sid": "28378462323", "op": 6, "d": { "requestType": "GetDeviceInfo", "requestId": "00000001" } }
-Server → Client: { "sid": "28378462323", "op": 7, "d": { "requestType": "GetDeviceInfo", "requestId": "00000001", "requestStatus": { "result": true, "code": 100 }, "responseData": { "model": "AX100", "version": "1.0.0" } } }
+Client → Server: { "sid": "28378462323", "op": 6, "d": { "id": 1, "method": "GetDeviceInfo" } }
+Server → Client: { "sid": "28378462323", "op": 7, "d": { "id": 1, "result": { "model": "AX100", "version": "1.0.0" } } }
 
 [断线重连]
 Client → Server: { "sid": "", "op": 1, "d": { "rpcVersion": 1, "resumeSid": "28378462323" } }
@@ -689,19 +686,19 @@ Server → Client: { "sid": "28378462323", "op": 2, "d": { "negotiatedRpcVersion
 
 ## 20. 与 MCP 的兼容性
 
-AXTP RPC 的 op+d 结构与 JSON-RPC 2.0 / MCP 在语义上高度兼容，后期适配 MCP Server 时：
+AXTP RPC 的 `method / id / params / result / error` 字段与 JSON-RPC 2.0 / MCP 高度兼容，后期适配 MCP Server 时：
 
 ```text
-AXTP Request (op=6)          → MCP tool call
-AXTP RequestResponse (op=7)  → MCP tool result / error
-AXTP Event (op=5)            → MCP notification / resource update
+AXTP Request (op=6)          → MCP tool call      (method, params)
+AXTP RequestResponse (op=7)  → MCP tool result    (result / error)
+AXTP Event (op=5)            → MCP notification   (event, data)
 ```
 
 主要差异：
 
-- AXTP 使用 `requestType` + `requestId`（8 位十六进制），MCP 使用 `method` + `id`（需字段重命名）
-- AXTP `requestStatus.code` 使用 AXTP ErrorCode Registry，MCP 使用 JSON-RPC 错误码（需映射）
+- AXTP `id` 为 uint32，MCP `id` 为 string/number（可直接转换）
 - AXTP `sid` 无 MCP 对应物，适配层在 MCP 边界消费
+- AXTP `error.code` 使用 AXTP ErrorCode Registry，MCP 使用 JSON-RPC 错误码（需映射）
 
 ---
 
@@ -745,7 +742,7 @@ RPC Parser 必须满足：
 - 不支持的 rpcEncoding 返回 UNSUPPORTED_ENCODING
 - requestId 必须原样返回，RequestResponse 必须匹配已有 pending request
 - Event 不得被当作 RequestResponse 处理
-- Identified 之前收到 Request 必须返回错误，不得处理业务请求
+- Identified 之前收到 Request 必须返回 error，不得处理业务请求
 - 所有整数解析必须显式处理字节序，不允许直接 reinterpret_cast 网络字节流为 C++ struct
 
 ---
@@ -761,9 +758,9 @@ sid+op+d Envelope（JSON 和 MessagePack）
 Binary Compact RPC Header（8B）
 TLV body encode/decode
 uint32 methodId / eventId
-requestId 8 位十六进制 ↔ uint32 互转
-requestType ↔ methodId 映射
-requestStatus.result / code / comment 结构
+uint32 id（requestId）
+method ↔ methodId 映射 / event ↔ eventId 映射
+result / error.code / error.message / error.data 结构
 ```
 
 ### 24.2 MVP 方法范围
