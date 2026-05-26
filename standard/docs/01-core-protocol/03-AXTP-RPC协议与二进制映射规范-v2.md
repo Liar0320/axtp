@@ -481,7 +481,7 @@ OTA:
 
 MessagePack 模式与 JSON 模式使用完全相同的 op+d 语义，仅将 JSON 对象序列化为 MessagePack 格式。
 
-Frame Header 中 `rpcEncoding = 0x04`（MSGPACK）。
+RPC Payload 首字节 `rpcEncoding = 0x04` 时，后续 Payload 按 MessagePack sid/op/d 对象解析。
 
 MessagePack 优势：
 
@@ -493,79 +493,67 @@ MessagePack 优势：
 
 ## 19. Binary RPC 编码
 
-Binary 模式面向嵌入式设备，使用固定二进制头替代 JSON/MessagePack 文本。
+Binary 模式面向嵌入式设备，使用统一 11B 固定二进制头承载 op+d 语义，不再区分 RPC Standard/Compact Payload。外层 Frame Profile 已经负责 Standard/Compact 的链路开销优化，RPC 层只保留一套固定头。
 
-### 17.1 Binary Standard Payload（14B 固定头）
+### 19.1 Binary Payload（11B 固定头）
 
 | 字段 | 长度 | 类型 | 说明 |
 | --- | ---: | --- | --- |
-| `rpcEncoding` | 1B | uint8 | `0x02`（BINARY） |
+| `rpcEncoding` | 1B | uint8 | 首字节，`0x01=JSON / 0x02=BINARY / 0x03=CBOR / 0x04=MSGPACK` |
 | `rpcOp` | 1B | uint8 | op 值，见 §4 |
-| `flags` | 1B | uint8 | RPC flags，见 §17.3 |
-| `reserved` | 1B | uint8 | 保留，填 0 |
 | `requestId` | 4B | uint32 | 请求 ID，EVENT 填 0 |
-| `methodOrEventId` | 4B | uint32 | methodId 或 eventId（uint32，支持 legacy CmdValue） |
-| `statusCode` | 2B | uint16 | Response 状态码，见 §17.4 |
-| `body` | N | bytes | TLV / CBOR / RAW_BYTES |
+| `methodOrEventId` | 2B | uint16 | methodId 或 eventId |
+| `statusCode` | 2B | uint16 | `0x0000=SUCCESS`，非 0 为 ErrorCode Registry 错误码 |
+| `bodyEncoding` | 1B | uint8 | 仅 `rpcEncoding=BINARY` 时有效，`0x01=TLV8 / 0x02=TLV16 / ...` |
+| `body` | N | bytes | 由 bodyEncoding 决定 |
 
-固定头 14B，所有多字节字段 Little-Endian。body 长度 = `Frame.payloadLength - 14`。
+固定头 11B，所有多字节字段 Little-Endian。body 长度 = `Frame.payloadLength - 11`。
 
-### 17.2 Binary Compact Payload（8B 固定头）
+### 19.2 Parser 分发规则
 
-| 字段 | 长度 | 类型 | 说明 |
-| --- | ---: | --- | --- |
-| `rpcOp` | 1B | uint8 | op 值 |
-| `flags` | 1B | uint8 | RPC flags |
-| `requestId` | 4B | uint32 | 请求 ID，EVENT 填 0 |
-| `methodOrEventId` | 2B | uint16 | methodId 或 eventId（uint16，BLE/HID 场景） |
-| `body` | N | TLV | 默认 TLV body |
+接收方读取 RPC Payload 首字节 `rpcEncoding` 后分发：
 
-Compact 约定：`rpcEncoding=BINARY`，body 为 TLV，body 长度 = `Frame.payloadLength - 8`。不携带 rpcEncoding/reserved/statusCode 字段（statusCode 通过 flags 的 SUCCESS/ERROR 位表达）。
-
-### 17.3 RPC Flags
-
-| Bit | 名称 | 说明 |
-| ---: | --- | --- |
-| 0 | `SUCCESS` | Response 成功 |
-| 1 | `ERROR` | Response 失败 |
-| 2 | `HAS_BODY` | 存在 body |
-| 3 | `ONEWAY` | 单向调用，不要求响应 |
-| 4-7 | `RESERVED` | 保留，置 0 |
-
-SUCCESS 与 ERROR 不应同时置 1；RESPONSE 必须设置 SUCCESS 或 ERROR 之一；EVENT 只根据是否有数据设置 HAS_BODY。
-
-### 17.4 statusCode
-
-| statusCode | 名称 |
+| rpcEncoding | Parser |
 | ---: | --- |
-| `0x0000` | `NONE` |
-| `0x0064` | `SUCCESS` |
-| `0x0100` | `UNKNOWN_ERROR` |
-| `0x0101` | `INVALID_REQUEST` |
-| `0x0102` | `METHOD_NOT_FOUND` |
-| `0x0103` | `INVALID_PARAMS` |
-| `0x0104` | `UNSUPPORTED_ENCODING` |
-| `0x0105` | `UNSUPPORTED_METHOD` |
-| `0x0106` | `DEVICE_BUSY` |
-| `0x0107` | `TIMEOUT` |
-| `0x0108` | `PERMISSION_DENIED` |
-| `0x0109` | `RESOURCE_NOT_FOUND` |
-| `0x010A` | `INTERNAL_ERROR` |
+| `0x01` JSON | JSON sid/op/d parser |
+| `0x02` BINARY | Binary 11B header parser |
+| `0x03` CBOR | CBOR sid/op/d parser |
+| `0x04` MSGPACK | MessagePack sid/op/d parser |
 
-Binary RESPONSE 中 statusCode 与 JSON/MessagePack 中 `error.code` 对应。
+JSON/CBOR/MSGPACK 模式下不使用 Binary 11B Header，`bodyEncoding` 字段不存在。若某个实现为了统一内部缓冲结构保留 `bodyEncoding`，必须填 `0x00` 并在编码输出时忽略。
 
-### 17.5 Binary 与 op+d 语义映射
+### 19.3 bodyEncoding
+
+| bodyEncoding | 名称 | 说明 |
+| ---: | --- | --- |
+| `0x00` | `NONE` | 无 body，或非 Binary 编码内部占位 |
+| `0x01` | `TLV8` | `fieldId:uint8 + length:uint8 + value` |
+| `0x02` | `TLV16` | 支持扩展长度的 TLV |
+| `0x03` | `RAW_BYTES` | 原始字节，由 method schema 或 profile 解释 |
+| `0x04` | `CBOR_BODY` | Binary RPC 内部使用 CBOR body |
+
+MVP 必须实现 `NONE` 和 `TLV8`。`bodyEncoding` 只在 `rpcEncoding=BINARY` 时有语义。
+
+### 19.4 statusCode
+
+`statusCode` 复用 ErrorCode Registry：
+
+- Request / Event：必须填 `0x0000`
+- Response 成功：必须填 `0x0000`
+- Response 失败：填 ErrorCode Registry 中的非 0 错误码
+
+Binary RESPONSE 中 `statusCode` 与 JSON/MessagePack 中 `error.code` 直接对应，不再维护独立 RPC statusCode 表。
+
+### 19.5 Binary 与 op+d 语义映射
 
 | op+d 字段 | Binary 字段 | 说明 |
 | --- | --- | --- |
 | `op` | `rpcOp` | 直接对应 |
 | `d.id` | `requestId` | uint32，Event 填 0 |
-| `d.method` | `methodOrEventId` | 方法名映射到 uint32 methodId |
-| `d.event` | `methodOrEventId` | 事件名映射到 uint32 eventId |
-| `d.intent` | `reserved`（暂用） | 订阅分类位，Binary 暂不单独携带，由 Stream Context 或 Registry 推导 |
+| `d.method` | `methodOrEventId` | 方法名映射到 uint16 methodId |
+| `d.event` | `methodOrEventId` | 事件名映射到 uint16 eventId |
+| `d.intent` | body 或本地订阅上下文 | Binary 固定头不携带 intent |
 | `d.params` / `d.result` / `d.data` | `body` | JSON object ↔ TLV |
-| `d.result` 存在 | `flags.SUCCESS = 1` | 成功 |
-| `d.error` 存在 | `flags.ERROR = 1` | 失败 |
 | `d.error.code` | `statusCode` | 错误码 |
 
 ---
@@ -657,17 +645,17 @@ Response 失败：
 }
 ```
 
-### 19.3 SetBrightness（Binary Compact）
+### 21.3 SetBrightness（Binary）
 
 ```text
 Request:
-07 04 01 00 00 00 02 06 01 01 50
-rpcOp=Request(7), flags=HAS_BODY(4), requestId=1, methodId=0x0602
+02 07 01 00 00 00 02 06 00 00 01 01 01 50
+rpcEncoding=BINARY(2), rpcOp=Request(7), requestId=1, methodId=0x0602, statusCode=SUCCESS, bodyEncoding=TLV8
 body: fieldId=1, len=1, value=80
 
 Response 成功:
-08 05 01 00 00 00 02 06 01 01 50
-rpcOp=RequestResponse(8), flags=SUCCESS|HAS_BODY(5), requestId=1, methodId=0x0602
+02 08 01 00 00 00 02 06 00 00 01 01 01 50
+rpcEncoding=BINARY(2), rpcOp=RequestResponse(8), requestId=1, methodId=0x0602, statusCode=SUCCESS, bodyEncoding=TLV8
 body: fieldId=1, len=1, value=80
 ```
 
@@ -778,17 +766,17 @@ AXTP Event (op=6)            → MCP notification   (event, data)
 
 ## 23. 老协议 CmdValue 适配
 
-旧协议 CmdValue 可直接映射为 AXTP methodId（uint32），不建议推翻旧命令表重新编号。
+旧协议 CmdValue 不直接塞进 AXTP `methodId:uint16`。兼容层必须通过 Legacy Mapping 将旧 CmdValue 映射到 AXTP MethodId，并在边界处完成 payload/status 转换。
 
 ```yaml
 legacyMappings:
   - legacyCmdValue: 0xC0021
-    axtpMethodId: 0xC0021
+    axtpMethodId: 0x0B02
     axtpMethodName: SetVideoMode
     bodyEncoding: FIXED_STRUCT
 ```
 
-Binary Standard Payload 使用 uint32 methodOrEventId，可直接容纳超过 0xFFFF 的旧 CmdValue。Binary Compact Payload 使用 uint16，超出范围时需建立 legacyMethodAlias 映射。
+Binary Payload 使用 uint16 methodOrEventId。超出 0xFFFF 的旧 CmdValue 必须通过 `legacy_mapping.yaml` 建立唯一映射，不得改变 AXTP MethodId 宽度。
 
 ---
 
@@ -829,9 +817,9 @@ RPC Parser 必须满足：
 rpcEncoding = JSON / BINARY
 op = Hello(0) / Identify(2) / Identified(3) / Event(6) / Request(7) / RequestResponse(8)
 sid+op+d Envelope（JSON 和 MessagePack）
-Binary Compact RPC Header（8B）
+Binary RPC Header（11B）
 TLV body encode/decode
-uint32 methodId / eventId
+uint16 methodId / eventId
 uint32 id（requestId）
 method ↔ methodId 映射 / event ↔ eventId 映射
 result / error.code / error.message / error.data 结构
