@@ -81,8 +81,8 @@ op 数值与老协议对齐，生命周期 op 保留为独立 op。
 | `8` | `RequestResponse` | Server→Client | 返回 RPC 结果 |
 | `9` | `RequestBatch` | Client→Server | 批量 RPC 请求 |
 | `10` | `RequestBatchResponse` | Server→Client | 批量 RPC 响应 |
-| `11` | `Cancel` | Client→Server | 取消进行中的请求（AXTP 扩展） |
-| `12` | `Progress` | Server→Client | 长操作进度通知（AXTP 扩展） |
+| `11` | — | — | **Reserved**，保留未分配 |
+| `12` | — | — | **Reserved**，保留未分配 |
 | `14` | `Bye` | Client→Server | 应用层优雅关闭，可携带关闭原因 |
 | `15` | `ByeAck` | Server→Client | 确认关闭，服务端完成清理后发送 |
 
@@ -381,41 +381,7 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 
 ---
 
-## 14. Cancel（op=11）
-
-```json
-{
-  "sid": "28378462323",
-  "op": 11,
-  "d": {
-    "id": 1
-  }
-}
-```
-
-取消 `requestId` 对应的进行中请求。服务端可忽略已完成的请求。
-
----
-
-## 15. Progress（op=12）
-
-```json
-{
-  "sid": "28378462323",
-  "op": 12,
-  "d": {
-    "id": 1,
-    "progress": 45,
-    "message": "Verifying firmware..."
-  }
-}
-```
-
-用于长操作（如 OTA verify）的中间进度通知，不替代最终 RequestResponse。
-
----
-
-## 16. 方法名与事件名规范
+## 14. 方法名与事件名规范
 
 ### 16.1 方法名
 
@@ -442,7 +408,7 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 
 ---
 
-## 17. 会话生命周期
+## 15. 会话生命周期
 
 AXTP 将会话生命周期分为两层，两层职责严格分离：
 
@@ -473,7 +439,7 @@ Unframed 模式（WebSocket Text / MessagePack）下，CONTROL 层不存在，He
 
 ---
 
-## 18. 事件订阅
+## 16. 事件订阅
 
 低频状态事件走 RPC Event（op=6），高频连续数据走 STREAM。
 
@@ -489,7 +455,7 @@ Unframed 模式（WebSocket Text / MessagePack）下，CONTROL 层不存在，He
 
 ---
 
-## 19. RPC 与 STREAM 的协作
+## 17. RPC 与 STREAM 的协作
 
 ```text
 OTA:
@@ -511,7 +477,7 @@ OTA:
 
 ---
 
-## 16. MessagePack 编码
+## 18. MessagePack 编码
 
 MessagePack 模式与 JSON 模式使用完全相同的 op+d 语义，仅将 JSON 对象序列化为 MessagePack 格式。
 
@@ -525,7 +491,7 @@ MessagePack 优势：
 
 ---
 
-## 17. Binary RPC 编码
+## 19. Binary RPC 编码
 
 Binary 模式面向嵌入式设备，使用固定二进制头替代 JSON/MessagePack 文本。
 
@@ -604,7 +570,7 @@ Binary RESPONSE 中 statusCode 与 JSON/MessagePack 中 `error.code` 对应。
 
 ---
 
-## 18. TLV Body 编码
+## 20. TLV Body 编码
 
 TLV 基本结构：`type(1B) + length(1B) + value(N)`，扩展长度由 TLV Schema 文档定义。
 
@@ -620,7 +586,7 @@ TLV body:    01 01 50
 
 ---
 
-## 19. 完整示例
+## 21. 完整示例
 
 ### 19.1 SetBrightness（JSON）
 
@@ -792,7 +758,7 @@ Server → Client:
 
 ---
 
-## 20. 与 MCP 的兼容性
+## 22. 与 MCP 的兼容性
 
 AXTP RPC 的 `method / id / params / result / error` 字段与 JSON-RPC 2.0 / MCP 高度兼容，后期适配 MCP Server 时：
 
@@ -810,7 +776,7 @@ AXTP Event (op=6)            → MCP notification   (event, data)
 
 ---
 
-## 21. 老协议 CmdValue 适配
+## 23. 老协议 CmdValue 适配
 
 旧协议 CmdValue 可直接映射为 AXTP methodId（uint32），不建议推翻旧命令表重新编号。
 
@@ -826,7 +792,7 @@ Binary Standard Payload 使用 uint32 methodOrEventId，可直接容纳超过 0x
 
 ---
 
-## 22. requestId 与 messageId 的边界
+## 24. requestId 与 messageId 的边界
 
 | 字段 | 所属层 | 作用 |
 | --- | --- | --- |
@@ -840,7 +806,7 @@ Binary Standard Payload 使用 uint32 methodOrEventId，可直接容纳超过 0x
 
 ---
 
-## 23. 安全与鲁棒性要求
+## 25. 安全与鲁棒性要求
 
 RPC Parser 必须满足：
 
@@ -855,9 +821,9 @@ RPC Parser 必须满足：
 
 ---
 
-## 24. MVP 实现范围
+## 26. MVP 实现范围
 
-### 24.1 必须实现
+### 26.1 必须实现
 
 ```text
 rpcEncoding = JSON / BINARY
@@ -871,7 +837,7 @@ method ↔ methodId 映射 / event ↔ eventId 映射
 result / error.code / error.message / error.data 结构
 ```
 
-### 24.2 MVP 方法范围
+### 26.2 MVP 方法范围
 
 ```text
 device.getInfo / capability.getAll
@@ -880,7 +846,7 @@ firmware.begin / firmware.verify / firmware.apply
 stream.open / stream.close
 ```
 
-### 24.3 MVP 事件范围
+### 26.3 MVP 事件范围
 
 ```text
 device.statusChanged / brightness.changed
@@ -888,18 +854,19 @@ firmware.updateProgress / firmware.updateCompleted / firmware.updateFailed
 stream.opened / stream.closed / stream.error
 ```
 
-### 24.4 可暂不实现
+### 26.4 可暂不实现
 
 ```text
-RequestBatch / RequestBatchResponse / Cancel / Progress
+RequestBatch / RequestBatchResponse
 Reidentify
+Bye / ByeAck
 MessagePack / CBOR
 压缩 body / 加密 body
 ```
 
 ---
 
-## 25. 版本与兼容策略
+## 27. 版本与兼容策略
 
 新增 methodId/eventId 不需要修改 RPC 协议版本，只需更新 Registry 和 Generator 输出。
 
@@ -911,7 +878,7 @@ MessagePack / CBOR
 
 ---
 
-## 26. 与后续文档的关系
+## 28. 与后续文档的关系
 
 | 文档 | 关系 |
 | --- | --- |
