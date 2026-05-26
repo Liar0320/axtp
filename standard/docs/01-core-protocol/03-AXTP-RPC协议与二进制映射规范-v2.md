@@ -274,6 +274,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 ```json
 {
   "event": "BrightnessChanged",
+  "intent": 1,
   "data": {
     "value": 80,
     "source": "local"
@@ -284,6 +285,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
 | `event` | string | 是 | 事件名，PascalCase，对应 Registry eventId |
+| `intent` | uint32 | 是 | 订阅分类位，对应 Identify `eventSubscriptions` 位图中的某一位，客户端用于过滤 |
 | `data` | object | 否 | 事件数据，无数据时可省略 |
 
 Event 不携带 `id`（Binary 中 requestId 填 0）。
@@ -291,7 +293,7 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 ### 11.1 示例
 
 ```json
-{ "sid": "28378462323", "op": 5, "d": { "event": "BrightnessChanged", "data": { "value": 80, "source": "local" } } }
+{ "sid": "28378462323", "op": 5, "d": { "event": "BrightnessChanged", "intent": 1, "data": { "value": 80, "source": "local" } } }
 ```
 
 ---
@@ -544,6 +546,7 @@ Binary RESPONSE 中 statusCode 与 JSON/MessagePack 中 `error.code` 对应。
 | `d.id` | `requestId` | uint32，Event 填 0 |
 | `d.method` | `methodOrEventId` | 方法名映射到 uint32 methodId |
 | `d.event` | `methodOrEventId` | 事件名映射到 uint32 eventId |
+| `d.intent` | `reserved`（暂用） | 订阅分类位，Binary 暂不单独携带，由 Stream Context 或 Registry 推导 |
 | `d.params` / `d.result` / `d.data` | `body` | JSON object ↔ TLV |
 | `d.result` 存在 | `flags.SUCCESS = 1` | 成功 |
 | `d.error` 存在 | `flags.ERROR = 1` | 失败 |
@@ -592,7 +595,7 @@ Response 失败：
 ### 19.2 BrightnessChanged（JSON Event）
 
 ```json
-{ "sid": "28378462323", "op": 5, "d": { "event": "BrightnessChanged", "data": { "value": 80, "source": "local" } } }
+{ "sid": "28378462323", "op": 5, "d": { "event": "BrightnessChanged", "intent": 1, "data": { "value": 80, "source": "local" } } }
 ```
 
 ### 19.3 SetBrightness（Binary Compact）
@@ -657,6 +660,7 @@ Response：
   "op": 5,
   "d": {
     "event": "FirmwareUpdateCompleted",
+    "intent": 4,
     "data": {
       "imageType": "mcu",
       "version": "2.1.0"
