@@ -517,6 +517,8 @@ WINDOW_UPDATE
 ```text
 PayloadType = CONTROL 不表示无 payload；
 它表示 Frame Payload 必须交给 ControlParser 解析。
+Control Payload 使用统一 5B 固定头（opcode/controlId/statusCode + TLV body），
+不区分 Standard/Compact Frame Profile，所有传输场景共用同一结构。
 ```
 
 ---
@@ -634,7 +636,7 @@ MVP Scope
 ```text
 WebSocket Text DS-RPC Profile
 WebSocket Binary AXTP Frame
-HID Compact Profile
+HID（Standard Profile，含 Compact 降级协商）
 BLE Compact Profile
 OTA Stream Demo
 Mock Transport
@@ -871,7 +873,7 @@ Client -> Server: CONTROL OPEN
 Server -> Client: CONTROL ACCEPT
 ```
 
-目标：验证 `PayloadType = CONTROL`、Control Payload、TLV body、sessionId、MTU、Profile、心跳参数。
+目标：验证 `PayloadType = CONTROL`、Control Payload 统一 5B 固定头、TLV body、sessionId、MTU、Frame Profile 协商、心跳参数。
 
 ---
 

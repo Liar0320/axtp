@@ -14,9 +14,15 @@ AXTP v1 只有一条正式生产路径：
 ```text
 AXTP Framed Mode
   PayloadType = CONTROL / RPC / STREAM
-  WebSocket Binary / TCP / USB Bulk → Standard Profile
-  HID / BLE / UART → Compact Profile
+  WebSocket Binary / TCP / USB Bulk → Standard Frame Profile
+  HID / BLE / UART → Compact Frame Profile
 ```
+
+**L2 Payload Header 说明：**
+
+- Control Payload：统一 5B 固定头（opcode/controlId/statusCode + TLV body），所有传输场景共用，不区分 Standard/Compact
+- RPC Binary Payload：统一 11B 固定头，所有传输场景共用
+- STREAM Payload：Standard 16B / Compact 8B，在 RPC 建流阶段协商
 
 WebSocket Text / HTTP JSON 只作为 Debug 或 Legacy Adapter，不承载正式 STREAM，不参与 CONTROL ACK/NACK / RESUME，不作为生产客户端必须实现的协议路径。
 
@@ -24,11 +30,11 @@ WebSocket Text / HTTP JSON 只作为 Debug 或 Legacy Adapter，不承载正式 
 
 ## 2. 场景总览
 
-| 场景 | 传输层 | Profile | 拓扑 | 典型用途 |
+| 场景 | 传输层 | Frame Profile | 拓扑 | 典型用途 |
 | --- | --- | --- | --- | --- |
 | A | TCP | Standard | 直连 | PC App ↔ 设备 |
 | B | WebSocket Binary | Standard | 直连 | Web App / Native App ↔ 设备 |
-| C | USB HID | Compact | 直连 | PC ↔ USB 设备 |
+| C | USB HID | Standard（默认）/ Compact（协商降级） | 直连 | PC ↔ USB 设备 |
 | D | BLE GATT | Compact | 直连 | 手机 ↔ 蓝牙设备（含断线重连） |
 | E | UART + COBS | Compact | 直连 | MCU ↔ 主控 |
 | F | WebSocket Binary → BLE/HID | Standard + Compact | 网关中继 | App ↔ 网关 ↔ 设备 |
@@ -115,13 +121,15 @@ WebSocket Text / HTTP JSON Debug Adapter：WebSocket 升级或 HTTP 认证完成
 Client → Server: TCP SYN / SYN-ACK / ACK
 Client → Server: CONTROL OPEN
   [Standard Frame] Magic=AX Ver=1 PT=0x01
-  body: protocolVersion=1, headerProfile=STANDARD, maxFrameSize=4096,
-        mtu=1460, supportedPayloadTypes=0x07, supportedRpcEncodings=0x03,
-        heartbeatIntervalMs=30000, ackMode=NO_ACK
+  opcode=OPEN controlId=0x0001 statusCode=0x0000
+  body TLV: protocolVersion=1, headerProfile=STANDARD, maxFrameSize=4096,
+            mtu=1460, supportedPayloadTypes=0x07, supportedRpcEncodings=0x03,
+            heartbeatIntervalMs=30000, ackMode=NO_ACK
 Server → Client: CONTROL ACCEPT
-  body: sessionId=0x12345678, protocolVersion=1, headerProfile=STANDARD,
-        maxFrameSize=4096, selectedRpcEncoding=BINARY,
-        heartbeatIntervalMs=30000, ackMode=NO_ACK, resumeToken=<token>
+  opcode=ACCEPT controlId=0x0001 statusCode=0x0000
+  body TLV: sessionId=0x12345678, protocolVersion=1, headerProfile=STANDARD,
+            maxFrameSize=4096, selectedRpcEncoding=BINARY,
+            heartbeatIntervalMs=30000, ackMode=NO_ACK, resumeToken=<token>
 [State: FRAMING_READY]
 ```
 
@@ -252,34 +260,47 @@ Server → Client: HTTP 101 Switching Protocols
 
 ---
 
-## 6. 场景 C：USB HID 直连（Compact Profile）
+## 6. 场景 C：USB HID 直连
 
 ### 6.1 Profile 选择
 
 | 项目 | 选择 |
 | --- | --- |
-| Header Profile | Compact（HID Report 有固定边界，无需 Magic） |
-| 可用 Payload | 58B（64B - 4B Header - 1B CRC8 - 1B ReportID） |
-| CRC | CRC8-MAXIM |
+| Frame Header Profile | Standard（默认）；Report Size ≤ 64B 时通过 CONTROL OPEN 协商降级为 Compact |
+| 可用 Payload（Standard，64B Report） | 48B（64B - 12B Header - 2B CRC16 - 1B ReportID - 1B padding） |
+| 可用 Payload（Compact，64B Report） | 58B（64B - 4B Header - 1B CRC8 - 1B ReportID） |
+| CRC | Standard: CRC16-CCITT-FALSE；Compact: CRC8-MAXIM |
 | rpcEncoding | BINARY + TLV |
 | ackMode | ON_DEMAND_ACK（HID 无内建可靠性） |
-| 分片 | 最多 15 片（Compact FrameIndex/FrameCount 各 4 bit） |
+| 分片 | Standard: 最多 254 片；Compact: 最多 15 片（FrameIndex/FrameCount 各 4 bit） |
 
 ### 6.2 完整调用流程
 
-**Session 建立：**
+**Session 建立（Standard，Report Size > 64B 或默认）：**
 
 ```text
 Host → Device: HID Report [CONTROL OPEN]
-  [Compact Frame] VT=0x11 Len=N MsgId=0x01 FrameInfo=0x11
-  body: protocolVersion=1, headerProfile=COMPACT, maxFrameSize=58,
-        mtu=58, supportedPayloadTypes=0x03, heartbeatIntervalMs=5000,
-        ackMode=ON_DEMAND_ACK
+  [Standard Frame] Magic=AX Ver=1 PT=0x01
+  opcode=OPEN controlId=0x0001 statusCode=0x0000
+  body TLV: protocolVersion=1, headerProfile=STANDARD, maxFrameSize=<report_size>,
+            supportedProfiles=[STANDARD,COMPACT], mtu=<report_size>,
+            supportedPayloadTypes=0x07, heartbeatIntervalMs=5000, ackMode=ON_DEMAND_ACK
 Device → Host: HID Report [CONTROL ACCEPT]
-  body: sessionId=0x00000001, protocolVersion=1, headerProfile=COMPACT,
-        maxFrameSize=58, selectedRpcEncoding=BINARY,
-        heartbeatIntervalMs=5000, ackMode=ON_DEMAND_ACK
+  opcode=ACCEPT controlId=0x0001 statusCode=0x0000
+  body TLV: sessionId=0x00000001, protocolVersion=1, headerProfile=STANDARD,
+            maxFrameSize=<report_size>, selectedRpcEncoding=BINARY,
+            heartbeatIntervalMs=5000, ackMode=ON_DEMAND_ACK
 [State: FRAMING_READY]
+```
+
+**Profile 降级协商（Report Size ≤ 64B）：**
+
+```text
+Host → Device: CONTROL OPEN
+  body TLV: maxFrameSize=64, supportedProfiles=[STANDARD,COMPACT], ...
+Device → Host: CONTROL ACCEPT
+  body TLV: headerProfile=COMPACT, maxFrameSize=58, ...
+[后续帧使用 Compact Frame Profile]
 ```
 
 **分片示例（capability.getAll 响应超过 58B）：**
@@ -326,22 +347,23 @@ Host → Device: STREAM chunk seqId=1 [48B data]
 ### 6.4 关键约束
 
 ```text
-1. Compact Profile 无 Magic，依赖 HID Report 边界定位帧头；
-2. 每个 HID Report 承载一个 Compact Frame（含分片），不跨 Report 拼接；
-3. Compact FrameCount 最大 15，单个 Message 最大 15 × 58B = 870B；
-4. 超过 870B 的数据必须通过 STREAM seqId/cursor 分块，不能依赖 Frame 分片；
-5. OTA chunkSize 应适配 HID 可用 Payload（≤ 58B - STREAM Header 16B = 42B）；
+1. HID Report 边界即帧边界，Standard Profile 依赖 Magic 做额外校验，Compact Profile 依赖 Report 边界；
+2. 每个 HID Report 承载一个 Frame（含分片），不跨 Report 拼接；
+3. Compact FrameCount 最大 15，单个 Message 最大 15 × 58B = 870B；Standard 无此限制；
+4. 超过单 Message 上限的数据必须通过 STREAM seqId/cursor 分块；
+5. OTA chunkSize 应适配 HID 可用 Payload（Standard: ≤ 32B；Compact: ≤ 42B，扣除 STREAM Header 16B）；
 6. HID 心跳间隔推荐 1s-5s。
 ```
 
 ---
-## 7. 场景 D：BLE GATT 直连（Compact Profile，含断线重连）
+
+## 7. 场景 D：BLE GATT 直连（Compact Frame Profile，含断线重连）
 
 ### 7.1 Profile 选择
 
 | 项目 | 选择 |
 | --- | --- |
-| Header Profile | Compact（ATT 有固定帧边界） |
+| Frame Header Profile | Compact（ATT 有固定帧边界） |
 | 可用 Payload | ~179B（185B ATT MTU - 4B Header - 1B CRC8 - 1B ATT opcode） |
 | CRC | CRC8-MAXIM |
 | ackMode | ON_DEMAND_ACK |
@@ -363,13 +385,15 @@ Central → Peripheral: ATT MTU Exchange (185B)
 
 ```text
 Central → Peripheral: BLE ATT Write [CONTROL OPEN]
-  VT=0x11 Len=N MsgId=0x01 FrameInfo=0x11
-  body: protocolVersion=1, headerProfile=COMPACT, maxFrameSize=179,
-        mtu=179, supportedPayloadTypes=0x07,
-        heartbeatIntervalMs=10000, ackMode=ON_DEMAND_ACK
+  [Compact Frame] VT=0x11 Len=N MsgId=0x01 FrameInfo=0x11
+  opcode=OPEN controlId=0x0001 statusCode=0x0000
+  body TLV: protocolVersion=1, headerProfile=COMPACT, maxFrameSize=179,
+            mtu=179, supportedPayloadTypes=0x07,
+            heartbeatIntervalMs=10000, ackMode=ON_DEMAND_ACK
 Peripheral → Central: BLE ATT Notify [CONTROL ACCEPT]
-  body: sessionId=0xABCD1234, resumeToken=<16B token>,
-        heartbeatIntervalMs=10000, ackMode=ON_DEMAND_ACK
+  opcode=ACCEPT controlId=0x0001 statusCode=0x0000
+  body TLV: sessionId=0xABCD1234, resumeToken=<16B token>,
+            heartbeatIntervalMs=10000, ackMode=ON_DEMAND_ACK
 [State: FRAMING_READY]
 (resumeToken 保存到本地，用于断线恢复)
 ```
@@ -443,7 +467,7 @@ UART 字节流结构：
 
 | 项目 | 选择 |
 | --- | --- |
-| Header Profile | Compact（MCU 内存极小） |
+| Frame Header Profile | Compact（MCU 内存极小） |
 | 帧边界 | COBS + 0x00 分隔符 |
 | CRC | CRC8-MAXIM |
 | rpcEncoding | BINARY + TLV |
@@ -456,11 +480,13 @@ UART 字节流结构：
 
 ```text
 Host → Device: UART [0x00 + COBS(CONTROL OPEN) + 0x00]
-  解 COBS 后: VT=0x11 Len=N MsgId=0x01 FrameInfo=0x11
-  body: protocolVersion=1, headerProfile=COMPACT, maxFrameSize=128,
+  解 COBS 后: [Compact Frame] VT=0x11 Len=N MsgId=0x01 FrameInfo=0x11
+  opcode=OPEN controlId=0x0001 statusCode=0x0000
+  body TLV: protocolVersion=1, headerProfile=COMPACT, maxFrameSize=128,
         mtu=128, heartbeatIntervalMs=2000, ackMode=ON_DEMAND_ACK
 Device → Host: UART [0x00 + COBS(CONTROL ACCEPT) + 0x00]
-  body: sessionId=0x00000001, heartbeatIntervalMs=2000
+  opcode=ACCEPT controlId=0x0001 statusCode=0x0000
+  body TLV: sessionId=0x00000001, heartbeatIntervalMs=2000
 [State: FRAMING_READY]
 ```
 
@@ -820,17 +846,19 @@ Adapter → Legacy Client: 旧 OTA Chunk ACK
 ---
 ## 13. 场景对比总结
 
-### 13.1 Profile 选择速查
+### 13.1 Frame Profile 选择速查
 
-| 传输层 | Profile | 理由 |
+| 传输层 | Frame Profile | 理由 |
 | --- | --- | --- |
 | TCP | Standard | 字节流需要 Magic 同步；带宽充足 |
 | WebSocket Binary | Standard | 消息边界由 WS 提供，但 Standard 保持一致性 |
-| USB HID | Compact | Report 边界固定，无需 Magic；节省 Report 空间 |
+| USB HID | Standard（默认）；Report Size ≤ 64B 时协商降级 Compact | Report 边界固定；Standard 优先，带宽紧张时降级 |
 | BLE GATT | Compact | ATT 边界固定；MTU 小，节省开销 |
 | UART | Compact + COBS | 无边界，需传输层 framing；MCU 内存小 |
 | 网关（App 侧） | Standard | 需要 SourceId/DestinationId 路由 |
-| 网关（Device 侧） | Compact | 取决于 Device 传输层 |
+| 网关（Device 侧） | 取决于 Device 传输层 | BLE/UART → Compact；TCP/WS → Standard |
+
+> Control Payload 固定 5B 头，不随 Frame Profile 变化。STREAM Payload 的 Standard/Compact 在 RPC 建流时单独协商。
 
 ### 13.2 Session 恢复能力
 

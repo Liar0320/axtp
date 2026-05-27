@@ -40,12 +40,12 @@ CONTROL CLOSE / CLOSE_ACK
 
 MVP Demo 必须支持以下两种运行方式：
 
-| 传输 | Header Profile | Frame CRC | 说明 |
-|---|---|---|---|
-| WebSocket Binary / TCP | Standard | CRC16 | 使用 `AX` Magic 与 12B Header |
-| HID / BLE | Compact | CRC8 | 使用 4B Header，依赖底层 packet boundary |
+| 传输 | Frame Header Profile | Frame CRC | Control Payload | 说明 |
+| --- | --- | --- | --- | --- |
+| WebSocket Binary / TCP | Standard | CRC16 | 统一 5B 固定头 | 使用 `AX` Magic 与 12B Frame Header |
+| HID / BLE | Compact（或 Standard 降级） | CRC8 | 统一 5B 固定头 | 使用 4B Frame Header，依赖底层 packet boundary |
 
-业务流程完全相同。差异只存在于外层 Frame Profile、CRC Footer、PayloadLength/MessageId wire 宽度和底层 MTU。
+业务流程完全相同。差异只存在于外层 Frame Profile、CRC Footer、PayloadLength/MessageId wire 宽度和底层 MTU。Control Payload 结构在所有场景下相同。
 
 ---
 
@@ -294,8 +294,8 @@ Device 返回 CONTROL CLOSE_ACK。双方进入 CLOSED 状态。
 实现必须通过以下场景：
 
 ```text
-1. Standard Profile 跑通完整流程；
-2. Compact Profile 跑通完整流程；
+1. Standard Frame Profile 跑通完整流程；
+2. Compact Frame Profile 跑通完整流程；
 3. Standard CRC16 错误帧被拒绝；
 4. Compact CRC8 错误帧被拒绝；
 5. Compact MessageId > 0xFF 序列化失败；
@@ -303,5 +303,6 @@ Device 返回 CONTROL CLOSE_ACK。双方进入 CLOSED 状态。
 7. STREAM chunk 缺失时返回 CONTROL NACK；
 8. sessionId 只存在于 Session Context；
 9. CLOSE / CLOSE_ACK 后拒绝新的 RPC / STREAM；
-10. Demo 不依赖任何 Legacy/Outdated 文档字段。
+10. Control Payload 使用统一 5B 固定头，两种 Frame Profile 下结构相同；
+11. Demo 不依赖任何 Legacy/Outdated 文档字段。
 ```

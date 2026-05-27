@@ -641,22 +641,19 @@ enum class BodyEncoding : uint8_t {
     TLV  = 0x01,
 };
 
+// Control Payload 统一 5B 固定头：opcode(1) + controlId(2) + statusCode(2) + body(N, TLV)
+// 不区分 Standard/Compact，所有传输场景共用同一结构
 struct ControlMessage {
     ControlOpcode opcode = ControlOpcode::OPEN;
-    uint8_t flags = 0;
     uint16_t controlId = 0;
     ErrorCode statusCode = ErrorCode::OK;
-    BodyEncoding bodyEncoding = BodyEncoding::TLV;
-    Bytes body;
+    Bytes body;  // TLV 编码，长度 = Frame.payloadLength - 5
 };
 
 class ControlCodec {
 public:
-    static Result<Bytes> encodeStandard(const ControlMessage& msg);
-    static Result<ControlMessage> decodeStandard(const uint8_t* data, size_t len);
-
-    static Result<Bytes> encodeCompact(const ControlMessage& msg);
-    static Result<ControlMessage> decodeCompact(const uint8_t* data, size_t len);
+    static Result<Bytes> encode(const ControlMessage& msg);
+    static Result<ControlMessage> decode(const uint8_t* data, size_t len);
 };
 
 } // namespace axtp
@@ -676,7 +673,7 @@ body.putU16(0x0A, 1000);   // heartbeat interval
 ControlMessage hello;
 hello.opcode = ControlOpcode::OPEN;
 hello.controlId = 1;
-hello.bodyEncoding = BodyEncoding::TLV;
+hello.statusCode = ErrorCode::OK;
 hello.body = body.bytes();
 ```
 
@@ -1302,7 +1299,7 @@ Compact MessageId > 0xFF serialization failure
 Compact PayloadLength > 0xFF serialization failure
 Standard CRC16 error frame rejection
 Compact CRC8 error frame rejection
-Control encode/decode
+Control encode/decode（统一 5B 固定头，Standard/Compact Frame 下结构相同）
 RPC encode/decode
 Stream encode/decode
 Legacy mapping
@@ -1476,7 +1473,7 @@ ota_stream_demo
 
 ```text
 WebSocket Binary demo
-HID Compact mock demo
+HID mock demo（Standard Profile，含 Compact 降级协商）
 BLE Compact mock demo
 Legacy Adapter demo
 测试向量自动加载

@@ -132,15 +132,21 @@ AXTP v1 定义两种 Header Profile：
 | CRC | CRC16-CCITT-FALSE（2B Footer） | CRC8-MAXIM（1B Footer） | |
 | **总帧开销** | **14B** | **5B** | |
 
-两种 Profile 均不包含 Flags 字段。ACK 模式在 OPEN 协商中确定；压缩/加密在 bodyEncoding 或 OPEN 协商中表达；这些信息不需要 per-frame 标志位。
+两种 Profile 均不包含 Flags 字段。ACK 模式在 OPEN 协商中确定；压缩/加密在 OPEN 协商中表达；这些信息不需要 per-frame 标志位。
 
-**Profile 选择原则：**
+**L2 Payload Header 与 Frame Profile 的关系：**
 
-| 场景 | 推荐 Profile |
+- **Control Payload**：统一 5B 固定头（opcode/controlId/statusCode + TLV body），不区分 Standard/Compact，所有传输场景共用同一结构
+- **RPC Binary Payload**：统一 11B 固定头，不区分 Standard/Compact
+- **STREAM Payload**：Standard 16B / Compact 8B，在 RPC 建流阶段协商，是唯一保留 L2 Profile 区分的 Payload 类型
+
+**Frame Profile 选择原则：**
+
+| 场景 | 推荐 Frame Profile |
 |---|---|
 | TCP / WebSocket Binary / USB Bulk / 网关 | Standard |
 | BLE GATT / UART 点对点 / MCU 内存极小 | Compact |
-| USB HID Report | Standard 或 Compact |
+| USB HID Report | Standard（默认）；Report Size ≤ 64B 时可协商降级为 Compact |
 
 ---
 
@@ -478,6 +484,8 @@ PayloadLength 校验 / CRC16 与 CRC8 校验
 MessageId 生成 / 未分片 Message 收发 / 基础 Fragment 重组
 基础错误码返回 / 基础测试向量
 ```
+
+> Control Payload 使用统一 5B 固定头，不需要区分 Standard/Compact 实现。
 
 可暂不实现（但规范中必须保留扩展点）：
 
