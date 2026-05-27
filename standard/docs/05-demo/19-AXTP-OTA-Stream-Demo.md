@@ -102,7 +102,7 @@ OTA Demo 中建议至少有三层校验：
 |---|---|---|
 | Frame 层 | CRC16 | 校验单个 AXTP Frame |
 | Chunk 层 | chunkCrc32 | 校验单个 OTA chunk |
-| Image 层 | imageHash / sha256 | 校验完整固件镜像 |
+| Image 层 | verifyType / verifyValue | 校验完整固件镜像，算法由 capability 协商 |
 
 MVP 必须实现：
 
@@ -110,7 +110,7 @@ MVP 必须实现：
 Frame CRC16
 chunkCrc32
 imageSize
-imageCrc32 或 imageSha256
+verifyType + verifyValue（MVP 默认 md5，设备通过 capability 声明支持范围）
 ```
 
 ---
@@ -356,15 +356,15 @@ sessionToken/resumeToken
 ### 9.2 请求参数
 
 | 字段 | 类型 | 必填 | 说明 |
-|---|---|---|---|
-| `imageType` | enum<uint8> | 是 | 固件镜像类型 |
+| --- | --- | --- | --- |
+| `imageType` | uint8 | 是 | 固件镜像类型 |
 | `imageSize` | uint32/uint64 | 是 | 固件总大小 |
 | `imageVersion` | string | 是 | 目标版本 |
-| `imageCrc32` | uint32 | 建议 | 固件整体 CRC32 |
-| `imageSha256` | bytes[32] | 建议 | 固件整体 SHA256 |
+| `verifyType` | string | 建议 | 校验算法，如 `md5`/`crc32`/`sha256`；需在设备 `firmware.supportedVerifyTypes` 中 |
+| `verifyValue` | string | 建议 | 对应算法的校验值（hex 字符串） |
 | `chunkSizeHint` | uint16 | 否 | 主机期望 chunk 大小 |
 | `windowSizeHint` | uint16 | 否 | 主机期望窗口大小 |
-| `flags` | bitmap<uint16> | 否 | 是否允许断点续传、是否强制升级等 |
+| `flags` | uint16 | 否 | 是否允许断点续传、是否强制升级等 |
 
 ---
 
@@ -1078,7 +1078,7 @@ AXTP 映射：
 | `firmware.chunkSizeMin` | uint16 | 最小 chunk |
 | `firmware.chunkSizeMax` | uint16 | 最大 chunk |
 | `firmware.windowSizeMax` | uint16 | 最大窗口 |
-| `firmware.hashAlgorithms` | bitmap | CRC32 / SHA256 |
+| `firmware.supportedVerifyTypes` | string[] | 支持的校验算法，如 `["md5","crc32","sha256"]` |
 | `stream.otaSupported` | bool | 是否支持 STREAM OTA |
 
 ---

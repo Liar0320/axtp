@@ -168,3 +168,119 @@ P3 BLE Compact Binary
 ```
 
 每一步都在前一步基础上增量，不需要推倒重来。
+
+---
+
+## Q6：OTA 校验字段用 MD5 还是 SHA256？协议如何处理多种算法？
+
+MD5 是哈希算法的一种。哈希算法是一类函数的统称，输入任意长度数据，输出固定长度摘要。MD5、SHA1、SHA256、CRC32 都属于这一类，区别在于安全强度和碰撞概率：
+
+| 算法 | 输出长度 | 碰撞风险 | 说明 |
+| --- | --- | --- | --- |
+| CRC32 | 32 bit（4B） | 非密码学，易碰撞 | 只防传输损坏，不防篡改 |
+| MD5 | 128 bit（16B） | 已知可构造碰撞 | 功能上可用于完整性校验，安全性弱 |
+| SHA256 | 256 bit（32B） | 目前无已知碰撞 | 推荐用于安全敏感场景 |
+
+**当前决策：MVP 阶段沿用 MD5，协议字段设计为算法无关。**
+
+规范使用通用字段 `verifyType`（算法名）+ `verifyValue`（校验值 hex 字符串），而不是绑定到具体算法的字段名（如 `imageSha256`）。这样 MD5、CRC32、SHA256 都能用同一套字段表达，不需要改协议。
+
+**多算法协商流程：**
+
+1. 设备在 `capability.getAll` 响应中声明 `firmware.supportedVerifyTypes`，例如 `["md5","crc32","sha256"]`
+2. 客户端在 `firmware.begin` 时选择设备支持的一种，填入 `verifyType` 和对应的 `verifyValue`
+3. 设备在 `firmware.verify` 时按 `verifyType` 执行对应算法校验
+
+MVP 阶段设备只需声明支持 `md5`，后续升级到 SHA256 只需在 capability 中新增，客户端和协议字段不需要改动。
+
+---
+
+## Q7：PING/PONG 和 HEARTBEAT 有什么区别？
+
+两者都是 CONTROL 层的保活机制，但目的不同：
+
+| | HEARTBEAT / HEARTBEAT_ACK | PING / PONG |
+| --- | --- | --- |
+| 目的 | 保活：证明连接还在，对端还活着 | 测量：量化链路延迟（RTT） |
+| 触发方式 | 周期性发送，间隔由 OPEN 协商 | 按需发送，不要求周期性 |
+| body | 可选，可携带 timestamp | 可选，携带 timestamp 或 nonce |
+| 响应要求 | 对端必须回 HEARTBEAT_ACK | 对端必须回 PONG，原样返回 nonce |
+| 超时处理 | 连续 3 次无响应 → 断开连接 | 超时 → 记录丢包，不强制断开 |
+| MVP 要求 | 必须实现 | P1，可延后 |
+
+HEARTBEAT 是连接保活的基础机制，所有 Framed 连接都需要。BLE 场景尤其重要，因为 BLE 连接可能在没有数据传输时被系统静默断开。PING/PONG 用于需要精确 RTT 数据的场景，比如自适应 OTA chunk size（根据链路延迟动态调整）、网关质量监控、诊断工具。
+
+MVP 阶段只实现 HEARTBEAT/HEARTBEAT_ACK 即可，PING/PONG 在 P1 阶段补充。
+
+---
+
+## Q8：新增一项业务，具体如何操作文档库？
+
+以新增"音量控制"业务（`audio.setVolume`）为例，完整操作步骤：
+
+### 第一步：确认 domain 归属
+
+查 `08-AXTP-Registry总则-v2.md` §9 Domain Registry，确认业务属于哪个 domain。音量控制属于 `audio.*`，MethodId 范围 `0x0800-0x08FF`，EventId 范围 `0x8800-0x88FF`。
+
+如果业务不属于任何已有 domain，先在 §9 中新增 domain 条目，再分配 ID 范围。
+
+### 第二步：在 MethodId 注册表中分配 ID
+
+打开 `09-AXTP-MethodId注册表-v2.md`，在 `audio.*` 段找到下一个可用 ID，新增条目：
+
+```yaml
+- id: 0x0801
+  name: audio.setVolume
+  status: draft
+  domain: audio
+  description: Set audio output volume.
+  schema:
+    params: AudioSetVolumeParams
+    result: AudioSetVolumeResult
+  errors:
+    - RPC_PARAM_INVALID
+    - OUT_OF_RANGE
+  events:
+    - audio.volumeChanged
+  mvp: false
+```
+
+### 第三步：在 EventId 注册表中分配事件 ID（如有）
+
+打开 `10-AXTP-EventId注册表-v2.md`，在 `audio.*` 段新增：
+
+```yaml
+- id: 0x8801
+  name: audio.volumeChanged
+  status: draft
+  domain: audio
+  description: Fired when audio volume changes.
+  schema:
+    data: AudioVolumeChangedData
+  mvp: false
+```
+
+### 第四步：在 Capability 注册表中声明能力（如需）
+
+打开 `12-AXTP-Capability注册表-v2.md`，新增 `audio.volume` 能力条目，让客户端可以通过 `capability.getAll` 发现设备是否支持音量控制。
+
+### 第五步：定义 TLV Schema（如需）
+
+在 `06-AXTP-TLV-Schema编码规范-v2.md` 中定义 `AudioSetVolumeParams` 和 `AudioSetVolumeResult` 的字段编号和类型。
+
+### 第六步：更新 ErrorCode 注册表（如需新错误码）
+
+如果现有错误码不够用，在 `11-AXTP-ErrorCode注册表-v2.md` 的 `audio` 分类下新增。
+
+### 第七步：更新连接场景文档（如有特殊流程）
+
+如果新业务有特殊的调用流程（比如需要先建流），在 `05-AXTP-连接场景与调用流程规范-v2.md` 中补充示例。
+
+核心原则：
+
+- Registry 是单一事实源，所有 ID 必须先在 Registry 中注册，再在代码中使用
+- 不得在代码或文档中私自使用未注册的 methodId/eventId
+- `status: draft` → 实现稳定后改为 `stable`，`stable` 后不得改变语义
+- 新增 method/event/capability 不需要升级 Protocol Version，只升级 Registry Version
+
+能否将新增业务逻辑这一项写成一个skill，放到文档中，每次我只需要说一句我需要增加一个调整音量的业务逻辑，claude就能根据我的业务需求逐项和我确认，就能生成正规的协议文档了。

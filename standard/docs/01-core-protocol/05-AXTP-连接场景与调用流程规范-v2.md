@@ -174,7 +174,7 @@ Server → Client: RPC EVENT display.brightnessChanged
 
 ```text
 Client → Server: RPC REQUEST firmware.begin (requestId=0x00000004)
-  body: totalSize=1048576, hashAlgo=sha256, hash="abc123...", chunkSize=4096
+  body: totalSize=1048576, verifyType=md5, verifyValue="abc123...", chunkSize=4096
 Server → Client: RPC REQUEST_RESPONSE firmware.begin
   body: streamId=0x00000009, ackMode=STOP_AND_WAIT
 [Stream Context OPEN: streamId=0x00000009]

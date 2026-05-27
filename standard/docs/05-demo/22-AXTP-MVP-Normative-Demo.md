@@ -182,8 +182,8 @@ body:
   imageType = application
   imageSize = <bytes>
   chunkSize = <preferred data bytes>
-  hashAlgorithm = sha256
-  hash = <image hash>
+  verifyType = md5          ← 校验算法，由设备 capability 声明支持范围
+  verifyValue = <hex string> ← 对应算法的校验值
   ackMode = stop_and_wait
 ```
 
@@ -197,7 +197,7 @@ body:
   windowSize = 1
 ```
 
-OTA 上下文绑定到 `streamId`。STREAM 包内不得重复携带 `profile / transferId / imageSize / hash / chunkSize`。
+OTA 上下文绑定到 `streamId`。STREAM 包内不得重复携带 `profile / transferId / imageSize / verifyValue / chunkSize`。
 
 ---
 
@@ -254,8 +254,8 @@ Client 完成所有 STREAM chunk 后发送 RPC Request：
 methodId = firmware.verify
 body:
   streamId = 9
-  hashAlgorithm = sha256
-  hash = <image hash>
+  verifyType = md5
+  verifyValue = <hex string>
 ```
 
 Device 返回：
