@@ -1477,13 +1477,13 @@ AXTP 请求 -> 旧请求
 | `04-AXTP-Control-Session-Spec.md` | 定义 OPEN / ACK / NACK / RESUME |
 | `05-AXTP-RPC-Session-Spec.md` | 定义 RPC request/response/event 映射 |
 | `06-AXTP-Stream-Spec.md` | 定义 OTA / File / Log / Media 数据面 |
-| `05-AXTP-Type-System基础类型规范.md` | 定义基础类型 |
-| `06-AXTP-TLV-Schema编码规范.md` | 定义 TLV body 映射 |
-| `08-AXTP-Registry总则.md` | 定义注册表治理规则 |
-| `09-AXTP-MethodId注册表.md` | 定义 methodId 与 legacy method 映射 |
-| `11-AXTP-ErrorCode注册表.md` | 定义错误码映射 |
-| `12-AXTP-Capability注册表.md` | 定义能力映射 |
-| `13-AXTP-MVP最小实现注册表.md` | 定义第一阶段迁移范围 |
+| `02-type-system/01-AXTP-Type-System基础类型规范.md` | 定义基础类型（待创建） |
+| `02-type-system/02-AXTP-TLV-Schema编码规范.md` | 定义 TLV body 映射（待创建） |
+| `08-AXTP-Protocol-Definition-Mapping-Spec.md` | 定义 Protocol Definition 映射规则 |
+| `09-AXTP-Methods-Registry-Spec.md` | 定义 methods 元模型与 methodId 约束 |
+| `11-AXTP-Errors-Registry-Spec.md` | 定义 errors 元模型与错误码映射 |
+| `12-AXTP-Types-and-Capability-Spec.md` | 定义 types 元模型与 v1 capability 范围 |
+| `13-AXTP-Profiles-Registry-Spec.md` | 定义 profiles 元模型与实现范围 |
 
 ---
 

@@ -118,7 +118,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 | 字段 | 类型 | 必填 | 说明 |
 | --- | --- | --- | --- |
-| `obsWebSocketVersion` | string | 是 | 服务端协议版本 |
+| `axtpVersion` | string | 是 | 服务端协议版本 |
 | `rpcVersion` | uint32 | 是 | RPC 协议版本，当前为 1 |
 | `authentication` | object | 否 | 认证挑战，不需要认证时省略 |
 
@@ -418,7 +418,7 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 
 ## 14. 方法名与事件名规范
 
-### 16.1 方法名
+### 14.1 方法名
 
 格式：`domain.verbObject`，camelCase
 
@@ -426,13 +426,13 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 
 示例：`device.getInfo / display.setBrightness / firmware.begin / stream.open`
 
-### 16.2 事件名
+### 14.2 事件名
 
 格式：`domain.objectChanged / domain.actionCompleted / domain.actionFailed / domain.error`
 
 示例：`display.brightnessChanged / firmware.updateCompleted / stream.error`
 
-### 16.3 与 Binary methodId/eventId 的映射
+### 14.3 与 Binary methodId/eventId 的映射
 
 方法名和事件名与 Binary 中的 uint16 ID 一一对应，由 Registry 统一管理：
 
@@ -456,13 +456,15 @@ Transport 层（CONTROL，Framed Mode）：
 
 Application 层（RPC，所有模式）：
   TRANSPORT_READY / WebSocket connected
-    → Hello (op=0)        Server→Client
-    → Identify (op=2)     Client→Server
-    → Identified (op=3)   Server→Client，分配 sid
+    → Hello (op=0)        Logical Server→Logical Client
+    → Identify (op=2)     Logical Client→Logical Server
+    → Identified (op=3)   Logical Server→Logical Client，分配 sid
     → APP_READY
     → capability.supportedMethods
     → Request / Event / Reidentify
 ```
+
+Hello 由 AXTP Logical Server 发送——即拥有并暴露 methods/events/streams 的一端。在本地设备场景中，Physical Server 与 Logical Server 是同一端（设备）。在云端反连场景中，设备是 Physical Client 但仍是 Logical Server，因此仍由设备发 Hello（详见 03《Transport Profiles》§3.0）。
 
 | OBS-WebSocket | AXTP 对应 | 说明 |
 | --- | --- | --- |
@@ -668,7 +670,7 @@ TLV body:    01 01 50
 
 ## 21. 完整示例
 
-### 19.1 SetBrightness（JSON）
+### 21.1 SetBrightness（JSON）
 
 Request：
 
@@ -725,7 +727,7 @@ Response 失败：
 }
 ```
 
-### 19.2 BrightnessChanged（JSON Event）
+### 21.2 BrightnessChanged（JSON Event）
 
 ```json
 {
@@ -756,7 +758,7 @@ rpcEncoding=BINARY(2), rpcOp=RequestResponse(8), requestId=1, methodId=0x0502, s
 body: fieldId=1, len=1, value=80
 ```
 
-### 19.4 OpenStream（JSON）
+### 21.4 OpenStream（JSON）
 
 Request：
 
@@ -800,7 +802,7 @@ Response：
 }
 ```
 
-### 19.5 FirmwareUpdateCompleted（JSON Event）
+### 21.5 FirmwareUpdateCompleted（JSON Event）
 
 ```json
 {
@@ -817,15 +819,15 @@ Response：
 }
 ```
 
-### 19.6 完整连接流程（JSON）
+### 21.6 完整连接流程（JSON）
 
 ```text
 [连接建立]
 Server → Client:
-  { "sid": "", "op": 0, "d": { "obsWebSocketVersion": "1.0.0", "rpcVersion": 1 } }
+  { "sid": "", "op": 0, "d": { "axtpVersion": "1.0.0", "rpcVersion": 1 } }
 
 Client → Server:
-  { "sid": "", "op": 2, "d": { "rpcVersion": 1, "eventSubscriptions": 33 } }
+  { "sid": "", "op": 2, "d": { "rpcVersion": 1, "eventMasks": "850101" } }
 
 Server → Client:
   { "sid": "28378462323", "op": 3, "d": { "negotiatedRpcVersion": 1 } }

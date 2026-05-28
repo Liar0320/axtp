@@ -1,0 +1,475 @@
+protocol:
+  name: AXTP
+  version: 1.0.0
+  specVersion: 1
+  registryVersion: 1.0.0
+  status: rc1
+
+overview:
+  title: AXTP Protocol
+  summary: >
+    AXTP is a transport-independent device communication protocol for
+    CONTROL, RPC and STREAM payloads across TCP, WebSocket, USB HID, BLE and
+    UART transports.
+  goals:
+    - Provide one unified protocol model for control, request/response RPC and stream transfer.
+    - Keep production clients small by binding each transport to a fixed frame profile.
+    - Support both standard and compact binary frame paths.
+    - Keep full dynamic capability modeling optional outside AXTP v1 Core.
+  nonGoals:
+    - Full dynamic UI capability modeling is not required in v1.
+    - WebSocket Text and HTTP JSON are debug or legacy adapter paths.
+    - STREAM is not carried over WebSocket Text or HTTP JSON in production.
+    - Header profile negotiation is not performed dynamically in v1.
+
+architecture:
+  layers:
+    - name: Transport Profile
+      description: Defines how AXTP runs over TCP, WebSocket, HID, BLE or UART.
+    - name: Frame Profile
+      description: Binds L1 Frame Header and L2 Payload Header into one parser profile.
+    - name: Payload Layer
+      description: Carries CONTROL, RPC or STREAM payloads.
+    - name: RPC Session
+      description: Handles Hello, Identify, requests, responses, events and errors.
+    - name: Stream Session
+      description: Handles OTA, file, audio, video, log and sensor chunk transfer.
+  lifecycle:
+    - step: OPEN
+      from: Client
+      to: Server
+      description: Open an AXTP logical session and declare runtime limits.
+    - step: ACCEPT
+      from: Server
+      to: Client
+      description: Accept the session and return final runtime parameters.
+    - step: Hello
+      from: Server
+      to: Client
+      description: Announce RPC session rules, protocol version and authentication requirements.
+    - step: Identify
+      from: Client
+      to: Server
+      description: Submit client identity and optional authentication data.
+    - step: Identified
+      from: Server
+      to: Client
+      description: Confirm that the RPC session is ready.
+    - step: capability.supportedMethods
+      from: Client
+      to: Server
+      description: Query the method bitmap available to the current session.
+  optionalLifecycleExtensions:
+    - step: READY
+      status: optional
+      description: Reserved for transports that need an explicit client acknowledgement after ACCEPT; not required by AXTP v1 Core.
+
+guide:
+  quickStart:
+    - title: Minimal Client Startup
+      steps:
+        - Connect using a Transport Profile.
+        - Send CONTROL OPEN.
+        - Wait for CONTROL ACCEPT.
+        - Wait for Hello.
+        - Send Identify if required.
+        - Query capability.supportedMethods.
+        - Start RPC requests.
+
+frameProfiles:
+  - name: STANDARD_FRAME
+    magic: AXTP
+    l1: STANDARD_L1
+    l2: STANDARD_L2
+    supportsMixing: false
+  - name: COMPACT_FRAME
+    magic: 0xA7
+    l1: COMPACT_L1
+    l2: COMPACT_L2
+    supportsMixing: false
+  - name: COMPACT_FRAME_CRC
+    magic: 0xA7
+    l1: COMPACT_L1_CRC
+    l2: COMPACT_L2
+    supportsMixing: false
+
+transports:
+  - name: AXTP-WS
+    family: websocket
+    frameProfile: STANDARD_FRAME
+    production: true
+  - name: AXTP-TCP
+    family: tcp
+    frameProfile: STANDARD_FRAME
+    production: true
+  - name: AXTP-HID-64
+    family: usb-hid
+    frameProfile: COMPACT_FRAME
+    maxFrameSize: 64
+    production: true
+  - name: AXTP-BLE-RPC
+    family: ble
+    frameProfile: COMPACT_FRAME
+    production: true
+  - name: AXTP-UART
+    family: uart
+    frameProfile: COMPACT_FRAME_CRC
+    production: true
+  - name: AXTP-WS-TEXT
+    family: websocket
+    frameProfile: none
+    production: false
+    usage: debug-or-legacy-adapter
+  - name: AXTP-HTTP-JSON
+    family: http
+    frameProfile: none
+    production: false
+    usage: debug-or-legacy-adapter
+
+payloadTypes:
+  - name: CONTROL
+    id: 0x01
+    headerBytes: 5
+    description: Logical session control payload.
+  - name: RPC
+    id: 0x02
+    headerBytes: 11
+    description: Binary request, response, event and error payload.
+  - name: STREAM
+    id: 0x03
+    headerBytes: 16
+    description: Chunk-oriented data plane payload.
+
+control:
+  requiredOpcodes:
+    - OPEN
+    - ACCEPT
+  optionalOpcodes:
+    - READY
+  reservedOpcodes:
+    - NACK
+    - RESUME
+  rules:
+    - v1 Core requires OPEN and ACCEPT before RPC or STREAM payloads.
+    - READY is not required by v1 Core and must not be assumed by peers.
+    - Dynamic header negotiation is not performed in v1.
+
+stream:
+  header:
+    name: AxtpStreamHeader
+    size: 16
+    fields:
+      - { name: streamId, type: uint32 }
+      - { name: seq, type: uint32 }
+      - { name: position, type: uint32 }
+      - { name: chunkLength, type: uint16 }
+      - { name: flags, type: uint16 }
+  rules:
+    - STREAM uses the unified 16-byte header in production transports.
+    - The historical 8-byte stream header is not part of AXTP v1 Core.
+    - WebSocket Text and HTTP JSON must not carry production STREAM data.
+
+compatibility:
+  legacySources:
+    - protocol-source/legacy-docs/registry-v2/
+  rules:
+    - Stable methodId, eventId and error code values must not be reused.
+    - Legacy command mappings may be preserved as metadata under requests[].legacy.
+    - WebSocket Text and HTTP JSON may exist only as debug or legacy adapter paths.
+
+types:
+  CommonEmptyRequest:
+    kind: object
+    fields: []
+  CommonEmptyResponse:
+    kind: object
+    fields: []
+  DeviceGetInfoRequest:
+    kind: object
+    fields: []
+  DeviceGetInfoResponse:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: vendor, type: string, required: false, maxLength: 32 }
+      - { fieldId: 0x02, name: product, type: string, required: false, maxLength: 32 }
+      - { fieldId: 0x03, name: firmwareVersion, type: string, required: false, maxLength: 32 }
+      - { fieldId: 0x04, name: serialNumber, type: string, required: false, maxLength: 64 }
+  CapabilitySupportedMethodsRequest:
+    kind: object
+    fields: []
+  CapabilitySupportedMethodsResponse:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: methodCount, type: uint16, required: true }
+      - { fieldId: 0x02, name: methodIds, type: array<uint16>, required: false, derivedFrom: requests.methodId }
+  DisplayGetBrightnessRequest:
+    kind: object
+    fields: []
+  DisplayGetBrightnessResponse:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: value, type: uint8, required: true, min: 0, max: 100 }
+  DisplaySetBrightnessRequest:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: value, type: uint8, required: true, min: 0, max: 100 }
+      - { fieldId: 0x02, name: transitionMs, type: uint16, required: false, min: 0, max: 60000 }
+  DisplayBrightnessChangedEvent:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: value, type: uint8, required: true, min: 0, max: 100 }
+      - { fieldId: 0x02, name: previousValue, type: uint8, required: false, min: 0, max: 100 }
+  FirmwareBeginRequest:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: totalSize, type: uint32, required: true }
+      - { fieldId: 0x02, name: hashAlgo, type: string, required: true, maxLength: 16 }
+      - { fieldId: 0x03, name: hash, type: bytes, required: true, maxLength: 64 }
+      - { fieldId: 0x04, name: chunkSize, type: uint16, required: true }
+  FirmwareBeginResponse:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: streamId, type: uint32, required: true }
+      - { fieldId: 0x02, name: profile, type: string, required: true, maxLength: 32 }
+      - { fieldId: 0x03, name: chunkSize, type: uint16, required: true }
+      - { fieldId: 0x04, name: ackMode, type: enum, required: true }
+      - { fieldId: 0x05, name: cursorUnit, type: enum, required: true }
+      - { fieldId: 0x06, name: reservedStreamHeaderProfile, type: enum, required: false, deprecated: true }
+      - { fieldId: 0x07, name: maxDataSize, type: uint16, required: false }
+  FirmwareEndRequest:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: streamId, type: uint32, required: true }
+  FirmwareVerifyRequest:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: streamId, type: uint32, required: true }
+  FirmwareApplyRequest:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: streamId, type: uint32, required: true }
+  FirmwareUpdateProgressEvent:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: streamId, type: uint32, required: true }
+      - { fieldId: 0x02, name: percent, type: uint8, required: true, min: 0, max: 100 }
+  FirmwareUpdateCompletedEvent:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: version, type: string, required: false, maxLength: 32 }
+  FirmwareUpdateFailedEvent:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: errorCode, type: uint16, required: true }
+      - { fieldId: 0x02, name: message, type: string, required: false, maxLength: 96 }
+  FirmwareOtaCapability:
+    kind: object
+    fields:
+      - { fieldId: 0x01, name: maxImageSize, type: uint32, required: true }
+      - { fieldId: 0x02, name: maxChunkSize, type: uint16, required: true }
+
+requests:
+  - name: device.getInfo
+    methodId: 0x0101
+    domain: device
+    since: 1.0.0
+    status: mvp
+    request: { type: DeviceGetInfoRequest }
+    response: { type: DeviceGetInfoResponse }
+    encodings: [json, binary_tlv]
+    capabilities: [device.info]
+    errors: [SUCCESS, RPC_METHOD_NOT_FOUND, RPC_PARAM_INVALID]
+    legacy:
+      cmdValue: 0x000B0002
+      name: BetaDeviceInfo
+      payloadFormat: fixed_struct
+  - name: capability.supportedMethods
+    methodId: 0x0301
+    domain: capability
+    since: 1.0.0
+    status: mvp
+    request: { type: CapabilitySupportedMethodsRequest }
+    response: { type: CapabilitySupportedMethodsResponse }
+    encodings: [json, binary_tlv]
+    capabilities: [capability.supportedMethods]
+    errors: [SUCCESS, RPC_METHOD_NOT_FOUND]
+  - name: display.getBrightness
+    methodId: 0x0501
+    domain: display
+    since: 1.0.0
+    status: mvp
+    request: { type: DisplayGetBrightnessRequest }
+    response: { type: DisplayGetBrightnessResponse }
+    encodings: [json, binary_tlv]
+    capabilities: [display.brightness]
+    errors: [SUCCESS, RPC_METHOD_NOT_FOUND]
+  - name: display.setBrightness
+    methodId: 0x0502
+    domain: display
+    since: 1.0.0
+    status: mvp
+    request: { type: DisplaySetBrightnessRequest }
+    response: { type: CommonEmptyResponse }
+    encodings: [json, binary_tlv]
+    capabilities: [display.brightness]
+    events: [display.brightnessChanged]
+    errors: [SUCCESS, RPC_PARAM_INVALID, BUSY]
+    legacy:
+      cmdValue: 0x000B0042
+      name: BetaBrightnessSet
+      payloadFormat: fixed_struct
+  - name: firmware.begin
+    methodId: 0x0B02
+    domain: firmware
+    since: 1.0.0
+    status: mvp
+    request: { type: FirmwareBeginRequest }
+    response: { type: FirmwareBeginResponse }
+    encodings: [json, binary_tlv]
+    capabilities: [firmware.ota]
+    events: [firmware.updateProgress]
+    errors: [SUCCESS, RPC_PARAM_INVALID, BUSY]
+  - name: firmware.end
+    methodId: 0x0B03
+    domain: firmware
+    since: 1.0.0
+    status: mvp
+    request: { type: FirmwareEndRequest }
+    response: { type: CommonEmptyResponse }
+    encodings: [json, binary_tlv]
+    capabilities: [firmware.ota]
+    errors: [SUCCESS, STREAM_NOT_FOUND, BUSY]
+  - name: firmware.verify
+    methodId: 0x0B04
+    domain: firmware
+    since: 1.0.0
+    status: mvp
+    request: { type: FirmwareVerifyRequest }
+    response: { type: CommonEmptyResponse }
+    encodings: [json, binary_tlv]
+    capabilities: [firmware.ota]
+    events: [firmware.updateCompleted, firmware.updateFailed]
+    errors: [SUCCESS, STREAM_CRC_ERROR, BUSY]
+  - name: firmware.apply
+    methodId: 0x0B05
+    domain: firmware
+    since: 1.0.0
+    status: mvp
+    request: { type: FirmwareApplyRequest }
+    response: { type: CommonEmptyResponse }
+    encodings: [json, binary_tlv]
+    capabilities: [firmware.ota]
+    events: [firmware.updateCompleted, firmware.updateFailed]
+    errors: [SUCCESS, BUSY]
+
+events:
+  - name: display.brightnessChanged
+    eventId: 0x8507
+    domain: display
+    since: 1.0.0
+    status: mvp
+    payload: { type: DisplayBrightnessChangedEvent }
+    severity: info
+    trigger: [display.setBrightness, device_local_change]
+    capabilities: [display.brightness]
+  - name: firmware.updateProgress
+    eventId: 0x8B02
+    domain: firmware
+    since: 1.0.0
+    status: mvp
+    payload: { type: FirmwareUpdateProgressEvent }
+    severity: info
+    trigger: [firmware.begin, stream.ota.chunk]
+    capabilities: [firmware.ota]
+  - name: firmware.updateCompleted
+    eventId: 0x8B03
+    domain: firmware
+    since: 1.0.0
+    status: mvp
+    payload: { type: FirmwareUpdateCompletedEvent }
+    severity: info
+    trigger: [firmware.verify, firmware.apply]
+    capabilities: [firmware.ota]
+  - name: firmware.updateFailed
+    eventId: 0x8B04
+    domain: firmware
+    since: 1.0.0
+    status: mvp
+    payload: { type: FirmwareUpdateFailedEvent }
+    severity: error
+    trigger: [firmware.verify, firmware.apply, stream.error]
+    capabilities: [firmware.ota]
+
+errors:
+  - { name: SUCCESS, code: 0x0000, category: common, status: mvp, severity: success, retryable: false, message: Operation completed successfully. }
+  - { name: UNKNOWN_ERROR, code: 0x0001, category: common, status: mvp, severity: error, retryable: false, message: Unknown error. }
+  - { name: BUSY, code: 0x0005, category: common, status: mvp, severity: warning, retryable: true, message: Device or resource is busy. }
+  - { name: FRAME_VERSION_UNSUPPORTED, code: 0x0102, category: frame, status: mvp, severity: error, retryable: false, message: Frame version is not supported. }
+  - { name: FRAME_CRC_ERROR, code: 0x0106, category: frame, status: mvp, severity: error, retryable: true, message: Frame CRC check failed. }
+  - { name: FRAME_FRAGMENT_MISSING, code: 0x0108, category: frame, status: mvp, severity: error, retryable: true, message: One or more frame fragments are missing. }
+  - { name: CONTROL_OPCODE_INVALID, code: 0x0201, category: control, status: mvp, severity: error, retryable: false, message: Control opcode is invalid. }
+  - { name: CONTROL_PAYLOAD_INVALID, code: 0x0202, category: control, status: mvp, severity: error, retryable: false, message: Control payload is invalid. }
+  - { name: CONTROL_OPEN_REQUIRED, code: 0x0204, category: control, status: mvp, severity: error, retryable: false, message: Session has not completed CONTROL OPEN. }
+  - { name: CONTROL_OPEN_REJECTED, code: 0x0205, category: control, status: mvp, severity: error, retryable: false, message: Control OPEN was rejected. }
+  - { name: RESERVED_CONTROL_PROFILE_UNSUPPORTED, code: 0x0206, category: control, status: reserved, severity: error, retryable: false, message: Historical header profile negotiation error. }
+  - { name: CONTROL_NEGOTIATION_FAILED, code: 0x0207, category: control, status: mvp, severity: error, retryable: false, message: Control negotiation failed. }
+  - { name: CONTROL_SESSION_INVALID, code: 0x0208, category: control, status: mvp, severity: error, retryable: false, message: SessionId is invalid. }
+  - { name: CONTROL_RESUME_FAILED, code: 0x020A, category: control, status: mvp, severity: error, retryable: false, message: Session resume failed. }
+  - { name: CONTROL_WINDOW_EXCEEDED, code: 0x020C, category: control, status: mvp, severity: warning, retryable: true, message: Flow-control window was exceeded. }
+  - { name: RPC_ENCODING_UNSUPPORTED, code: 0x0301, category: rpc, status: mvp, severity: error, retryable: false, message: RPC encoding is not supported. }
+  - { name: RPC_METHOD_NOT_FOUND, code: 0x0306, category: rpc, status: mvp, severity: error, retryable: false, message: MethodId or method name is not supported. }
+  - { name: RPC_PARAM_INVALID, code: 0x030B, category: rpc, status: mvp, severity: error, retryable: false, message: RPC parameters are invalid. }
+  - { name: STREAM_NOT_FOUND, code: 0x0401, category: stream, status: mvp, severity: error, retryable: false, message: Stream context does not exist. }
+  - { name: STREAM_TIMEOUT, code: 0x0402, category: stream, status: mvp, severity: error, retryable: true, message: Stream timed out. }
+  - { name: STREAM_CRC_ERROR, code: 0x0403, category: stream, status: mvp, severity: error, retryable: true, message: Stream chunk CRC check failed. }
+  - { name: FW_VERIFY_FAILED, code: 0x060B, category: firmware, status: mvp, severity: error, retryable: false, message: Firmware verification failed. }
+
+profiles:
+  - name: AXTP-MVP
+    since: 1.0.0
+    status: mvp
+    requiredRequests:
+      - device.getInfo
+      - capability.supportedMethods
+      - display.getBrightness
+      - display.setBrightness
+      - firmware.begin
+      - firmware.end
+      - firmware.verify
+      - firmware.apply
+    requiredEvents:
+      - display.brightnessChanged
+      - firmware.updateProgress
+      - firmware.updateCompleted
+      - firmware.updateFailed
+    requiredErrors:
+      - SUCCESS
+      - RPC_METHOD_NOT_FOUND
+      - RPC_PARAM_INVALID
+      - STREAM_NOT_FOUND
+      - STREAM_CRC_ERROR
+      - BUSY
+    requiredCapabilities:
+      - protocol.payload.control
+      - protocol.payload.rpc
+      - protocol.payload.stream
+      - device.info
+      - capability.supportedMethods
+      - display.brightness
+      - display.brightnessMin
+      - display.brightnessMax
+      - display.brightnessStep
+      - firmware.ota
+    transportProfiles:
+      - AXTP-WS
+      - AXTP-TCP
+      - AXTP-HID-64
+      - AXTP-BLE-RPC
+      - AXTP-UART
+  - name: AXTP-MVP-HID
+    since: 1.0.0
+    status: mvp
+    extends: AXTP-MVP
+    transportProfiles:
+      - AXTP-HID-64
+    frameProfile: COMPACT_FRAME

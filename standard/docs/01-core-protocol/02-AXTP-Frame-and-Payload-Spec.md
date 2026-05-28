@@ -134,8 +134,8 @@ payloadType = STREAM, streamId = firmware.begin 返回的流通道 ID
 
 AXTP v1 定义两种 Frame Profile：
 
-- `STANDARD_FRAME = STANDARD_L1 + v1 L2 Payload Header`
-- `COMPACT_FRAME = COMPACT_L1 + v1 L2 Payload Header`
+- `STANDARD_FRAME = STANDARD_L1 + STANDARD_L2`
+- `COMPACT_FRAME = COMPACT_L1 + COMPACT_L2`
 
 Transport Profile 固定决定 Frame Profile；同一个 AXTP Session 内 Frame Profile 不切换。AXTP v1 不支持运行时 Header Profile 协商，也不支持 `STANDARD_L1 + COMPACT_L2` 或 `COMPACT_L1 + STANDARD_L2` 混搭。如需使用其他 Frame Profile，必须选择其他 Transport Profile 或重新 OPEN。
 
@@ -443,7 +443,7 @@ MVP 推荐：
 |---|---|---|
 | BLE | Compact | MTU 小，重连常见，需要 RESUME，使用小 chunk |
 | USB HID | Compact | Report Size 固定，可能有 Report ID |
-| UART | Standard 或 Compact+framing | 字节流无边界，Compact 必须额外定义 COBS/SLIP/length-prefix |
+| UART | Compact+framing | 字节流无边界，必须额外定义 COBS/SLIP/length-prefix |
 | TCP | Standard | 字节流，接收方按 Header+PayloadLength+CRC 重组 Frame |
 | WebSocket Binary | Standard | 建议一个 WS Message 承载一个 AXTP Frame |
 | WebSocket Text | 无 Frame | 只承载 DS-RPC Text Profile，不能混入 AXTP Binary Frame |

@@ -46,10 +46,43 @@ WebSocket Text / HTTP JSON 只作为 Debug 或 Legacy Adapter，不承载正式 
 | G | WebSocket Binary（多设备路由） | Standard | 多设备 | App ↔ 网关 ↔ 多台设备 |
 | H | WebSocket Text（DS-RPC Debug Adapter） | Unframed | 调试 / Legacy | 浏览器 / curl ↔ 设备 |
 | I | 老协议适配 | Standard / Compact | 适配层 | 旧客户端 ↔ AXTP 适配器 ↔ 设备 |
+| J | WebSocket Binary（设备反连云端） | Standard | 云端反连 | 设备主动连接云端，设备仍为 Logical Server |
 
 ---
 
 ## 3. 通用约定
+
+### 3.0 连接角色定义
+
+AXTP 区分两套角色，二者可以不同端：
+
+| 角色 | 含义 | 负责动作 |
+| --- | --- | --- |
+| Physical Client | 底层连接发起方 | 建立 transport 连接，发送 CONTROL OPEN |
+| Physical Server | 底层监听/接收方 | 接收 OPEN，返回 ACCEPT |
+| Logical Client | AXTP 调用方 / 控制方 | 发送 Identify，发起 request，订阅 event |
+| Logical Server | AXTP 能力提供方 | 发送 Hello，校验 Identify，提供 methods/events/streams |
+
+核心规则：
+
+```text
+OPEN  follows the physical connection direction.
+Hello follows the logical service direction.
+```
+
+即：**OPEN 顺着物理连接方向发；Hello 顺着逻辑服务方向发。**
+
+在大多数本地设备场景中，Physical Server 与 Logical Server 是同一端（设备），流程自然。在云端反连场景中，设备是 Physical Client 但仍是 Logical Server，因此设备主动连接云端后，仍由设备发 Hello。
+
+**各 Transport Profile 角色速查：**
+
+| Transport Profile | Physical Client | Physical Server | Logical Client | Logical Server | Hello 发送方 |
+| --- | --- | --- | --- | --- | --- |
+| AXTP-TCP / AXTP-WS（本地） | App / PC | Device | App / PC | Device | Device |
+| AXTP-HID-64 | Host / App | HID Device | Host / App | Device | Device |
+| AXTP-BLE-RPC | BLE Central / App | BLE Peripheral | App | Device | Device |
+| AXTP-UART | Initiator | Responder | Host | Device | Device |
+| AXTP-WS-CLOUD-REVERSE | Device | Cloud | Cloud | Device | Device |
 
 ### 3.1 统一连接状态机
 
@@ -82,9 +115,9 @@ WebSocket Text / HTTP JSON Debug Adapter：WebSocket 升级或 HTTP 认证完成
 | 字段 / 能力 | 归属 |
 | --- | --- |
 | AXTP 协议版本、maxFrameSize、maxPayloadSize、supportedPayloadTypes、rpcEncoding、压缩/加密、心跳间隔、resumeToken | CONTROL OPEN / RESUME |
-| challengeString / authRequired / rpcVersion | Hello（op=0，Server→Client） |
-| clientName / authResponse | Identify（op=2，Client→Server） |
-| negotiatedRpcVersion / sid | Identified（op=3，Server→Client） |
+| challengeString / authRequired / rpcVersion | Hello（op=0，Logical Server→Logical Client） |
+| clientName / authResponse | Identify（op=2，Logical Client→Logical Server） |
+| negotiatedRpcVersion / sid | Identified（op=3，Logical Server→Logical Client） |
 | 设备型号 / 固件版本 | device.getInfo |
 | v1 方法能力位图 | capability.supportedMethods |
 
@@ -94,7 +127,7 @@ WebSocket Text / HTTP JSON Debug Adapter：WebSocket 升级或 HTTP 认证完成
 ① 传输层连接建立
 ② CONTROL OPEN / ACCEPT          ← Framed Mode 必须；Debug Adapter 可跳过
    [State: FRAMING_READY]
-③ RPC Hello (op=0)                ← Server 主动推送
+③ RPC Hello (op=0)                ← Logical Server 主动推送
 ④ RPC Identify (op=2)             ← Client 回应
 ⑤ RPC Identified (op=3)           ← Server 确认
    [State: APP_READY]
@@ -107,6 +140,7 @@ WebSocket Text / HTTP JSON Debug Adapter：WebSocket 升级或 HTTP 认证完成
 ```
 
 ---
+
 ## 4. 场景 A：TCP 直连（Standard Profile）
 
 ### 4.1 Profile 选择
@@ -227,6 +261,7 @@ Server → Client: CONTROL CLOSE_ACK
 ```
 
 ---
+
 ## 5. 场景 B：WebSocket Binary 直连（Standard Profile）
 
 与场景 A 的差异仅在传输层：
@@ -499,6 +534,7 @@ Device → Host: 重传上一帧
 ```
 
 ---
+
 ## 9. 场景 F：网关中继（WebSocket Binary → BLE/HID，Standard + Compact）
 
 ### 9.1 拓扑
@@ -649,6 +685,7 @@ Gateway → App: RESPONSE (B)
 ```
 
 ---
+
 ## 11. 场景 H：WebSocket Text 调试（DS-RPC Debug Adapter）
 
 不使用 AXTP Frame Header。适用于浏览器 JS、curl、Postman、DevTools 等无法处理二进制帧的工具。**这不是生产路径。**
@@ -833,6 +870,7 @@ Adapter → Legacy Client: 旧 OTA Chunk ACK
 ```
 
 ---
+
 ## 13. 场景对比总结
 
 ### 13.1 Frame Profile 选择速查
@@ -846,6 +884,7 @@ Adapter → Legacy Client: 旧 OTA Chunk ACK
 | UART | Compact + COBS | 无边界，需传输层 framing；MCU 内存小 |
 | 网关（App 侧） | Standard | 需要 SourceId/DestinationId 路由 |
 | 网关（Device 侧） | 取决于 Device 传输层 | BLE/UART → Compact；TCP/WS → Standard |
+| 云端反连（Device→Cloud） | Standard | 设备是 Physical Client，但仍是 Logical Server；Hello 由设备发 |
 
 > Control Payload 固定 5B 头，不随 Frame Profile 变化。STREAM Payload 固定 16B Header，适用于所有传输场景。
 
@@ -879,9 +918,9 @@ Adapter → Legacy Client: 旧 OTA Chunk ACK
 1. 传输层连接建立（TCP/WS/BLE/HID/UART）
 2. CONTROL OPEN / ACCEPT（协商运行参数）← Framed Mode 必须；Unframed 跳过
    [State: FRAMING_READY]
-3. RPC Hello（op=0，Server 推送）
-4. RPC Identify（op=2，Client 回应）
-5. RPC Identified（op=3，Server 确认）
+3. RPC Hello（op=0，Logical Server 推送）
+4. RPC Identify（op=2，Logical Client 回应）
+5. RPC Identified（op=3，Logical Server 确认）
    [State: APP_READY]
 6. RPC capability.supportedMethods
 7. RPC device.getInfo
@@ -893,6 +932,26 @@ Adapter → Legacy Client: 旧 OTA Chunk ACK
 ```
 
 差异只在步骤 1（传输层）和步骤 2（Profile 选择），步骤 3-9 的业务语义完全一致。这正是 AXTP 统一协议栈的核心价值：**换传输层不换业务逻辑**。
+
+### 13.5 云端反连场景（场景 J）
+
+设备主动连接云端时，Physical Client/Server 与 Logical Client/Server 反转：
+
+```text
+Transport Profile: AXTP-WS-CLOUD-REVERSE
+Physical Client: Device    Physical Server: Cloud
+Logical Client:  Cloud     Logical Server:  Device
+
+Device → Cloud: WebSocket connect
+Device → Cloud: CONTROL OPEN
+Cloud  → Device: CONTROL ACCEPT
+Device → Cloud: RPC Hello          ← 设备是 Logical Server，仍由设备发 Hello
+Cloud  → Device: RPC Identify
+Device → Cloud: RPC Identified
+Cloud  → Device: capability.supportedMethods
+```
+
+虽然 Cloud 是 WebSocket 物理服务端，但设备仍是能力提供者（Logical Server），因此 ACCEPT 后由设备发 Hello，Cloud 发 Identify。
 
 ---
 

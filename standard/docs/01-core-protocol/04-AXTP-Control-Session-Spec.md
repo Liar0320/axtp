@@ -265,6 +265,8 @@ ANY_STATE → (SESSION_RESET, P1) → LINK_CONNECTED or DISCONNECTED
 
 OPEN / ACCEPT 协商协议运行时参数，不协商业务能力，也不协商 Header Profile。Frame Profile 由 Transport Profile 固定决定。业务能力在 APP_READY 后通过 `capability.supportedMethods` 查询；完整 Capability Model 保留到 v2/P1。
 
+OPEN 由当前 Transport Profile 的 Physical Client 发送；ACCEPT 由 Physical Server 返回。OPEN/ACCEPT 只建立 AXTP Link Session，不决定哪一端是 Logical Server（见 03《Transport Profiles》§3.0）。
+
 ### 10.1 OPEN 请求字段
 
 | 字段 | TLV | 必须 |
