@@ -623,17 +623,18 @@ namespace axtp {
 
 enum class ControlOpcode : uint8_t {
     OPEN          = 0x01,
-    ACCEPT     = 0x02,
-    HEARTBEAT     = 0x03,
-    HEARTBEAT_ACK = 0x04,
-    ACK           = 0x05,
-    NACK          = 0x06,
-    RESUME        = 0x07,
-    RESUME_ACK    = 0x08,
-    CLOSE         = 0x09,
-    CLOSE_ACK     = 0x0A,
-    SESSION_RESET = 0x0B,
-    WINDOW_UPDATE = 0x0C,
+    ACCEPT        = 0x02,
+    READY         = 0x03,  // 三步协商预留，当前版本不实现，收到时忽略
+    HEARTBEAT     = 0x04,
+    HEARTBEAT_ACK = 0x05,
+    ACK           = 0x06,
+    NACK          = 0x07,
+    RESUME        = 0x08,
+    RESUME_ACK    = 0x09,
+    CLOSE         = 0x0A,
+    CLOSE_ACK     = 0x0B,
+    SESSION_RESET = 0x0C,
+    WINDOW_UPDATE = 0x0D,
 };
 
 enum class BodyEncoding : uint8_t {
