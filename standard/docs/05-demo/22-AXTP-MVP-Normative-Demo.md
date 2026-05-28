@@ -58,7 +58,7 @@ Client 发送 `PayloadType = CONTROL` 的 OPEN。
 OPEN body 至少携带：
 
 | 字段 | 来源 | 示例值 |
-|---|---|---|
+| --- |---| --- |
 | `protocolVersion` | 02 Control | `0x01` |
 | `headerProfile` | 01 Frame / 13 Registry | `STANDARD` 或 `COMPACT` |
 | `maxFrameSize` | 02 Control | 传输允许的最大 Frame |
@@ -83,10 +83,12 @@ ACCEPT 完成后，Device 主动发送 RPC Hello(op=0)，Client 回应 Identify(
 | 步骤 | 方向 | rpcOp | 方法 / 事件 | 关键字段 |
 | --- | --- | --- | --- | --- |
 | 1 | Server → Client | Hello(op=0) | - | `challengeString`、`authRequired`、`rpcVersion` |
-| 2 | Client → Server | Identify(op=2) | - | `clientName`、`clientVersion`、`rpcVersion`、`authResponse`（无密码时省略） |
+| 2 | Client → Server | Identify(op=2) | - | `clientName`、`clientVersion`、`rpcVersion`、`authResponse`（无密码时省略）、`eventMasks`（域级事件订阅掩码） |
 | 3 | Server → Client | Identified(op=3) | - | `sid`、`negotiatedRpcVersion` |
 
 三步完成后进入 `APP_READY` 状态。
+
+`eventMasks` 格式为 Hex 字符串，由 Domain Block 链拼接而成（见 08《Registry 总则》§23）。MVP 阶段设备可忽略 `eventMasks`，默认推送所有核心事件（全量广播模式）。
 
 如果设备为免鉴权模式，Hello 中 `authRequired=false`，Client 发送 Identify 时省略 `authResponse`，Device 直接回 Identified。
 
@@ -97,7 +99,7 @@ ACCEPT 完成后，Device 主动发送 RPC Hello(op=0)，Client 回应 Identify(
 Client 发送 RPC Request：
 
 | 字段 | 值 |
-|---|---|
+| --- |---|
 | `PayloadType` | RPC |
 | `rpcEncoding` | BINARY |
 | `rpcOp` | REQUEST |
@@ -105,7 +107,7 @@ Client 发送 RPC Request：
 | `methodId` | `capability.getAll` 对应 Registry 值 |
 | `bodyEncoding` | TLV |
 
-Device 返回 RPC Response，body 中至少包含：
+Device 返回 RPC Response，body 中至少包含 `capabilityMasks`（域级掩码 Hex 字符串）：
 
 ```text
 protocol.payloadTypes
@@ -116,6 +118,8 @@ protocol.ackModes
 rpc.encodings
 stream.profiles
 ```
+
+`capabilityMasks` 格式见 08《Registry 总则》§23 和 12《Capability 注册表》§4.1。
 
 ---
 
@@ -213,7 +217,7 @@ Stream Data
 STREAM L2 Header 字段引用 `04-AXTP-Stream流式传输协议规范`：
 
 | 字段 | 示例 |
-|---|---|
+| --- |---|
 | `streamId` | firmware.begin 返回值 |
 | `seqId` | 从 0 递增 |
 | `cursor` | 当前固件偏移 |

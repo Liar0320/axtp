@@ -511,7 +511,7 @@ Compact FrameInfo 是否溢出
 错误码映射：
 
 | 场景 | ErrorCode |
-|---|---|
+| --- |---|
 | Magic 错误 | `FRAME_BAD_MAGIC` |
 | Version 不支持 | `FRAME_UNSUPPORTED_VERSION` |
 | PayloadType 不支持 | `FRAME_UNSUPPORTED_PAYLOAD_TYPE` |
@@ -909,6 +909,21 @@ Session MVP 必须负责：
 处理 OPEN / ACCEPT
 处理 ACK / NACK
 路由 Frame 到 Control/RPC/Stream Parser
+处理 Hello / Identify / Identified 三步握手
+解析 Identify 中的 eventMasks（域级事件订阅掩码）
+```
+
+**eventMasks 处理**：MVP 阶段 Session 可采用全量广播模式，忽略 `eventMasks` 直接推送所有核心事件。P1 阶段实现按掩码过滤时，Session 需维护每个 Domain 的掩码字节数组：
+
+```cpp
+struct EventMaskEntry {
+    uint8_t domainId;
+    uint8_t maskLen;
+    uint8_t bitmask[32]; // 高水位截断，实际只用 maskLen 字节
+};
+
+// 判定某事件是否被订阅
+bool isEventSubscribed(uint8_t domainId, uint8_t bitOffset) const;
 ```
 
 Session MVP 不必须负责：
@@ -919,6 +934,7 @@ Session MVP 不必须负责：
 自动重连
 高级 QoS
 多设备路由表
+eventMasks 细粒度过滤（MVP 阶段全量广播即可）
 ```
 
 ---
