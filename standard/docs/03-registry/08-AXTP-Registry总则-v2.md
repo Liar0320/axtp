@@ -228,7 +228,9 @@ MVP 只实现：`CONTROL / RPC / STREAM`
 | `0x7F` | Vendor Escape |
 | `0x80-0xFF` | 保留 |
 
-MVP Control Opcode：`OPEN / ACCEPT / HEARTBEAT / HEARTBEAT_ACK / ACK / NACK / CLOSE / CLOSE_ACK`
+MVP Control Opcode：`OPEN(0x01) / ACCEPT(0x02) / HEARTBEAT(0x04) / HEARTBEAT_ACK(0x05) / ACK(0x06) / NACK(0x07) / CLOSE(0x0A) / CLOSE_ACK(0x0B)`
+
+预留 Opcode：`READY(0x03)` — 三步协商预留，当前版本不实现，收到时必须忽略
 
 ### 8.3 RPC Encoding
 
