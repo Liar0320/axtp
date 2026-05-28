@@ -32,9 +32,9 @@ RPC Payload
 | 编码模式 | rpcEncoding | 适用场景 |
 | --- | --- | --- |
 | JSON | `0x01` | WebSocket Text、HTTP Debug、CLI、浏览器调试 |
-| MessagePack | `0x04` | WebSocket Binary、高效文本协议场景 |
 | Binary | `0x02` | BLE、HID、UART、TCP、USB Bulk 嵌入式场景 |
 | CBOR | `0x03` | 可选，IoT 场景 |
+| MessagePack | `0x04` | WebSocket Binary、高效文本协议场景 |
 
 JSON 和 MessagePack 使用相同的 sid+op+d 语义结构，仅编码格式不同。Binary 使用固定二进制头，语义与 op+d 一一对应（sid 由 CONTROL 层 session 管理，不出现在 Binary Payload 中）。
 
@@ -101,7 +101,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
   "sid": "",
   "op": 0,
   "d": {
-    "obsWebSocketVersion": "1.0.0",
+    "axtpVersion": "1.0.0",
     "rpcVersion": 1,
     "authentication": {
       "challenge": "...",
