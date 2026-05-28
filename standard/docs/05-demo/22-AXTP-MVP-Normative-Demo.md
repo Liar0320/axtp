@@ -224,7 +224,7 @@ STREAM L2 Header 字段引用 `04-AXTP-Stream流式传输协议规范`：
 
 `dataLength` 由外层 Frame `PayloadLength - 16` 推导，不在 L2 Header 中重复编码。
 
-Compact Profile 的单帧 STREAM data 不得超过 `239B`，并且还必须满足 HID Report / BLE ATT MTU 的更小限制。
+单帧 STREAM data 上限由传输层 MTU 和 Frame Profile 决定，必须满足 HID Report / BLE ATT MTU 的限制。
 
 ---
 
@@ -303,10 +303,10 @@ Device 返回 CONTROL CLOSE_ACK。双方进入 CLOSED 状态。
 3. Standard CRC16 错误帧被拒绝；
 4. Compact CRC8 错误帧被拒绝；
 5. Compact MessageId > 0xFF 序列化失败；
-6. Compact STREAM data > 239B 序列化失败；
-7. STREAM chunk 缺失时返回 CONTROL NACK；
-8. sessionId 只存在于 Session Context；
-9. CLOSE / CLOSE_ACK 后拒绝新的 RPC / STREAM；
-10. Control Payload 使用统一 5B 固定头，两种 Frame Profile 下结构相同；
+6. STREAM chunk 缺失时返回 CONTROL NACK；
+7. sessionId 只存在于 Session Context；
+8. CLOSE / CLOSE_ACK 后拒绝新的 RPC / STREAM；
+9. Control Payload 使用统一 5B 固定头，两种 Frame Profile 下结构相同；
+10. STREAM Header 固定 16B，所有传输场景一致；
 11. Demo 不依赖任何 Legacy/Outdated 文档字段。
 ```

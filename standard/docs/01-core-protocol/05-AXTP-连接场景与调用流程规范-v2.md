@@ -22,7 +22,7 @@ AXTP Framed Mode
 
 - Control Payload：统一 5B 固定头（opcode/controlId/statusCode + TLV body），所有传输场景共用，不区分 Standard/Compact
 - RPC Binary Payload：统一 11B 固定头，所有传输场景共用
-- STREAM Payload：Standard 16B / Compact 8B，在 RPC 建流阶段协商
+- STREAM Payload：固定 16B Header，适用于所有传输场景
 
 WebSocket Text / HTTP JSON 只作为 Debug 或 Legacy Adapter，不承载正式 STREAM，不参与 CONTROL ACK/NACK / RESUME，不作为生产客户端必须实现的协议路径。
 
@@ -320,15 +320,15 @@ Host → Device: HID Report [CONTROL ACK]
 
 ```text
 Host → Device: RPC REQUEST firmware.begin
-  body: totalSize=1048576, chunkSize=48（适配 HID 58B 可用空间）
+  body: totalSize=1048576, chunkSize=42（适配 HID Compact Frame 58B 可用空间 - 16B STREAM Header）
 Device → Host: RPC REQUEST_RESPONSE firmware.begin
   body: streamId=0x01, ackMode=STOP_AND_WAIT
 
-Host → Device: STREAM chunk seqId=0 [48B data]
-  VT=0x13 Len=56 MsgId=0x06, streamId=0x01, seqId=0, cursor=0
+Host → Device: STREAM chunk seqId=0 [42B data]
+  VT=0x13 Len=58 MsgId=0x06, streamId=0x01, seqId=0, cursor=0
 Device → Host: CONTROL ACK seqId=0
-Host → Device: STREAM chunk seqId=1 [48B data]
-... (约 21845 次完成 1MB OTA)
+Host → Device: STREAM chunk seqId=1 [42B data]
+... (约 24899 次完成 1MB OTA)
 ```
 
 ### 6.3 错误处理
@@ -346,7 +346,7 @@ Host → Device: STREAM chunk seqId=1 [48B data]
 2. 每个 HID Report 承载一个 Frame（含分片），不跨 Report 拼接；
 3. Compact FrameCount 最大 15，单个 Message 最大 15 × 58B = 870B；Standard 无此限制；
 4. 超过单 Message 上限的数据必须通过 STREAM seqId/cursor 分块；
-5. OTA chunkSize 应适配 HID 可用 Payload（Standard: ≤ 32B；Compact: ≤ 42B，扣除 STREAM Header 16B）；
+5. OTA chunkSize 应适配 HID 可用 Payload（Standard: ≤ 32B；Compact: ≤ 42B，扣除 16B STREAM Header）；
 6. HID 心跳间隔推荐 1s-5s。
 ```
 
@@ -566,11 +566,11 @@ requestId 在转发时保持不变，确保 App 能正确匹配 Request/Response
 ```text
 App → Gateway: Standard RPC firmware.begin → Standard RPC REQUEST_RESPONSE streamId=0x09
 App → Gateway: Standard STREAM chunk seqId=0 [4096B data]
-Gateway: 将 4096B 数据按 BLE MTU 拆分为多个 Compact STREAM 分片
-Gateway → Device: Compact STREAM frag 0, seqId=0, cursor=0 [163B]
-Gateway → Device: Compact STREAM frag 1, seqId=0, cursor=163 [163B]
+Gateway: 将 4096B 数据按 BLE MTU 拆分为多个 Frame 分片转发
+Gateway → Device: STREAM frag 0, seqId=0, cursor=0 [163B]
+Gateway → Device: STREAM frag 1, seqId=0, cursor=163 [163B]
 ...
-Device → Gateway: Compact ACK seqId=0
+Device → Gateway: ACK seqId=0
 Gateway → App: Standard ACK seqId=0
 ```
 
@@ -853,7 +853,7 @@ Adapter → Legacy Client: 旧 OTA Chunk ACK
 | 网关（App 侧） | Standard | 需要 SourceId/DestinationId 路由 |
 | 网关（Device 侧） | 取决于 Device 传输层 | BLE/UART → Compact；TCP/WS → Standard |
 
-> Control Payload 固定 5B 头，不随 Frame Profile 变化。STREAM Payload 的 Standard/Compact 在 RPC 建流时单独协商。
+> Control Payload 固定 5B 头，不随 Frame Profile 变化。STREAM Payload 固定 16B Header，适用于所有传输场景。
 
 ### 13.2 Session 恢复能力
 

@@ -426,16 +426,18 @@ method/event 继续由 registry 管理；
 method bitmap 作为首版唯一强制能力发现机制；
 完整 capability 作为未来增强层。
 
-2. frameheader根据magicnumber或者连接对象来判定，stream header通过frameheader的control命令协商得到
 
 
-3. 要实现的几个端的场景（精简00号文档，并将落地方案补充到文档中）
+
+1. 要实现的几个端的场景（精简00号文档，并将落地方案补充到文档中）
    1. nearsync-设备，hid方案，frameheader + json
    2. nearsync-cloud，websocket方案，unframed rpcjson
-   3. uxplay的受控端
+   3. uxplay的受控端--作为试点
    4. na20的audio-video上传，通过hid，走stream流，需要设计完整的协议流程
 
-4. 取消stream payload下的8B长度头类型
-5. 很重要，但是后面的协议文档没有关注的点：0x20-0x5F	当前 schema 私有字段
-6. generator中，生成registry的标准仿佛不是按照文档08-13来的，需要确认；理论上应该是参照08-13的文档标准内容，去检验registry的内容
-7. generator生成器生成的东西里面，需要有整个协议设计的一些overview在前面介绍，然后是各种domain下的method/event/errorcode的这些东西，但是现在好像是没有overview写着的，参考obs-websocket
+2. 取消stream payload下的8B长度头类型
+3. 很重要，但是后面的协议文档没有关注的点：0x20-0x5F	当前 schema 私有字段
+4. generator中，生成registry的标准仿佛不是按照文档08-13来的，需要确认；理论上应该是参照08-13的文档标准内容，去检验registry的内容
+5. generator生成器生成的东西里面，需要有整个协议设计的一些overview在前面介绍，然后是各种domain下的method/event/errorcode的这些东西，但是现在好像是没有overview写着的，参考obs-websocket
+6. 关于逻辑和物理server得定义：OPEN 由 Physical Client 发起，用于打开底层 AXTP 逻辑通道。
+Hello 由 Logical Server 发起，用于打开 RPC 业务会话。

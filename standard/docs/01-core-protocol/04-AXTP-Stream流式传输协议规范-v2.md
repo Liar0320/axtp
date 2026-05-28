@@ -39,16 +39,11 @@ Stream Data: opaque bytes
 
 ---
 
-## 3. STREAM Header Profile
+## 3. STREAM Header
 
-AXTP v1 定义两种 STREAM Header Profile，在 RPC 建流阶段协商，写入 Stream Context。
+AXTP v1 只有一种 STREAM Header：固定 16B Standard Header，适用于所有传输场景（TCP / WebSocket Binary / USB Bulk / BLE / USB HID / UART）。
 
-| Profile | 总长度 | 适用场景 |
-| --- | ---: | --- |
-| Standard | 16B | TCP / WebSocket Binary / USB Bulk |
-| Compact | 8B | BLE / USB HID / UART（低带宽场景） |
-
-### 3.1 Standard STREAM Header（16B）
+### 3.1 STREAM Header（16B）
 
 ```text
 +------------------+
@@ -67,64 +62,7 @@ AXTP v1 定义两种 STREAM Header Profile，在 RPC 建流阶段协商，写入
 | `seqId` | uint32 | 4B | stream 内数据包序号，从 0 开始，uint32 自然回绕 |
 | `cursor` | uint64 | 8B | 通用游标，含义由 Stream Context 的 cursorUnit 决定 |
 
-### 3.2 Compact STREAM Header（8B）
-
-```text
-+------------------+
-| streamId:uint16  |  2B
-+------------------+
-| seqId:uint16     |  2B
-+------------------+
-| cursor:uint32    |  4B
-+------------------+
-| data...          |  N
-```
-
-| 字段 | 类型 | 长度 | 说明 |
-| --- |---:|---:| --- |
-| `streamId` | uint16 | 2B | 流通道 ID，最大 65534 个并发流（0x0000 保留） |
-| `seqId` | uint16 | 2B | stream 内数据包序号，从 0 开始，uint16 自然回绕（接收方必须处理回绕） |
-| `cursor` | uint32 | 4B | 通用游标，最大 4GB 偏移（byteOffset）或 4G 微秒（timestampUs） |
-
-**Compact Header 限制：**
-
-- seqId uint16 最大 65535，BLE 163B/chunk 下约 10MB 回绕一次，接收方必须实现回绕检测
-- cursor uint32 最大 4GB，适用于 MCU 固件 OTA 和小文件传输；超过 4GB 的传输必须使用 Standard Header
-- streamId uint16 最大 65534，点对点场景完全够用
-
-**Compact Header 节省效果：**
-
-| 传输层 | Standard 数据空间 | Compact 数据空间 | 提升 |
-| --- | ---: | ---: | ---: |
-| BLE (ATT MTU 185B) | 163B | 171B | +5% |
-| USB HID (64B Report) | 42B | 50B | +19% |
-
-所有字段 Little-Endian。`payloadLength = headerSize + dataLength`，headerSize 由 Stream Context 的 `streamHeaderProfile` 决定。
-
-### 3.3 Profile 选择与协商
-
-`streamHeaderProfile` 由 Server 在建流 RPC Response 中返回，Client 按返回值解析和发送后续 STREAM 数据包。
-
-Server 选择原则：
-
-- 若协商的 `maxFrameSize ≤ 128B`（BLE/HID 场景）→ 优先返回 `compact`
-- 若 `totalSize > 4GB` 或 `expectedSeqCount > 65535` → 必须返回 `standard`
-- 其余情况 → 由 Server 根据传输层自行决定
-
-Client 可在建流请求中通过 `preferredStreamHeaderProfile` 字段表达偏好，Server 可忽略。
-
-建流 Response 示例（新增 `streamHeaderProfile` 字段）：
-
-```json
-{
-  "streamId": 33,
-  "profile": "firmware.ota",
-  "chunkSize": 50,
-  "ackMode": "stop_and_wait",
-  "cursorUnit": "byteOffset",
-  "streamHeaderProfile": "compact"
-}
-```
+所有字段 Little-Endian。`payloadLength = 16 + dataLength`。
 
 ### 3.2 cursor 含义
 
@@ -171,7 +109,7 @@ totalSize: 1048576
 verifyType: md5
 ```
 
-STREAM 数据包只携带 `streamId/seqId/cursor/data`，通用 StreamParser 按 Stream Context 的 `streamHeaderProfile` 决定解析 8B 还是 16B Header，然后按 streamId 查表投递数据。
+STREAM 数据包只携带 `streamId/seqId/cursor/data`，StreamParser 固定解析 16B Header，然后按 streamId 查表投递数据。
 
 ### 4.1 Stream Context 生命周期
 
@@ -371,20 +309,20 @@ MVP 建议：断线后允许重新分配 streamId，业务对象通过 transferI
 
 ## 12. BLE 传输 MTU 前置检查
 
-BLE 默认 ATT MTU 23B，去除 ATT 头后有效载荷仅 20B，无法容纳 Compact Frame Header(4B) + Compact STREAM Header(8B) + CRC8(1B) = 13B 以上的数据。在 BLE 上使用 STREAM 必须在 CONTROL OPEN 阶段协商 MTU，协商后有效 Payload 空间必须 ≥ 14B（Compact STREAM）或 ≥ 22B（Standard STREAM）。推荐协商至 185B 或 247B（BLE 5.0 DLE）。
+BLE 默认 ATT MTU 23B，去除 ATT 头后有效载荷仅 20B，无法容纳 Compact Frame Header(4B) + STREAM Header(16B) + CRC8(1B) = 21B 以上的数据。在 BLE 上使用 STREAM 必须在 CONTROL OPEN 阶段协商 MTU，协商后有效 Payload 空间必须 ≥ 17B（STREAM Header 16B + 至少 1B data）。推荐协商至 185B 或 247B（BLE 5.0 DLE）。
 
-| BLE ATT MTU | Standard 可用数据 | Compact 可用数据 | 有效载荷比（Compact） |
+| BLE ATT MTU | Compact Frame 可用 Payload | STREAM 可用数据 | 有效载荷比 |
 | --- | ---: | ---: | ---: |
 | 23B（默认） | 不可用 | 不可用 | — |
-| 64B | 43B | 51B | 80% |
-| 185B | 163B | 171B | 92% |
-| 247B | 225B | 233B | 94% |
+| 64B | 58B | 42B | 66% |
+| 185B | 179B | 163B | 88% |
+| 247B | 241B | 225B | 91% |
 
 ---
 
 ## 13. 编码示例
 
-### 13.1 Standard STREAM Packet（最小）
+### 13.1 STREAM Packet（最小）
 
 ```text
 streamId=1, seqId=0, cursor=0, data=AA BB CC DD
@@ -395,7 +333,7 @@ streamId=1, seqId=0, cursor=0, data=AA BB CC DD
 AA BB CC DD              // data
 ```
 
-### 13.2 Standard STREAM Packet（OTA 第 2 个 chunk）
+### 13.2 STREAM Packet（OTA 第 2 个 chunk）
 
 ```text
 streamId=33, seqId=1, cursor=512, data=firmware[512..1023]
@@ -406,17 +344,6 @@ streamId=33, seqId=1, cursor=512, data=firmware[512..1023]
 [512 bytes firmware data]
 ```
 
-### 13.3 Compact STREAM Packet（BLE/HID OTA 第 2 个 chunk）
-
-```text
-streamId=1, seqId=1, cursor=50, data=firmware[50..99]
-
-01 00        // streamId (uint16)
-01 00        // seqId (uint16)
-32 00 00 00  // cursor=50 (uint32)
-[50 bytes firmware data]
-```
-
 ---
 
 ## 14. Parser 实现要求
@@ -425,11 +352,9 @@ streamId=1, seqId=1, cursor=50, data=firmware[50..99]
 ```text
 parse AXTP Frame Header
   → if payloadType != STREAM: dispatch other parser
-  → lookup StreamContext by streamId (peek first 2B or 4B)
-  → determine headerSize from streamHeaderProfile (8 or 16)
-  → ensure payloadLength >= headerSize
-  → read streamId / seqId / cursor per profile
-  → data = payload[headerSize:]
+  → ensure payloadLength >= 16
+  → read streamId(4B) / seqId(4B) / cursor(8B)
+  → data = payload[16:]
   → validate seqId / cursor / window
   → dispatch data to profile handler
 ```
@@ -454,7 +379,7 @@ parse AXTP Frame Header
 | `streamType` | RPC Stream Context `profile` |
 | `timestamp` | STREAM Header `cursor`（cursorUnit=timestampUs） |
 | `flags` | Stream Context / data profile |
-| `dataLength` | Frame Header `payloadLength - headerSize`（8 或 16） |
+| `dataLength` | Frame Header `payloadLength - 16` |
 | OTA `offset` | STREAM Header `cursor`（cursorUnit=byteOffset） |
 | OTA `totalLength` | `firmware.begin.params.totalSize` |
 | OTA `chunkCrc32` | profile trailer 或 CONTROL ACK/NACK |
@@ -467,9 +392,7 @@ parse AXTP Frame Header
 | 能力 | 是否必须 |
 | --- |---|
 | `PayloadType = STREAM` | 必须 |
-| 16B Standard STREAM Header | 必须 |
-| 8B Compact STREAM Header | 必须（BLE/HID 场景） |
-| streamHeaderProfile 协商 | 必须 |
+| 16B STREAM Header | 必须 |
 | streamId 查表 | 必须 |
 | seqId 顺序检测 | 必须 |
 | cursor 解析 | 必须 |
@@ -486,4 +409,4 @@ parse AXTP Frame Header
 
 ## 17. 版本与兼容策略
 
-STREAM Header 有 Standard（16B）和 Compact（8B）两种 Profile，通过 RPC 建流协商，写入 Stream Context，不得在运行时切换。新增业务流类型只扩展 Stream Profile Registry，不改 Header 结构。
+AXTP v1 STREAM Header 固定为 16B，不存在多 Profile 协商。新增业务流类型只扩展 Stream Profile Registry，不改 Header 结构。
