@@ -12,9 +12,9 @@
     "test": "vitest run",
     "lint": "tsc -p tsconfig.json --noEmit",
     "validate": "node dist/cli.js validate --spec ..",
-    "generate": "node dist/cli.js generate --spec .. --out ../out/generated",
-    "validate:protocol": "node dist/cli.js validate-protocol --spec ../..",
-    "generate:protocol": "node dist/cli.js generate-protocol --spec ../.. --out ../../generated"
+    "generate": "node dist/cli.js generate --spec .. --out ../runtimes/cpp-core/include/axtp/generated --out-docs ../docs/generated --out-mcp ../tooling/mcp --out-vectors ../tooling/test-vectors",
+    "validate:protocol": "node dist/cli.js validate-protocol --spec ..",
+    "generate:protocol": "node dist/cli.js generate-protocol --spec .. --out ../docs/generated"
   },
   "dependencies": {
     "commander": "^12.1.0",

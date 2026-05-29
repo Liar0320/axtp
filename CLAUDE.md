@@ -4,24 +4,55 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Repo Is
 
-This is the **AXTP (Auditoryworks Transport Protocol)** specification repository. It is currently a pure documentation project — no build system, no code, no tests. The `generator/`, `registry/`, and `out/` directories under `standard/` are empty placeholders for future phases.
+This is the **AXTP (Auditoryworks Transport Protocol)** specification repository — a Registry-Driven Protocol Platform. It contains the protocol specification, YAML registries, a TypeScript generator toolchain, and generated artifacts.
 
 ## Repository Structure
 
 ```text
-standard/
+axtp/
 ├── docs/
-│   ├── 00-overview/        # Protocol overview and landing roadmap
-│   ├── 01-core-protocol/   # Frame layer, Control, RPC, Stream specs
-│   ├── 02-type-system/     # Type system, TLV encoding, field numbering
-│   ├── 03-registry/        # Method/Event/Error/Capability registries
-│   ├── 04-compatibility/   # Legacy protocol migration
-│   ├── 05-demo/            # Demo specs (WebSocket, HID, BLE, OTA)
-│   ├── 06-generator/       # Generator v1 spec
-│   └── 07-cpp-demo/        # C++ demo implementation spec
-├── generator/              # (empty) Future: generator tool
-├── registry/               # (empty) Future: YAML registry files
-└── out/                    # (empty) Future: generated output
+│   ├── specs/               # 00-22 手动编写的协议规范 Markdown
+│   └── generated/           # ⚠️ Generator 生成的 Registry API 参考手册（禁止手改）
+│
+├── registry/                # 单一事实源 — 纯 YAML（扁平结构）
+│   ├── method_registry.yaml
+│   ├── event_registry.yaml
+│   ├── error_code.yaml
+│   ├── capability_registry.yaml
+│   ├── *_schema.yaml        # TLV 类型定义
+│   └── ...
+│
+├── protocol/                # 统一协议定义文件
+│   └── axtp.protocol.yaml   # 顶层 Protocol Definition（单一事实源）
+│
+├── domains/                 # 业务域配置（预留，纯 YAML）
+│   ├── device/
+│   ├── firmware/
+│   ├── media/
+│   ├── session/
+│   └── discovery/
+│
+├── generators/              # 编译器工具链（TypeScript/Node.js）
+│   ├── src/                 # 核心逻辑（cli, loader, validator, emitters）
+│   ├── templates/           # 代码生成模板（预留）
+│   ├── package.json
+│   └── tsconfig.json
+│
+├── runtimes/                # 各端运行时实现（代码隔离区）
+│   ├── cpp-core/
+│   │   ├── src/             # 手写 C++ 核心协议栈（预留）
+│   │   └── include/axtp/generated/  # ⚠️ 生成的 C++ 头文件（禁止手改）
+│   └── web-sdk/
+│       ├── src/             # 手写 TS/JS SDK（预留）
+│       └── generated/       # ⚠️ 生成的 TypeScript 类型（禁止手改）
+│
+├── tooling/                 # 平台化工具链
+│   ├── mcp/                 # ⚠️ 生成的 AI Agent JSON Schema 工具描述
+│   ├── wireshark/           # ⚠️ 生成的 Wireshark Lua 解析插件（预留）
+│   └── test-vectors/        # ⚠️ 生成的 JSON/hex 测试向量
+│
+└── adapters/                # 兼容层：旧协议文档与映射
+    └── legacy-protocols/    # 旧协议参考文档（xlsx, pdf, md）
 ```
 
 ## Protocol Architecture
@@ -29,7 +60,7 @@ standard/
 AXTP defines a 5-layer stack:
 
 ```text
-Business Layer      → device / brightness / video / ota domains
+Business Layer      → device / display / firmware / media domains
 Registry Layer      → Method / Event / Error / Capability IDs
 Payload Layer       → CONTROL (0x01) / RPC (0x02) / STREAM (0x03)
 AXTP Frame Layer    → Header / Length / MessageId / Fragment / CRC
@@ -40,57 +71,40 @@ Transport Layer     → BLE / HID / UART / TCP / WebSocket / USB Bulk
 
 ## Two Header Profiles
 
-- **Standard Profile** (12B Header + 2B CRC16 Footer = 14B total): TCP, WebSocket Binary, USB Bulk, gateways. Magic=`AX` (`0x41 0x58`), Version, PayloadType, PayloadLength(uint16), SourceId, DestinationId, MessageId(uint16), FrameIndex(uint8), FrameCount(uint8). No Flags field.
-- **Compact Profile** (4B Header + 1B CRC8 Footer = 5B total): BLE, USB HID, UART, MCU. No Magic (relies on transport frame boundary). VT(Version+PayloadType), PayloadLength(uint8), MessageId(uint8), FrameInfo(FrameIndex+FrameCount nibbles). No Flags field.
+- **Standard Profile** (12B Header + 2B CRC16 Footer = 14B total): TCP, WebSocket Binary, USB Bulk, gateways.
+- **Compact Profile** (4B Header + 1B CRC8 Footer = 5B total): BLE, USB HID, UART, MCU.
 
 ## Three Payload Types
 
 | PayloadType | Value | Role |
 | --- | --- | --- |
-| CONTROL | 0x01 | Protocol runtime signals: HELLO, ACK, NACK, HEARTBEAT, RESUME, CLOSE |
+| CONTROL | 0x01 | Protocol runtime signals: OPEN, ACK, NACK, HEARTBEAT, RESUME, CLOSE |
 | RPC | 0x02 | Business control plane: request, response, event, batch |
 | STREAM | 0x03 | Business data plane: video/audio frames, OTA chunks, file chunks, logs |
-
-RPC uses an internal `rpcEncoding` field (JSON / BINARY / TLV / CBOR / FIXED_STRUCT). JSON means the DS-RPC Text Profile; Binary-RPC uses the same Method/Event/Error/Capability semantics with binary headers and TLV bodies.
-
-## Connection Profiles
-
-- WebSocket Text and HTTP Debug API use DS-RPC Text Profile only. They carry Hello, Heartbeat, Request, Response, Event, and Bye through DS-RPC `op` values and do not send AXTP Frame Header.
-- WebSocket Binary, HID, BLE, UART, TCP, and USB Bulk use AXTP Framed Mode. They carry lifecycle and reliability through `PayloadType=CONTROL`, business calls through `PayloadType=RPC`, and data plane traffic through `PayloadType=STREAM`.
-- Do not mix DS-RPC Envelope and AXTP Frame Header on the same connection. Both codecs should decode into the same internal Session + ProtocolMessage runtime.
-
-## Development Phases
-
-The project is in **Phase 0 (documentation)**. Planned phases:
-
-1. **Phase 1**: Structured YAML registries (`method_registry.yaml`, `event_registry.yaml`, `error_code.yaml`, `capability_registry.yaml`, `tlv_schema.yaml`)
-2. **Phase 2**: Generator v1 — reads YAML, outputs C++ enums/constants, Markdown tables, test vectors
-3. **Phase 3**: C++ Demo — frame encoder/decoder, control/rpc/stream parsers, TLV codec, mock transport
-4. **Phase 4**: Legacy protocol compatibility adapters
-5. **Phase 5**: Real transport integration (WebSocket → HID → BLE → UART → TCP)
-
-## MVP Scope
-
-The MVP validates this end-to-end flow:
-
-```text
-CONTROL HELLO/HELLO_ACK → RPC capability.getAll → RPC device.getInfo →
-RPC brightness.set → RPC Event brightness.changed →
-RPC firmware.begin → STREAM OTA chunk → CONTROL ACK/NACK →
-RPC firmware.verify → RPC Event firmware.updateCompleted → CONTROL CLOSE
-```
-
-MVP domains: `device.*`, `capability.*`, `brightness.*`, `firmware.*`, `stream.*`, `event.*`
 
 ## Key Conventions
 
 - **Byte order**: Little-Endian for all multi-byte integers in AXTP v1 wire format
-- **CRC**: Standard uses CRC16-CCITT-FALSE (poly 0x1021, init 0xFFFF); Compact uses CRC8-MAXIM (poly 0x31, init 0x00, reflected). Both cover Header + Payload.
-- **Magic**: Standard only — 2 bytes `0x41 0x58` (`AX`). Compact has no Magic (relies on HID/BLE transport frame boundary).
-- **No Flags field** in either Profile — ACK mode negotiated in HELLO; compression/encryption expressed in bodyEncoding.
-- **Registry is the single source of truth** — Markdown docs are human-readable output; YAML registries are the machine-readable source; Generator produces both code and docs from YAML
-- **MessageId** (Frame layer) ≠ **requestId** (RPC layer) ≠ **streamId** (Stream layer) — these serve distinct purposes and must not be substituted for each other
+- **CRC**: Standard uses CRC16-CCITT-FALSE; Compact uses CRC8-MAXIM. Both cover Header + Payload.
+- **Registry is the single source of truth** — `registry/*.yaml` and `protocol/axtp.protocol.yaml` are the machine-readable source; Generator produces code and docs from YAML.
+- **No-Touch Rule**: All `generated/` directories are produced by `generators/`. Never hand-edit them.
+- **MessageId** (Frame layer) ≠ **requestId** (RPC layer) ≠ **streamId** (Stream layer)
+
+## Generator Usage
+
+```bash
+cd generators
+pnpm install
+pnpm build
+pnpm validate:protocol   # validate protocol/axtp.protocol.yaml
+pnpm generate:protocol   # generate docs/generated/
+pnpm validate            # validate registry/*.yaml
+pnpm generate            # generate runtimes/, tooling/
+```
 
 ## When Adding to This Repo
 
-When writing new spec documents, follow the existing numbering convention (`NN-AXTP-<Title>.md`) and place them in the appropriate `docs/` subdirectory. When the registry YAML phase begins, files go in `standard/registry/` and generated output in `standard/out/`.
+- New spec documents → `docs/specs/` (follow `NN-AXTP-<Title>.md` numbering)
+- New registry entries → edit `registry/*.yaml` then run `pnpm generate`
+- New protocol definition content → edit `protocol/axtp.protocol.yaml` then run `pnpm generate:protocol`
+- Never edit files under any `generated/` directory directly
