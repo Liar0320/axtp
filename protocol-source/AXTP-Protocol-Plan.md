@@ -12,6 +12,7 @@ AXTP v1 now separates the documentation system into three layers:
 1. Stable normative specs under `standard/docs/`.
 2. Protocol content source under `protocol-source/`.
 3. Machine-readable protocol facts under `protocol/axtp.protocol.yaml`, with generated outputs under `generated/`.
+4. Future and legacy source material under `protocol-source/future/` and `protocol-source/legacy/`.
 
 ## 2. Source Of Truth
 
@@ -20,7 +21,7 @@ AXTP v1 now separates the documentation system into three layers:
 The previous 08-13 hand-written registry documents have been moved to:
 
 ```text
-protocol-source/legacy-docs/registry-v2/
+protocol-source/legacy-docs/02-registry/
 ```
 
 They are retained as migration reference material, not as current normative registry tables.
@@ -35,7 +36,7 @@ The stable normative layer defines rules and constraints:
 | `09-AXTP-Methods-Registry-Spec.md` | `methods:` entry model and validation rules. |
 | `10-AXTP-Events-Registry-Spec.md` | `events:` entry model and validation rules. |
 | `11-AXTP-Errors-Registry-Spec.md` | `errors:` entry model and error mapping rules. |
-| `12-AXTP-Types-and-Capability-Spec.md` | `types:` model, fieldId rules and v1 capability scope. |
+| `12-AXTP-Types-and-Capability-Spec.md` | `types:` model, fieldId rules and v1 `capability.supportedMethods` scope. |
 | `13-AXTP-Profiles-Registry-Spec.md` | `profiles:` model and implementation profile rules. |
 
 These files must not contain full business request/event/error tables.
@@ -85,15 +86,18 @@ generated/
 - v1 capability discovery is limited to `capability.supportedMethods`.
 - Full dynamic capability modeling is reserved for v2/P1.
 - WebSocket Text and HTTP JSON are debug or legacy adapter paths and must not carry production STREAM.
+- Domain-scoped method/event masks are wire-relevant and must be specified in v1 Core docs, not only in legacy registry tables.
 
 ## 7. Migration Steps
 
-1. Keep existing stable specs in `standard/docs/01-core-protocol/`.
+1. Keep existing stable specs in `standard/docs/00-spec/`.
 2. Replace old 08-13 registry tables with Protocol Definition meta specs.
-3. Move old 08-13 registry documents into `protocol-source/legacy-docs/registry-v2/`.
+3. Move old 08-13 registry documents into `protocol-source/legacy-docs/02-registry/`.
 4. Consolidate current registry/schema facts into `protocol/axtp.protocol.yaml`.
 5. Generate `generated/protocol.md` from `protocol/axtp.protocol.yaml`.
 6. Extend the generator so schema, SDK enum, bitmap and conformance outputs are derived from the same file.
+7. Move complete Capability Model material into `protocol-source/future/AXTP-Capability-Model-v2.md`.
+8. Move legacy compatibility tables into `protocol-source/legacy/AXTP-Legacy-Compatibility-Reference.md`.
 
 ## 8. Change Workflow
 

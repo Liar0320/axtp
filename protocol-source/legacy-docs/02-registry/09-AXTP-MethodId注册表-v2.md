@@ -1,7 +1,7 @@
 # 09《AXTP MethodId 注册表》
 
-版本：v1.1 Draft  
-状态：MVP MethodId 注册表（精简版）  
+版本：v1.1 Draft
+状态：MVP MethodId 注册表（精简版）
 适用范围：AXTP RPC MethodId 分配、Domain 分段、MVP 方法集合、老协议适配
 
 ---

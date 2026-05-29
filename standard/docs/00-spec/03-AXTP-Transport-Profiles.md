@@ -31,6 +31,16 @@ AXTP Framed Mode
 
 WebSocket Text / HTTP JSON 只作为 Debug 或 Legacy Adapter，不承载正式 STREAM，不参与 CONTROL ACK/NACK / RESUME，不作为生产客户端必须实现的协议路径。
 
+旧 08-13 注册表中关于 transport/header/profile 的内容在 v1 中按以下边界处理：
+
+| 内容 | 归属 |
+|---|---|
+| Transport Profile 到 Frame Profile 的固定绑定 | 本文档 |
+| Standard / Compact Frame Header 字段 | 02《Frame and Payload Spec》 |
+| Control / RPC / STREAM L2 固定头 | 04 / 05 / 06 |
+| Profile 条目的机器可读描述 | `protocol/axtp.protocol.yaml` 的 `profiles:` |
+| 完整业务 profile 清单 | `protocol-source/AXTP-Protocol-Full-Reference.md` |
+
 ---
 
 ## 2. 场景总览

@@ -7,7 +7,7 @@
 
 版本：v1.0.0-rc1
 状态：AXTP v1 Core Freeze Candidate
-适用范围：`PayloadType = RPC` 的 Payload 结构、op+d Envelope、sid、JSON/MessagePack/Binary 编码、MethodId/EventId、Hello/Identify/Request/Response/Event/Batch  
+适用范围：`PayloadType = RPC` 的 Payload 结构、op+d Envelope、sid、JSON/MessagePack/Binary 编码、MethodId/EventId、Hello/Identify/Request/Response/Event/Batch
 前置文档：01《AXTP Protocol Framework》、02《AXTP Frame and Payload Spec》、04《AXTP Control Session Spec》
 后续文档：06《AXTP Stream Spec》、Registry 文档
 
@@ -545,6 +545,8 @@ bool isEventSubscribed(const uint8_t* bitmask, uint8_t maskLen, uint8_t bitOffse
 MVP 阶段设备可采用"全量广播模式"：忽略 `eventMasks`，只要 App 进入 APP_READY 状态，设备产生的所有核心事件无条件推送。P1 阶段再实现按掩码过滤。
 
 初始订阅在 Identify（op=2）的 `eventMasks` 字段声明。运行时修改订阅使用 Reidentify（op=4）。
+
+事件掩码的 DomainId 与 EventId 高字节对齐，例如 `display.*` 事件 `0x85xx` 使用 DomainId `0x85`。这与 `capability.supportedMethods` 的 method bitmap 不同，后者与 methodId 高字节对齐，例如 `display.*` method `0x05xx` 使用 DomainId `0x05`。两种掩码格式相同，但 DomainId 空间不同，生成器必须分别从 `events[].bitOffset` 和 `methods[].bitOffset` 派生。
 
 ---
 

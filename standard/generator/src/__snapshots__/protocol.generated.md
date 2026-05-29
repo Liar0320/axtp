@@ -526,3 +526,4 @@ Kind: `object`
 | Transport Profiles | AXTP-HID-64 |
 | Frame Profiles | COMPACT_FRAME |
 | Notes | - |
+

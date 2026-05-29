@@ -16,13 +16,22 @@
 
 ---
 
-## 2. events 条目结构
+## 2. 事件设计原则
+
+- 事件名使用过去式或状态变化语义（`device.statusChanged`，不是 `device.changeStatus`）
+- 事件不替代 Response：Response 回答请求是否成功，Event 通知后续状态变化
+- 接收端必须允许忽略未知事件
+- 每个事件必须绑定事件数据 Schema，不允许只定义事件名而不定义数据结构
+- 事件订阅使用域级掩码（`eventMasks`），由 RPC `IDENTIFY / REIDENTIFY` 声明；每个事件在其 Domain 内分配唯一 `bitOffset`（0-255）；MVP 阶段设备可采用全量广播模式
+
+
+## 3. events 条目结构
 
 ```yaml
 events:
   - name: device.statusChanged
-    eventId: 0x8201
-    bitmapId: 0
+    eventId: 0x8101
+    bitOffset: 0
     domain: device
     since: 1.0.0
     status: stable
@@ -33,13 +42,13 @@ events:
 
 ---
 
-## 3. 字段定义
+## 4. 字段定义
 
 | 字段 | 必填 | 说明 |
 |---|---:|---|
 | `name` | 是 | event name，必须为 `domain.eventName` |
 | `eventId` | 是 | uint16，Binary-RPC eventId，wire 上使用 |
-| `bitmapId` | 是 | uint8，该 event 在所属 domain 的 `eventMasks` bitmask 中的 bit 位置（bitOffset），domain 内从 0 开始，domain 内唯一 |
+| `bitOffset` | 是 | uint8，该 event 在所属 domain 的 `eventMasks` bitmask 中的 bit 位置（bitOffset），domain 内从 0 开始，domain 内唯一 |
 | `domain` | 是 | 与 name 前缀一致 |
 | `since` | 是 | 首次引入版本 |
 | `status` | 是 | `draft / experimental / stable / deprecated / reserved` |
@@ -50,21 +59,22 @@ events:
 
 ---
 
-## 4. 约束
+## 5. 约束
 
 1. `eventId` 在所有 events 中必须唯一。
-2. `bitmapId` 在同一 `domain` 内必须唯一，从 0 开始连续分配，stable 后不得复用。
+2. `bitOffset` 在同一 `domain` 内必须唯一，从 0 开始连续分配，stable 后不得复用。
 3. `name` 在所有 events 中必须唯一。
 4. stable eventId 不得复用；废弃只能标记 `deprecated`。
 5. `payload.type` 必须存在。
 6. Event 必须通过 `PayloadType = RPC` 且 `rpcOp = EVENT` 承载。
 7. STREAM 数据不得作为 Event 直接承载；Event 只能通知状态或结果。
-8. `eventMasks` 中的 `bitOffset` 必须与 `bitmapId` 一致，由 `axtpc` 从 `events[].bitmapId` 自动派生。
+8. `eventMasks` 中的 `bitOffset` 必须与 `bitOffset` 一致，由 `axtpc` 从 `events[].bitOffset` 自动派生。
 9. v1 Core 不强制完整 event capability discovery；事件能力可在 v2 Capability Model 中描述。
+10. eventId 必须从 `0x8000` 以上分配，event mask DomainId 与 eventId 高字节对齐。
 
 ---
 
-## 5. 生成规则
+## 6. 生成规则
 
 `axtpc` 必须从 `events:` 生成：
 
@@ -72,9 +82,9 @@ events:
 generated/protocol.md Events Reference
 generated/schema event payload schema
 generated/cpp event enum          // eventId 值
-generated/cpp event bitmap enum   // bitmapId 值（按 domain 分组）
+generated/cpp event bitmap enum   // bitOffset 值（按 domain 分组）
 generated/ts event enum
 generated/conformance event payload validation cases
 ```
 
-`eventMasks` 中每个 domain 的 bitmask 由该 domain 下所有 events 的 `bitmapId` 自动派生：domain 内第 N bit 置 1 表示 `bitmapId=N` 的 event 已订阅。v1 MVP 设备可采用全量广播模式，忽略 `eventMasks`。
+`eventMasks` 中每个 domain 的 bitmask 由该 domain 下所有 events 的 `bitOffset` 自动派生：domain 内第 N bit 置 1 表示 `bitOffset=N` 的 event 已订阅。v1 MVP 设备可采用全量广播模式，忽略 `eventMasks`。

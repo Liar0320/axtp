@@ -1,0 +1,1217 @@
+{
+  "source": "protocol/axtp.protocol.yaml",
+  "protocol": {
+    "name": "AXTP",
+    "version": "1.0.0",
+    "specVersion": 1,
+    "registryVersion": "1.0.0",
+    "status": "rc1"
+  },
+  "overview": {
+    "title": "AXTP Protocol",
+    "summary": "AXTP is a transport-independent device communication protocol for CONTROL, RPC and STREAM payloads across TCP, WebSocket, USB HID, BLE and UART transports.",
+    "goals": [
+      "Provide one unified protocol model for control, request/response RPC and stream transfer.",
+      "Keep production clients small by binding each transport to a fixed frame profile.",
+      "Support both standard and compact binary frame paths.",
+      "Keep full dynamic capability modeling optional outside AXTP v1 Core."
+    ],
+    "nonGoals": [
+      "Full dynamic UI capability modeling is not required in v1.",
+      "WebSocket Text and HTTP JSON are debug or legacy adapter paths.",
+      "STREAM is not carried over WebSocket Text or HTTP JSON in production.",
+      "Header profile negotiation is not performed dynamically in v1."
+    ]
+  },
+  "architecture": {
+    "layers": [
+      {
+        "name": "Transport Profile",
+        "description": "Defines how AXTP runs over TCP, WebSocket, HID, BLE or UART."
+      },
+      {
+        "name": "Frame Profile",
+        "description": "Binds L1 Frame Header and L2 Payload Header into one parser profile."
+      },
+      {
+        "name": "Payload Layer",
+        "description": "Carries CONTROL, RPC or STREAM payloads."
+      },
+      {
+        "name": "RPC Session",
+        "description": "Handles Hello, Identify, requests, responses, events and errors."
+      },
+      {
+        "name": "Stream Session",
+        "description": "Handles OTA, file, audio, video, log and sensor chunk transfer."
+      }
+    ],
+    "lifecycle": [
+      {
+        "step": "OPEN",
+        "from": "Client",
+        "to": "Server",
+        "description": "Open an AXTP logical session and declare runtime limits."
+      },
+      {
+        "step": "ACCEPT",
+        "from": "Server",
+        "to": "Client",
+        "description": "Accept the session and return final runtime parameters."
+      },
+      {
+        "step": "Hello",
+        "from": "Server",
+        "to": "Client",
+        "description": "Announce RPC session rules, protocol version and authentication requirements."
+      },
+      {
+        "step": "Identify",
+        "from": "Client",
+        "to": "Server",
+        "description": "Submit client identity and optional authentication data."
+      },
+      {
+        "step": "Identified",
+        "from": "Server",
+        "to": "Client",
+        "description": "Confirm that the RPC session is ready."
+      },
+      {
+        "step": "capability.supportedMethods",
+        "from": "Client",
+        "to": "Server",
+        "description": "Query the method bitmap available to the current session."
+      }
+    ],
+    "optionalLifecycleExtensions": [
+      {
+        "step": "READY",
+        "status": "optional",
+        "description": "Reserved for transports that need an explicit client acknowledgement after ACCEPT; not required by AXTP v1 Core."
+      }
+    ]
+  },
+  "guide": {
+    "quickStart": [
+      {
+        "title": "Minimal Client Startup",
+        "steps": [
+          "Connect using a Transport Profile.",
+          "Send CONTROL OPEN.",
+          "Wait for CONTROL ACCEPT.",
+          "Wait for Hello.",
+          "Send Identify if required.",
+          "Query capability.supportedMethods.",
+          "Start RPC requests."
+        ]
+      }
+    ]
+  },
+  "frameProfiles": [
+    {
+      "name": "STANDARD_FRAME",
+      "magic": "AXTP",
+      "l1": "STANDARD_L1",
+      "l2": "STANDARD_L2",
+      "supportsMixing": false
+    },
+    {
+      "name": "COMPACT_FRAME",
+      "magic": 167,
+      "l1": "COMPACT_L1",
+      "l2": "COMPACT_L2",
+      "supportsMixing": false
+    },
+    {
+      "name": "COMPACT_FRAME_CRC",
+      "magic": 167,
+      "l1": "COMPACT_L1_CRC",
+      "l2": "COMPACT_L2",
+      "supportsMixing": false
+    }
+  ],
+  "transports": [
+    {
+      "name": "AXTP-WS",
+      "family": "websocket",
+      "frameProfile": "STANDARD_FRAME",
+      "production": true
+    },
+    {
+      "name": "AXTP-TCP",
+      "family": "tcp",
+      "frameProfile": "STANDARD_FRAME",
+      "production": true
+    },
+    {
+      "name": "AXTP-HID-64",
+      "family": "usb-hid",
+      "frameProfile": "COMPACT_FRAME",
+      "production": true,
+      "maxFrameSize": 64
+    },
+    {
+      "name": "AXTP-BLE-RPC",
+      "family": "ble",
+      "frameProfile": "COMPACT_FRAME",
+      "production": true
+    },
+    {
+      "name": "AXTP-UART",
+      "family": "uart",
+      "frameProfile": "COMPACT_FRAME_CRC",
+      "production": true
+    },
+    {
+      "name": "AXTP-WS-TEXT",
+      "family": "websocket",
+      "frameProfile": "none",
+      "production": false,
+      "usage": "debug-or-legacy-adapter"
+    },
+    {
+      "name": "AXTP-HTTP-JSON",
+      "family": "http",
+      "frameProfile": "none",
+      "production": false,
+      "usage": "debug-or-legacy-adapter"
+    }
+  ],
+  "payloadTypes": [
+    {
+      "name": "CONTROL",
+      "id": 1,
+      "headerBytes": 5,
+      "description": "Logical session control payload."
+    },
+    {
+      "name": "RPC",
+      "id": 2,
+      "headerBytes": 11,
+      "description": "Binary request, response, event and error payload."
+    },
+    {
+      "name": "STREAM",
+      "id": 3,
+      "headerBytes": 16,
+      "description": "Chunk-oriented data plane payload."
+    }
+  ],
+  "control": {
+    "requiredOpcodes": [
+      "OPEN",
+      "ACCEPT"
+    ],
+    "optionalOpcodes": [
+      "READY"
+    ],
+    "reservedOpcodes": [
+      "NACK",
+      "RESUME"
+    ],
+    "rules": [
+      "v1 Core requires OPEN and ACCEPT before RPC or STREAM payloads.",
+      "READY is not required by v1 Core and must not be assumed by peers.",
+      "Dynamic header negotiation is not performed in v1."
+    ]
+  },
+  "stream": {
+    "header": {
+      "name": "AxtpStreamHeader",
+      "size": 16,
+      "fields": [
+        {
+          "name": "streamId",
+          "type": "uint32"
+        },
+        {
+          "name": "seq",
+          "type": "uint32"
+        },
+        {
+          "name": "position",
+          "type": "uint32"
+        },
+        {
+          "name": "chunkLength",
+          "type": "uint16"
+        },
+        {
+          "name": "flags",
+          "type": "uint16"
+        }
+      ]
+    },
+    "rules": [
+      "STREAM uses the unified 16-byte header in production transports.",
+      "The historical 8-byte stream header is not part of AXTP v1 Core.",
+      "WebSocket Text and HTTP JSON must not carry production STREAM data."
+    ]
+  },
+  "compatibility": {
+    "legacySources": [
+      "protocol-source/legacy-docs/02-registry/"
+    ],
+    "rules": [
+      "Stable methodId, eventId and error code values must not be reused.",
+      "Legacy command mappings may be preserved as metadata under methods[].legacy.",
+      "WebSocket Text and HTTP JSON may exist only as debug or legacy adapter paths."
+    ]
+  },
+  "types": [
+    {
+      "name": "CommonEmptyRequest",
+      "kind": "object",
+      "fields": []
+    },
+    {
+      "name": "CommonEmptyResponse",
+      "kind": "object",
+      "fields": []
+    },
+    {
+      "name": "DeviceGetInfoRequest",
+      "kind": "object",
+      "fields": []
+    },
+    {
+      "name": "DeviceGetInfoResponse",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "vendor",
+          "type": "string",
+          "required": false,
+          "maxLength": 32
+        },
+        {
+          "fieldId": 2,
+          "name": "product",
+          "type": "string",
+          "required": false,
+          "maxLength": 32
+        },
+        {
+          "fieldId": 3,
+          "name": "firmwareVersion",
+          "type": "string",
+          "required": false,
+          "maxLength": 32
+        },
+        {
+          "fieldId": 4,
+          "name": "serialNumber",
+          "type": "string",
+          "required": false,
+          "maxLength": 64
+        }
+      ]
+    },
+    {
+      "name": "CapabilitySupportedMethodsRequest",
+      "kind": "object",
+      "fields": []
+    },
+    {
+      "name": "CapabilitySupportedMethodsResponse",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "methodMaskCount",
+          "type": "uint16",
+          "required": true
+        },
+        {
+          "fieldId": 2,
+          "name": "methodMasks",
+          "type": "bytes",
+          "required": true,
+          "derivedFrom": "methods.bitOffset"
+        }
+      ]
+    },
+    {
+      "name": "DisplayGetBrightnessRequest",
+      "kind": "object",
+      "fields": []
+    },
+    {
+      "name": "DisplayGetBrightnessResponse",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "value",
+          "type": "uint8",
+          "required": true,
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "name": "DisplaySetBrightnessRequest",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "value",
+          "type": "uint8",
+          "required": true,
+          "min": 0,
+          "max": 100
+        },
+        {
+          "fieldId": 2,
+          "name": "transitionMs",
+          "type": "uint16",
+          "required": false,
+          "min": 0,
+          "max": 60000
+        }
+      ]
+    },
+    {
+      "name": "DisplayBrightnessChangedEvent",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "value",
+          "type": "uint8",
+          "required": true,
+          "min": 0,
+          "max": 100
+        },
+        {
+          "fieldId": 2,
+          "name": "previousValue",
+          "type": "uint8",
+          "required": false,
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "name": "FirmwareBeginRequest",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "totalSize",
+          "type": "uint32",
+          "required": true
+        },
+        {
+          "fieldId": 2,
+          "name": "hashAlgo",
+          "type": "string",
+          "required": true,
+          "maxLength": 16
+        },
+        {
+          "fieldId": 3,
+          "name": "hash",
+          "type": "bytes",
+          "required": true,
+          "maxLength": 64
+        },
+        {
+          "fieldId": 4,
+          "name": "chunkSize",
+          "type": "uint16",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "FirmwareBeginResponse",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true
+        },
+        {
+          "fieldId": 2,
+          "name": "profile",
+          "type": "string",
+          "required": true,
+          "maxLength": 32
+        },
+        {
+          "fieldId": 3,
+          "name": "chunkSize",
+          "type": "uint16",
+          "required": true
+        },
+        {
+          "fieldId": 4,
+          "name": "ackMode",
+          "type": "enum",
+          "required": true
+        },
+        {
+          "fieldId": 5,
+          "name": "cursorUnit",
+          "type": "enum",
+          "required": true
+        },
+        {
+          "fieldId": 6,
+          "name": "reservedStreamHeaderProfile",
+          "type": "enum",
+          "required": false,
+          "deprecated": true
+        },
+        {
+          "fieldId": 7,
+          "name": "maxDataSize",
+          "type": "uint16",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "FirmwareEndRequest",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "FirmwareVerifyRequest",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "FirmwareApplyRequest",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "FirmwareUpdateProgressEvent",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true
+        },
+        {
+          "fieldId": 2,
+          "name": "percent",
+          "type": "uint8",
+          "required": true,
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "name": "FirmwareUpdateCompletedEvent",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "version",
+          "type": "string",
+          "required": false,
+          "maxLength": 32
+        }
+      ]
+    },
+    {
+      "name": "FirmwareUpdateFailedEvent",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "errorCode",
+          "type": "uint16",
+          "required": true
+        },
+        {
+          "fieldId": 2,
+          "name": "message",
+          "type": "string",
+          "required": false,
+          "maxLength": 96
+        }
+      ]
+    },
+    {
+      "name": "FirmwareOtaCapability",
+      "kind": "object",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "maxImageSize",
+          "type": "uint32",
+          "required": true
+        },
+        {
+          "fieldId": 2,
+          "name": "maxChunkSize",
+          "type": "uint16",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "methods": [
+    {
+      "name": "device.getInfo",
+      "methodId": 257,
+      "bitOffset": 0,
+      "domain": "device",
+      "since": "1.0.0",
+      "status": "stable",
+      "request": {
+        "type": "DeviceGetInfoRequest"
+      },
+      "response": {
+        "type": "DeviceGetInfoResponse"
+      },
+      "encodings": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "device.info"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "RPC_METHOD_NOT_FOUND",
+        "RPC_PARAM_INVALID"
+      ],
+      "legacy": {
+        "cmdValue": 720898,
+        "name": "BetaDeviceInfo",
+        "payloadFormat": "fixed_struct"
+      }
+    },
+    {
+      "name": "capability.supportedMethods",
+      "methodId": 769,
+      "bitOffset": 0,
+      "domain": "capability",
+      "since": "1.0.0",
+      "status": "stable",
+      "request": {
+        "type": "CapabilitySupportedMethodsRequest"
+      },
+      "response": {
+        "type": "CapabilitySupportedMethodsResponse"
+      },
+      "encodings": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "capability.supportedMethods"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "RPC_METHOD_NOT_FOUND"
+      ]
+    },
+    {
+      "name": "display.getBrightness",
+      "methodId": 1281,
+      "bitOffset": 0,
+      "domain": "display",
+      "since": "1.0.0",
+      "status": "stable",
+      "request": {
+        "type": "DisplayGetBrightnessRequest"
+      },
+      "response": {
+        "type": "DisplayGetBrightnessResponse"
+      },
+      "encodings": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "display.brightness"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "RPC_METHOD_NOT_FOUND"
+      ]
+    },
+    {
+      "name": "display.setBrightness",
+      "methodId": 1282,
+      "bitOffset": 1,
+      "domain": "display",
+      "since": "1.0.0",
+      "status": "stable",
+      "request": {
+        "type": "DisplaySetBrightnessRequest"
+      },
+      "response": {
+        "type": "CommonEmptyResponse"
+      },
+      "encodings": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "display.brightness"
+      ],
+      "events": [
+        "display.brightnessChanged"
+      ],
+      "errors": [
+        "SUCCESS",
+        "RPC_PARAM_INVALID",
+        "BUSY"
+      ],
+      "legacy": {
+        "cmdValue": 720962,
+        "name": "BetaBrightnessSet",
+        "payloadFormat": "fixed_struct"
+      }
+    },
+    {
+      "name": "firmware.begin",
+      "methodId": 2818,
+      "bitOffset": 0,
+      "domain": "firmware",
+      "since": "1.0.0",
+      "status": "stable",
+      "request": {
+        "type": "FirmwareBeginRequest"
+      },
+      "response": {
+        "type": "FirmwareBeginResponse"
+      },
+      "encodings": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [
+        "firmware.updateProgress"
+      ],
+      "errors": [
+        "SUCCESS",
+        "RPC_PARAM_INVALID",
+        "BUSY"
+      ]
+    },
+    {
+      "name": "firmware.end",
+      "methodId": 2819,
+      "bitOffset": 1,
+      "domain": "firmware",
+      "since": "1.0.0",
+      "status": "stable",
+      "request": {
+        "type": "FirmwareEndRequest"
+      },
+      "response": {
+        "type": "CommonEmptyResponse"
+      },
+      "encodings": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "STREAM_NOT_FOUND",
+        "BUSY"
+      ]
+    },
+    {
+      "name": "firmware.verify",
+      "methodId": 2820,
+      "bitOffset": 2,
+      "domain": "firmware",
+      "since": "1.0.0",
+      "status": "stable",
+      "request": {
+        "type": "FirmwareVerifyRequest"
+      },
+      "response": {
+        "type": "CommonEmptyResponse"
+      },
+      "encodings": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [
+        "firmware.updateCompleted",
+        "firmware.updateFailed"
+      ],
+      "errors": [
+        "SUCCESS",
+        "STREAM_CRC_ERROR",
+        "BUSY"
+      ]
+    },
+    {
+      "name": "firmware.apply",
+      "methodId": 2821,
+      "bitOffset": 3,
+      "domain": "firmware",
+      "since": "1.0.0",
+      "status": "stable",
+      "request": {
+        "type": "FirmwareApplyRequest"
+      },
+      "response": {
+        "type": "CommonEmptyResponse"
+      },
+      "encodings": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [
+        "firmware.updateCompleted",
+        "firmware.updateFailed"
+      ],
+      "errors": [
+        "SUCCESS",
+        "BUSY"
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "display.brightnessChanged",
+      "eventId": 34055,
+      "bitOffset": 0,
+      "domain": "display",
+      "since": "1.0.0",
+      "status": "stable",
+      "payload": {
+        "type": "DisplayBrightnessChangedEvent"
+      },
+      "severity": "info",
+      "trigger": [
+        "display.setBrightness",
+        "device_local_change"
+      ],
+      "capabilities": [
+        "display.brightness"
+      ]
+    },
+    {
+      "name": "firmware.updateProgress",
+      "eventId": 35586,
+      "bitOffset": 0,
+      "domain": "firmware",
+      "since": "1.0.0",
+      "status": "stable",
+      "payload": {
+        "type": "FirmwareUpdateProgressEvent"
+      },
+      "severity": "info",
+      "trigger": [
+        "firmware.begin",
+        "stream.ota.chunk"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ]
+    },
+    {
+      "name": "firmware.updateCompleted",
+      "eventId": 35587,
+      "bitOffset": 1,
+      "domain": "firmware",
+      "since": "1.0.0",
+      "status": "stable",
+      "payload": {
+        "type": "FirmwareUpdateCompletedEvent"
+      },
+      "severity": "info",
+      "trigger": [
+        "firmware.verify",
+        "firmware.apply"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ]
+    },
+    {
+      "name": "firmware.updateFailed",
+      "eventId": 35588,
+      "bitOffset": 2,
+      "domain": "firmware",
+      "since": "1.0.0",
+      "status": "stable",
+      "payload": {
+        "type": "FirmwareUpdateFailedEvent"
+      },
+      "severity": "error",
+      "trigger": [
+        "firmware.verify",
+        "firmware.apply",
+        "stream.error"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "name": "SUCCESS",
+      "code": 0,
+      "category": "common",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "info",
+      "retryable": false,
+      "message": "Operation completed successfully."
+    },
+    {
+      "name": "UNKNOWN_ERROR",
+      "code": 1,
+      "category": "common",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "Unknown error."
+    },
+    {
+      "name": "BUSY",
+      "code": 5,
+      "category": "common",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "warning",
+      "retryable": true,
+      "message": "Device or resource is busy."
+    },
+    {
+      "name": "FRAME_VERSION_UNSUPPORTED",
+      "code": 258,
+      "category": "frame",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "Frame version is not supported."
+    },
+    {
+      "name": "FRAME_CRC_ERROR",
+      "code": 262,
+      "category": "frame",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": true,
+      "message": "Frame CRC check failed."
+    },
+    {
+      "name": "FRAME_FRAGMENT_MISSING",
+      "code": 264,
+      "category": "frame",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": true,
+      "message": "One or more frame fragments are missing."
+    },
+    {
+      "name": "CONTROL_OPCODE_INVALID",
+      "code": 513,
+      "category": "control",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "Control opcode is invalid."
+    },
+    {
+      "name": "CONTROL_PAYLOAD_INVALID",
+      "code": 514,
+      "category": "control",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "Control payload is invalid."
+    },
+    {
+      "name": "CONTROL_OPEN_REQUIRED",
+      "code": 516,
+      "category": "control",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "Session has not completed CONTROL OPEN."
+    },
+    {
+      "name": "CONTROL_OPEN_REJECTED",
+      "code": 517,
+      "category": "control",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "Control OPEN was rejected."
+    },
+    {
+      "name": "RESERVED_CONTROL_PROFILE_UNSUPPORTED",
+      "code": 518,
+      "category": "control",
+      "since": "1.0.0",
+      "status": "reserved",
+      "severity": "error",
+      "retryable": false,
+      "message": "Historical header profile negotiation error."
+    },
+    {
+      "name": "CONTROL_NEGOTIATION_FAILED",
+      "code": 519,
+      "category": "control",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "Control negotiation failed."
+    },
+    {
+      "name": "CONTROL_SESSION_INVALID",
+      "code": 520,
+      "category": "control",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "SessionId is invalid."
+    },
+    {
+      "name": "CONTROL_RESUME_FAILED",
+      "code": 522,
+      "category": "control",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "Session resume failed."
+    },
+    {
+      "name": "CONTROL_WINDOW_EXCEEDED",
+      "code": 524,
+      "category": "control",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "warning",
+      "retryable": true,
+      "message": "Flow-control window was exceeded."
+    },
+    {
+      "name": "RPC_ENCODING_UNSUPPORTED",
+      "code": 769,
+      "category": "rpc",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "RPC encoding is not supported."
+    },
+    {
+      "name": "RPC_METHOD_NOT_FOUND",
+      "code": 774,
+      "category": "rpc",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "MethodId or method name is not supported."
+    },
+    {
+      "name": "RPC_PARAM_INVALID",
+      "code": 779,
+      "category": "rpc",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "RPC parameters are invalid."
+    },
+    {
+      "name": "STREAM_NOT_FOUND",
+      "code": 1025,
+      "category": "stream",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "Stream context does not exist."
+    },
+    {
+      "name": "STREAM_TIMEOUT",
+      "code": 1026,
+      "category": "stream",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": true,
+      "message": "Stream timed out."
+    },
+    {
+      "name": "STREAM_CRC_ERROR",
+      "code": 1027,
+      "category": "stream",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": true,
+      "message": "Stream chunk CRC check failed."
+    },
+    {
+      "name": "FW_VERIFY_FAILED",
+      "code": 1547,
+      "category": "firmware",
+      "since": "1.0.0",
+      "status": "stable",
+      "severity": "error",
+      "retryable": false,
+      "message": "Firmware verification failed."
+    }
+  ],
+  "profiles": [
+    {
+      "name": "AXTP-MVP",
+      "since": "1.0.0",
+      "status": "stable",
+      "requiredMethods": [
+        "device.getInfo",
+        "capability.supportedMethods",
+        "display.getBrightness",
+        "display.setBrightness",
+        "firmware.begin",
+        "firmware.end",
+        "firmware.verify",
+        "firmware.apply"
+      ],
+      "requiredEvents": [
+        "display.brightnessChanged",
+        "firmware.updateProgress",
+        "firmware.updateCompleted",
+        "firmware.updateFailed"
+      ],
+      "requiredTypes": [],
+      "requiredErrors": [
+        "SUCCESS",
+        "RPC_METHOD_NOT_FOUND",
+        "RPC_PARAM_INVALID",
+        "STREAM_NOT_FOUND",
+        "STREAM_CRC_ERROR",
+        "BUSY"
+      ],
+      "requiredCapabilities": [
+        "protocol.payload.control",
+        "protocol.payload.rpc",
+        "protocol.payload.stream",
+        "device.info",
+        "capability.supportedMethods",
+        "display.brightness",
+        "display.brightnessMin",
+        "display.brightnessMax",
+        "display.brightnessStep",
+        "firmware.ota"
+      ],
+      "transportProfiles": [
+        "AXTP-WS",
+        "AXTP-TCP",
+        "AXTP-HID-64",
+        "AXTP-BLE-RPC",
+        "AXTP-UART"
+      ],
+      "frameProfiles": [
+        "STANDARD_FRAME",
+        "COMPACT_FRAME",
+        "COMPACT_FRAME_CRC"
+      ]
+    },
+    {
+      "name": "AXTP-MVP-HID",
+      "since": "1.0.0",
+      "status": "stable",
+      "extends": "AXTP-MVP",
+      "requiredMethods": [
+        "device.getInfo",
+        "capability.supportedMethods",
+        "display.getBrightness",
+        "display.setBrightness",
+        "firmware.begin",
+        "firmware.end",
+        "firmware.verify",
+        "firmware.apply"
+      ],
+      "requiredEvents": [
+        "display.brightnessChanged",
+        "firmware.updateProgress",
+        "firmware.updateCompleted",
+        "firmware.updateFailed"
+      ],
+      "requiredTypes": [],
+      "requiredErrors": [
+        "SUCCESS",
+        "RPC_METHOD_NOT_FOUND",
+        "RPC_PARAM_INVALID",
+        "STREAM_NOT_FOUND",
+        "STREAM_CRC_ERROR",
+        "BUSY"
+      ],
+      "requiredCapabilities": [],
+      "transportProfiles": [
+        "AXTP-HID-64"
+      ],
+      "frameProfile": "COMPACT_FRAME",
+      "frameProfiles": []
+    }
+  ]
+}

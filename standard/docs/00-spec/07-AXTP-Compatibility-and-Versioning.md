@@ -115,7 +115,7 @@ Registry mapping
 
 ### 2.4 旧协议兼容优先采用 Adapter，不污染 AXTP Core
 
-不建议为了兼容旧协议修改 AXTP Frame Header。  
+不建议为了兼容旧协议修改 AXTP Frame Header。
 推荐新增：
 
 ```text
@@ -319,7 +319,7 @@ Common
 Vendor
 ```
 
-AXTP 不建议继续把这些作为业务方法一级域。  
+AXTP 不建议继续把这些作为业务方法一级域。
 它们应该变成兼容属性，而不是 methodName 的前缀。
 
 错误示例：
@@ -771,7 +771,7 @@ payloadType = STREAM
 
 ### 12.2 不建议把 KVM 当成普通 RPC 长期传输
 
-KVM / HID Raw 高频数据具有连续性和低延迟要求。  
+KVM / HID Raw 高频数据具有连续性和低延迟要求。
 如果全部走 RPC，会产生：
 
 ```text
@@ -1040,11 +1040,10 @@ control.helloAck:
 业务层通过 RPC 查询：
 
 ```text
-capability.getAll
-capability.getDomain
-capability.hasMethod
 capability.supportedMethods
 ```
+
+`capability.getAll / capability.getDomain / capability.hasMethod` 属于 v2/P1 Capability Model，只能作为 future compatibility reference，不能作为 v1 MVP Adapter 的必选依赖。
 
 返回：
 
@@ -1062,7 +1061,7 @@ legacyMappings:
 
 ### 18.1 文件目的
 
-`legacy_mapping.yaml` 是老协议迁移的核心文件。  
+`legacy_mapping.yaml` 是老协议迁移的核心文件。
 它描述：
 
 ```text
@@ -1241,7 +1240,7 @@ payload 格式
 
 ```text
 device.getInfo
-capability.getAll
+capability.supportedMethods
 display.getBrightness
 display.setBrightness
 firmware.begin
@@ -1384,7 +1383,7 @@ MVP 阶段只迁移最小闭环，不要求覆盖所有旧命令。
 | --- |---|
 | `device.getInfo` | 验证旧设备信息查询 |
 | `device.getStatus` | 验证状态查询 |
-| `capability.getAll` | 验证旧能力表转换 |
+| `capability.supportedMethods` | 验证旧能力表转换为 v1 method bitmap |
 | `display.getBrightness` | 验证简单查询 |
 | `display.setBrightness` | 验证简单设置 |
 | `firmware.begin` | 验证 OTA 控制面 |
@@ -1484,6 +1483,22 @@ AXTP 请求 -> 旧请求
 | `11-AXTP-Errors-Registry-Spec.md` | 定义 errors 元模型与错误码映射 |
 | `12-AXTP-Types-and-Capability-Spec.md` | 定义 types 元模型与 v1 capability 范围 |
 | `13-AXTP-Profiles-Registry-Spec.md` | 定义 profiles 元模型与实现范围 |
+| `protocol-source/legacy/AXTP-Legacy-Compatibility-Reference.md` | 保存旧协议兼容参考和映射候选 |
+| `protocol-source/legacy-docs/02-registry/` | 保存老 08-13 手写注册表原文，仅作迁移参考 |
+
+---
+
+## 26.1 Legacy Source 边界
+
+旧协议兼容参考不得回流到 02/04/05/06 Core wire format，除非它描述的是已经被 AXTP v1 采纳的线格式规则。
+
+| 内容类型 | 处理方式 |
+|---|---|
+| 旧 CmdValue / 旧 methodName | 写入 `protocol-source/legacy/`，稳定后以 `methods[].legacy` 进入 `protocol.yaml` |
+| 旧状态码 | 写入 legacy error mapping，稳定后映射到 `errors[].code` |
+| 旧事件名 / 旧推送格式 | 写入 legacy event mapping，稳定后映射到 `events[]` |
+| 旧能力表 / Feature bitmap | 写入 legacy capability mapping；完整 Capability Model 仍属于 v2/P1 |
+| 旧 OTA / RawStream 字节流 | 映射到 RPC 建流 + STREAM profile，不得新增 PayloadType |
 
 ---
 

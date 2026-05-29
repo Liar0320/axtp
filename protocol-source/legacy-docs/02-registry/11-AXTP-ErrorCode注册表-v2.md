@@ -1,7 +1,7 @@
 # 11《AXTP ErrorCode 注册表》
 
-版本：v1.1 Draft  
-状态：MVP ErrorCode 注册表（精简版）  
+版本：v1.1 Draft
+状态：MVP ErrorCode 注册表（精简版）
 适用范围：AXTP Control / RPC / Stream 统一错误码分配与使用规则
 
 ---

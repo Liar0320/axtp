@@ -32,6 +32,20 @@ protocol-source/
 generated/
 ```
 
+旧 08-13 文档中的内容按以下规则分流：
+
+| 内容类型 | 归属 |
+|---|---|
+| 二进制线格式、Header、Payload 固定头 | 02 / 04 / 05 / 06 |
+| Transport/Profile 固定绑定 | 03 |
+| OPEN / ACCEPT / READY | 04 |
+| Hello / Identify / RPC / EVENT | 05 |
+| STREAM Header / resume | 06 |
+| 旧协议兼容映射 | 07 与 `protocol-source/legacy/` |
+| 完整 Capability Model | `protocol-source/future/` |
+| method/event/error/type/profile entry 元模型 | 09-13 |
+| 具体业务 method/event/type/error/profile | `protocol/axtp.protocol.yaml` |
+
 ---
 
 ## 2. Protocol Definition 顶层结构
@@ -57,6 +71,8 @@ profiles: []
 ```
 
 `protocol.specVersion` 与 `protocol.registryVersion` 必须分离。Core wire format 修改使用 `specVersion`；method/event/type/error/profile 增量使用 `registryVersion`。
+
+08-13 元规范不得重新定义 wire header 字段，也不得手写完整业务表。
 
 ---
 

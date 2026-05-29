@@ -1,7 +1,7 @@
 # 13《AXTP-MVP 最小实现注册表》
 
-版本：v1.1 Draft  
-状态：MVP / Implementation Contract（精简版）  
+版本：v1.1 Draft
+状态：MVP / Implementation Contract（精简版）
 适用范围：AXTP v1 第一阶段落地最小注册表集合
 
 ---

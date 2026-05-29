@@ -1,7 +1,7 @@
 # 00《AXTP Overview》
 
-版本：v2.0 Draft  
-状态：Normative  
+版本：v2.0 Draft
+状态：Normative
 适用范围：AXTP 协议体系架构入口
 
 ---

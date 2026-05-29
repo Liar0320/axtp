@@ -1,7 +1,7 @@
 # 08《AXTP Registry 总则》
 
-版本：v1.1 Draft  
-状态：MVP Registry 治理规范（精简版）  
+版本：v1.1 Draft
+状态：MVP Registry 治理规范（精简版）
 适用范围：AXTP Registry 系统统一治理规则、ID 分配、命名规范、生命周期、Legacy Mapping、Vendor Extension
 
 ---

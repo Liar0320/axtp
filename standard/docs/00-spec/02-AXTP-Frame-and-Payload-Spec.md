@@ -84,6 +84,26 @@ CONTROL / RPC / STREAM 的 Payload 内部结构、TLV Schema、Registry、老协
 
 ---
 
+## 3.2 Wire ID 宽度与归属
+
+旧 08-13 注册表中影响二进制线格式的 ID 宽度迁入本文档及 04/05/06。Registry 文档只保留 entry 元模型，不再承担 wire format 规范职责。
+
+| 对象 | 宽度 | 使用位置 | 规范归属 |
+|---|---:|---|---|
+| `payloadType` | uint8 | Frame Header | 本文档 |
+| `controlOpcode` | uint8 | Control Payload | 04《Control Session Spec》 |
+| `rpcEncoding` | uint8 | RPC Payload | 05《RPC Session Spec》 |
+| `rpcOp` | uint8 | RPC Payload | 05《RPC Session Spec》 |
+| `methodId` | uint16 | Binary RPC Request/Response | 05 + 09 |
+| `eventId` | uint16 | Binary RPC Event | 05 + 10 |
+| `statusCode` | uint16 | Control / Binary RPC | 04 / 05 + 11 |
+| `streamId` | uint32 | STREAM Header | 06《Stream Spec》 |
+| `fieldId` | uint8 | TLV body | 12《Types and Capability Spec》 |
+
+所有多字节整数在线格式中均使用 Little-Endian。若字段只存在于 Protocol Definition 或生成产物中，而不在线上传输，则不得写入 Frame / Payload Header。
+
+---
+
 ## 4. 协议模式
 
 ### 4.1 Framed Mode

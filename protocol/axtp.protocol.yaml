@@ -171,7 +171,7 @@ stream:
 
 compatibility:
   legacySources:
-    - protocol-source/legacy-docs/registry-v2/
+    - protocol-source/legacy-docs/02-registry/
   rules:
     - Stable methodId, eventId and error code values must not be reused.
     - Legacy command mappings may be preserved as metadata under methods[].legacy.
@@ -200,8 +200,8 @@ types:
   CapabilitySupportedMethodsResponse:
     kind: object
     fields:
-      - { fieldId: 0x01, name: methodCount, type: uint16, required: true }
-      - { fieldId: 0x02, name: methodIds, type: array<uint16>, required: false, derivedFrom: methods.methodId }
+      - { fieldId: 0x01, name: methodMaskCount, type: uint16, required: true }
+      - { fieldId: 0x02, name: methodMasks, type: bytes, required: true, derivedFrom: methods.bitOffset }
   DisplayGetBrightnessRequest:
     kind: object
     fields: []
@@ -271,7 +271,7 @@ types:
 methods:
   - name: device.getInfo
     methodId: 0x0101
-    bitmapId: 0
+    bitOffset: 0
     domain: device
     since: 1.0.0
     status: stable
@@ -286,7 +286,7 @@ methods:
       payloadFormat: fixed_struct
   - name: capability.supportedMethods
     methodId: 0x0301
-    bitmapId: 0
+    bitOffset: 0
     domain: capability
     since: 1.0.0
     status: stable
@@ -297,7 +297,7 @@ methods:
     errors: [SUCCESS, RPC_METHOD_NOT_FOUND]
   - name: display.getBrightness
     methodId: 0x0501
-    bitmapId: 0
+    bitOffset: 0
     domain: display
     since: 1.0.0
     status: stable
@@ -308,7 +308,7 @@ methods:
     errors: [SUCCESS, RPC_METHOD_NOT_FOUND]
   - name: display.setBrightness
     methodId: 0x0502
-    bitmapId: 1
+    bitOffset: 1
     domain: display
     since: 1.0.0
     status: stable
@@ -324,7 +324,7 @@ methods:
       payloadFormat: fixed_struct
   - name: firmware.begin
     methodId: 0x0B02
-    bitmapId: 0
+    bitOffset: 0
     domain: firmware
     since: 1.0.0
     status: stable
@@ -336,7 +336,7 @@ methods:
     errors: [SUCCESS, RPC_PARAM_INVALID, BUSY]
   - name: firmware.end
     methodId: 0x0B03
-    bitmapId: 1
+    bitOffset: 1
     domain: firmware
     since: 1.0.0
     status: stable
@@ -347,7 +347,7 @@ methods:
     errors: [SUCCESS, STREAM_NOT_FOUND, BUSY]
   - name: firmware.verify
     methodId: 0x0B04
-    bitmapId: 2
+    bitOffset: 2
     domain: firmware
     since: 1.0.0
     status: stable
@@ -359,7 +359,7 @@ methods:
     errors: [SUCCESS, STREAM_CRC_ERROR, BUSY]
   - name: firmware.apply
     methodId: 0x0B05
-    bitmapId: 3
+    bitOffset: 3
     domain: firmware
     since: 1.0.0
     status: stable
@@ -373,7 +373,7 @@ methods:
 events:
   - name: display.brightnessChanged
     eventId: 0x8507
-    bitmapId: 0
+    bitOffset: 0
     domain: display
     since: 1.0.0
     status: stable
@@ -383,7 +383,7 @@ events:
     capabilities: [display.brightness]
   - name: firmware.updateProgress
     eventId: 0x8B02
-    bitmapId: 0
+    bitOffset: 0
     domain: firmware
     since: 1.0.0
     status: stable
@@ -393,7 +393,7 @@ events:
     capabilities: [firmware.ota]
   - name: firmware.updateCompleted
     eventId: 0x8B03
-    bitmapId: 1
+    bitOffset: 1
     domain: firmware
     since: 1.0.0
     status: stable
@@ -403,7 +403,7 @@ events:
     capabilities: [firmware.ota]
   - name: firmware.updateFailed
     eventId: 0x8B04
-    bitmapId: 2
+    bitOffset: 2
     domain: firmware
     since: 1.0.0
     status: stable

@@ -91,7 +91,21 @@ capability.supportedMethods
 返回当前设备、当前固件、当前会话、当前鉴权状态下支持的 methodId 集合。
 ```
 
-`capability.supportedMethods` 的 method bitmap 按 domain 分段，由 `methods[].bitmapId` 自动派生：每个 domain 内第 N bit 置 1 表示该 domain 下 `bitmapId=N` 的 method 当前可用。
+`capability.supportedMethods` 的 method bitmap 按 domain 分段，由 `methods[].bitOffset` 自动派生：每个 domain 内第 N bit 置 1 表示该 domain 下 `bitOffset=N` 的 method 当前可用。
+
+Binary 响应使用域级方法掩码链：
+
+```text
+Domain Block = [DomainId:1B] + [MaskLen:1B] + [MethodBitmask:N B Little-Endian]
+```
+
+| 字段 | 说明 |
+|---|---|
+| `DomainId` | 与 methodId 高字节对齐，例如 `display.*` methodId `0x05xx` 使用 `0x05` |
+| `MaskLen` | bitmask 字节数，必须按最高有效 bit 截断，范围 `1-32` |
+| `MethodBitmask` | Little-Endian bitset，Bit N 对应 `methods[].bitOffset=N` |
+
+该格式只表达当前会话可调用 method 集合，不表达完整业务能力树。
 
 ---
 
@@ -107,4 +121,4 @@ capability schema
 按事件/流/profile 的复杂能力协商
 ```
 
-v2 Capability Model 可以引用 `types:`，但不得改变 v1 request/event/error/type 的 stable wire format。
+v2 Capability Model 可以引用 `types:`，但不得改变 v1 method/event/error/type 的 stable wire format。完整设计草案迁移到 `protocol-source/future/AXTP-Capability-Model-v2.md`，不得回流为 v1 Core 必选项。

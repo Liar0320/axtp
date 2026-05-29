@@ -1,7 +1,7 @@
 # 12《AXTP Capability 注册表》
 
-版本：v1.1 Draft  
-状态：MVP Capability Registry 规范（精简版）  
+版本：v1.1 Draft
+状态：MVP Capability Registry 规范（精简版）
 适用范围：AXTP Capability 分类、CapabilityId 编号、条目结构、查询方法、MVP 集合、老协议适配
 
 ---

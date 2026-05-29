@@ -38,7 +38,7 @@ errors:
 |---|---:|---|
 | `name` | 是 | 全大写枚举名 |
 | `code` | 是 | uint16 errorCode / statusCode |
-| `category` | 是 | `common / frame / control / rpc / stream / firmware / vendor` |
+| `category` | 是 | `common / frame / control / rpc / stream / business / firmware / vendor / legacy` |
 | `severity` | 是 | `info / warning / error / fatal` |
 | `message` | 是 | 默认英文错误描述 |
 | `retryable` | 是 | 是否建议客户端重试 |
@@ -70,6 +70,10 @@ errors:
 | Binary RPC | `BinaryRpcHeader.statusCode = errors[].code` |
 | JSON-RPC | `status.code = errors[].code`，`status.message = errors[].message` |
 | STREAM NACK | `Control.statusCode` 或 `reasonCode` 引用对应 stream error |
+
+Control NACK 应优先使用 frame/control/stream 类错误；业务失败应通过 RPC Response 或 RPC Event 表达，不得用 Frame Header 字段表达。
+
+Legacy Adapter 必须把旧状态码映射到 `errors[].code`，映射表作为 legacy source 维护，不得在运行时代码中散落硬编码。
 
 ---
 

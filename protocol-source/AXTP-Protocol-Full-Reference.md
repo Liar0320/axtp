@@ -14,7 +14,7 @@ protocol/axtp.protocol.yaml
 The legacy hand-written 08-13 registry documents are retained at:
 
 ```text
-protocol-source/legacy-docs/registry-v2/
+protocol-source/legacy-docs/02-registry/
 ```
 
 ## 2. Current v1 MVP Methods
@@ -102,7 +102,7 @@ The `AXTP-MVP` profile requires:
 - display brightness get/set.
 - firmware OTA begin/end/verify/apply.
 - display brightness and firmware update events.
-- method bitmap discovery derived from `methods[].methodId`.
+- method bitmap discovery derived from `methods[].bitOffset`.
 
 Transport bindings are defined in `protocol/axtp.protocol.yaml`.
 
@@ -115,4 +115,4 @@ The current v1 protocol preserves known legacy command mappings as request metad
 | `device.getInfo` | `0x000B0002` | `BetaDeviceInfo` | fixed_struct |
 | `display.setBrightness` | `0x000B0042` | `BetaBrightnessSet` | fixed_struct |
 
-Additional legacy material must be migrated into `protocol-source/legacy-inputs/` or summarized here before it is promoted into `protocol/axtp.protocol.yaml`.
+Additional legacy material must be migrated into `protocol-source/legacy-inputs/` or summarized in `protocol-source/legacy/AXTP-Legacy-Compatibility-Reference.md` before it is promoted into `protocol/axtp.protocol.yaml`.

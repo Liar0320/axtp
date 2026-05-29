@@ -3,8 +3,10 @@ import { Command } from "commander";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { formatGeneratorError } from "./errors.js";
-import { emitAll, emitMarkdown, emitTestVectors } from "./emitters/index.js";
+import { emitAll, emitMarkdown, emitProtocolDocs, emitTestVectors } from "./emitters/index.js";
 import { loadSpec } from "./loader.js";
+import { loadProtocolDefinition } from "./protocolLoader.js";
+import { validateProtocolDefinition } from "./protocolValidator.js";
 import { validateSpec } from "./validator.js";
 
 function resolveInputPath(input: string): string {
@@ -24,8 +26,18 @@ async function loadAndValidate(specPath: string) {
   return { spec, messages };
 }
 
+async function loadAndValidateProtocol(specPath: string) {
+  const model = await loadProtocolDefinition(resolveInputPath(specPath));
+  const messages = validateProtocolDefinition(model);
+  return { model, messages };
+}
+
 function defaultOut(specPath: string): string {
   return path.join(resolveInputPath(specPath), "out", "generated");
+}
+
+function defaultProtocolOut(specPath: string): string {
+  return path.join(resolveInputPath(specPath), "generated");
 }
 
 const program = new Command();
@@ -59,6 +71,36 @@ program.command("generate")
       await emitAll(spec, out);
       for (const message of messages) console.log(message);
       console.log(`[OK] generated outputs: ${out}`);
+    } catch (error) {
+      console.error(formatGeneratorError(error));
+      process.exitCode = 1;
+    }
+  });
+
+program.command("validate-protocol")
+  .description("validate protocol definition input")
+  .requiredOption("--spec <path>", "AXTP repository root")
+  .action(async (options) => {
+    try {
+      const { messages } = await loadAndValidateProtocol(options.spec);
+      for (const message of messages) console.log(message);
+    } catch (error) {
+      console.error(formatGeneratorError(error));
+      process.exitCode = 1;
+    }
+  });
+
+program.command("generate-protocol")
+  .description("generate protocol definition JSON and Markdown")
+  .requiredOption("--spec <path>", "AXTP repository root")
+  .option("--out <path>", "output directory")
+  .action(async (options) => {
+    try {
+      const { model, messages } = await loadAndValidateProtocol(options.spec);
+      const out = options.out ? resolveOutputPath(options.out) : defaultProtocolOut(options.spec);
+      await emitProtocolDocs(model, out);
+      for (const message of messages) console.log(message);
+      console.log(`[OK] generated protocol outputs: ${out}`);
     } catch (error) {
       console.error(formatGeneratorError(error));
       process.exitCode = 1;
