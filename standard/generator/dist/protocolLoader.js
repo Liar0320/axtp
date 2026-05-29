@@ -1,0 +1,255 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import YAML from "yaml";
+import { GeneratorError } from "./errors.js";
+import { normalizeId } from "./util.js";
+function asArray(value) {
+    return Array.isArray(value) ? value : [];
+}
+function asStringArray(value) {
+    return asArray(value).map(String);
+}
+function asObject(value, context) {
+    if (value && typeof value === "object" && !Array.isArray(value))
+        return value;
+    throw new GeneratorError({
+        code: "AXTP-GEN-1001",
+        file: "protocol/axtp.protocol.yaml",
+        entry: context,
+        message: `${context} must be an object`
+    });
+}
+function optionalNumber(value) {
+    return typeof value === "number" ? value : undefined;
+}
+function mapTypeField(field, typeName) {
+    return {
+        fieldId: normalizeId(field.fieldId, `${typeName}.${field.name}`),
+        name: String(field.name),
+        type: String(field.type),
+        required: Boolean(field.required),
+        min: optionalNumber(field.min),
+        max: optionalNumber(field.max),
+        maxLength: optionalNumber(field.maxLength),
+        deprecated: field.deprecated === undefined ? undefined : Boolean(field.deprecated),
+        derivedFrom: field.derivedFrom === undefined ? undefined : String(field.derivedFrom),
+        description: field.description === undefined ? undefined : String(field.description)
+    };
+}
+function mapTypes(types) {
+    const rawTypes = asObject(types, "types");
+    return Object.entries(rawTypes).map(([name, raw]) => {
+        const item = asObject(raw, `types.${name}`);
+        return {
+            name,
+            kind: String(item.kind ?? "object"),
+            description: item.description === undefined ? undefined : String(item.description),
+            fields: asArray(item.fields).map((field) => mapTypeField(field, name))
+        };
+    });
+}
+function mapMethods(methods) {
+    return asArray(methods).map((item) => ({
+        name: String(item.name),
+        description: item.description === undefined ? undefined : String(item.description),
+        methodId: normalizeId(item.methodId, `methods.${item.name}.methodId`),
+        bitOffset: normalizeId(item.bitOffset, `methods.${item.name}.bitOffset`),
+        domain: String(item.domain),
+        since: String(item.since ?? ""),
+        status: item.status ?? "draft",
+        request: { type: String(item.request?.type ?? "") },
+        response: { type: String(item.response?.type ?? "") },
+        encodings: asStringArray(item.encodings),
+        capabilities: asStringArray(item.capabilities),
+        events: asStringArray(item.events),
+        errors: asStringArray(item.errors),
+        legacy: item.legacy
+    }));
+}
+function mapEvents(events) {
+    return asArray(events).map((item) => ({
+        name: String(item.name),
+        description: item.description === undefined ? undefined : String(item.description),
+        eventId: normalizeId(item.eventId, `events.${item.name}.eventId`),
+        bitOffset: normalizeId(item.bitOffset, `events.${item.name}.bitOffset`),
+        domain: String(item.domain),
+        since: String(item.since ?? ""),
+        status: item.status ?? "draft",
+        payload: { type: String(item.payload?.type ?? "") },
+        severity: item.severity === undefined ? undefined : String(item.severity),
+        trigger: asStringArray(item.trigger),
+        capabilities: asStringArray(item.capabilities)
+    }));
+}
+function mapErrors(errors) {
+    return asArray(errors).map((item) => ({
+        name: String(item.name),
+        code: normalizeId(item.code, `errors.${item.name}.code`),
+        category: String(item.category),
+        since: item.since === undefined ? undefined : String(item.since),
+        status: item.status ?? "draft",
+        severity: String(item.severity),
+        retryable: Boolean(item.retryable),
+        message: String(item.message)
+    }));
+}
+function mapProfiles(profiles) {
+    return asArray(profiles).map((item) => ({
+        name: String(item.name),
+        since: String(item.since ?? ""),
+        status: item.status ?? "draft",
+        extends: item.extends === undefined ? undefined : String(item.extends),
+        requiredMethods: asStringArray(item.requiredMethods),
+        requiredEvents: asStringArray(item.requiredEvents),
+        requiredTypes: asStringArray(item.requiredTypes),
+        requiredErrors: asStringArray(item.requiredErrors),
+        transportProfiles: asStringArray(item.transportProfiles),
+        frameProfile: item.frameProfile === undefined ? undefined : String(item.frameProfile),
+        frameProfiles: asStringArray(item.frameProfiles),
+        notes: item.notes === undefined ? undefined : String(item.notes)
+    }));
+}
+function mapProtocol(raw) {
+    const item = asObject(raw, "protocol");
+    return {
+        name: String(item.name),
+        version: String(item.version),
+        specVersion: normalizeId(item.specVersion, "protocol.specVersion"),
+        registryVersion: String(item.registryVersion),
+        status: item.status === undefined ? undefined : String(item.status)
+    };
+}
+function mapOverview(raw) {
+    const item = asObject(raw, "overview");
+    return {
+        title: String(item.title),
+        summary: String(item.summary ?? "").trim(),
+        goals: asStringArray(item.goals),
+        nonGoals: asStringArray(item.nonGoals)
+    };
+}
+function mapArchitecture(raw) {
+    const item = asObject(raw, "architecture");
+    return {
+        layers: asArray(item.layers).map((layer) => ({
+            name: String(layer.name),
+            description: String(layer.description)
+        })),
+        lifecycle: asArray(item.lifecycle).map((step) => ({
+            step: String(step.step),
+            from: step.from === undefined ? undefined : String(step.from),
+            to: step.to === undefined ? undefined : String(step.to),
+            status: step.status === undefined ? undefined : String(step.status),
+            description: String(step.description)
+        })),
+        optionalLifecycleExtensions: asArray(item.optionalLifecycleExtensions).map((step) => ({
+            step: String(step.step),
+            from: step.from === undefined ? undefined : String(step.from),
+            to: step.to === undefined ? undefined : String(step.to),
+            status: step.status === undefined ? undefined : String(step.status),
+            description: String(step.description)
+        }))
+    };
+}
+function mapGuide(raw) {
+    const item = asObject(raw ?? {}, "guide");
+    return {
+        quickStart: asArray(item.quickStart).map((guide) => ({
+            title: String(guide.title),
+            steps: asStringArray(guide.steps)
+        }))
+    };
+}
+function mapFrameProfiles(value) {
+    return asArray(value).map((item) => ({
+        name: String(item.name),
+        magic: item.magic,
+        l1: String(item.l1),
+        l2: String(item.l2),
+        supportsMixing: item.supportsMixing === undefined ? undefined : Boolean(item.supportsMixing)
+    }));
+}
+function mapTransports(value) {
+    return asArray(value).map((item) => ({
+        name: String(item.name),
+        family: String(item.family),
+        frameProfile: String(item.frameProfile),
+        production: Boolean(item.production),
+        maxFrameSize: optionalNumber(item.maxFrameSize),
+        usage: item.usage === undefined ? undefined : String(item.usage)
+    }));
+}
+function mapPayloadTypes(value) {
+    return asArray(value).map((item) => ({
+        name: String(item.name),
+        id: normalizeId(item.id, `payloadTypes.${item.name}.id`),
+        headerBytes: normalizeId(item.headerBytes, `payloadTypes.${item.name}.headerBytes`),
+        description: String(item.description)
+    }));
+}
+function mapControl(value) {
+    const item = asObject(value, "control");
+    return {
+        requiredOpcodes: asStringArray(item.requiredOpcodes),
+        optionalOpcodes: asStringArray(item.optionalOpcodes),
+        reservedOpcodes: asStringArray(item.reservedOpcodes),
+        rules: asStringArray(item.rules)
+    };
+}
+function mapStream(value) {
+    const item = asObject(value, "stream");
+    const header = asObject(item.header, "stream.header");
+    return {
+        header: {
+            name: String(header.name),
+            size: normalizeId(header.size, "stream.header.size"),
+            fields: asArray(header.fields).map((field) => ({
+                name: String(field.name),
+                type: String(field.type)
+            }))
+        },
+        rules: asStringArray(item.rules)
+    };
+}
+function mapCompatibility(value) {
+    const item = asObject(value, "compatibility");
+    return {
+        legacySources: asStringArray(item.legacySources),
+        rules: asStringArray(item.rules)
+    };
+}
+export async function loadProtocolDefinition(specRoot) {
+    const sourcePath = path.join(specRoot, "protocol", "axtp.protocol.yaml");
+    let raw;
+    try {
+        raw = YAML.parse(await readFile(sourcePath, "utf8")) ?? {};
+    }
+    catch (error) {
+        throw new GeneratorError({
+            code: "AXTP-GEN-1001",
+            file: sourcePath,
+            message: error instanceof Error ? error.message : String(error)
+        });
+    }
+    return {
+        specRoot,
+        sourcePath,
+        protocol: mapProtocol(raw.protocol),
+        overview: mapOverview(raw.overview),
+        architecture: mapArchitecture(raw.architecture),
+        guide: mapGuide(raw.guide),
+        frameProfiles: mapFrameProfiles(raw.frameProfiles),
+        transports: mapTransports(raw.transports),
+        payloadTypes: mapPayloadTypes(raw.payloadTypes),
+        control: mapControl(raw.control),
+        stream: mapStream(raw.stream),
+        compatibility: mapCompatibility(raw.compatibility),
+        types: mapTypes(raw.types),
+        methods: mapMethods(raw.methods),
+        events: mapEvents(raw.events),
+        errors: mapErrors(raw.errors),
+        profiles: mapProfiles(raw.profiles),
+        raw
+    };
+}
+//# sourceMappingURL=protocolLoader.js.map
