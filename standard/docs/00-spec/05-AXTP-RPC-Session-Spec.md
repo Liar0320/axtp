@@ -452,10 +452,10 @@ Transport 层（CONTROL，Framed Mode）：
   Physical connected
     → CONTROL OPEN
     → CONTROL ACCEPT
-    → TRANSPORT_READY
+    → FRAMING_READY
 
 Application 层（RPC，所有模式）：
-  TRANSPORT_READY / WebSocket connected
+  FRAMING_READY / WebSocket connected
     → Hello (op=0)        Logical Server→Logical Client
     → Identify (op=2)     Logical Client→Logical Server
     → Identified (op=3)   Logical Server→Logical Client，分配 sid
@@ -987,9 +987,9 @@ MessagePack / CBOR
 
 | 文档 | 关系 |
 | --- | --- |
-| 01《整体协议规范》 | Frame Header、PayloadType、Fragment、CRC |
-| 02《Control 信令规范》 | CONTROL 建立 Session，不承载业务方法 |
-| 04《Stream 流式传输规范》 | STREAM 数据面，RPC 只负责控制面 |
+| 02《AXTP Frame and Payload Spec》 | Frame Header、PayloadType、Fragment、CRC |
+| 04《AXTP Control Session Spec》 | CONTROL 建立 Session，不承载业务方法 |
+| 06《AXTP Stream Spec》 | STREAM 数据面，RPC 只负责控制面 |
 | Type System / TLV Schema | body 字段类型和编码规则 |
 | MethodId/EventId/ErrorCode/Capability 注册表 | 业务语义单一事实源 |
 | 老协议适配规范 | CmdValue/legacy payload 到 RPC 的映射 |

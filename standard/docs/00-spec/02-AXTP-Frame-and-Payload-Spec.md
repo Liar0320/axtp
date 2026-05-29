@@ -575,14 +575,14 @@ Transport Connected → CONTROL OPEN → CONTROL ACCEPT
 
 | 文档 | 负责内容 |
 |---|---|
-| 02《Control 信令协议规范》 | CONTROL Payload、Opcode、OPEN、ACK/NACK、RESUME、CLOSE |
-| 03《RPC 协议与二进制映射规范》 | RPC Payload、JSON/Binary 映射、requestId、methodId、eventId |
-| 04《Stream 流式传输协议规范》 | Stream L2 Header、streamId/seqId/cursor、ACK/NACK、窗口、断点续传 |
-| 05《连接场景与调用流程规范》 | 不同传输组合下的 Wire Profile 选择、建连流程、桥接方式 |
+| 03《AXTP Transport Profiles》 | 不同传输组合下的 Frame Profile 选择、建连流程、桥接方式 |
+| 04《AXTP Control Session Spec》 | CONTROL Payload、Opcode、OPEN、ACK/NACK、RESUME、CLOSE |
+| 05《AXTP RPC Session Spec》 | RPC Payload、JSON/Binary 映射、requestId、methodId、eventId |
+| 06《AXTP Stream Spec》 | Stream L2 Header、streamId/seqId/cursor、ACK/NACK、窗口、断点续传 |
 | Type System | 基础类型、字节序、数组、对象、enum、bitmap |
 | TLV Schema | TLV 编码、字段 ID、嵌套、扩展长度 |
 | Registry | Method / Event / Error / Capability 单一事实源 |
-| Compatibility | 老协议 CmdValue / Payload / Error / Capability 映射 |
+| 07《AXTP Compatibility and Versioning》 | Wire format freeze 规则、老协议 CmdValue / Payload / Error / Capability 映射 |
 
 ---
 

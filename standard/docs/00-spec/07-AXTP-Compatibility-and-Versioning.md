@@ -7,7 +7,102 @@
 
 版本：v1.0.0-rc1
 状态：AXTP v1 Core Freeze Candidate
-适用范围：USB HID、BLE、UART、TCP、WebSocket、旧 AXDP/Alpha/Beta/Common/CmdValue 类协议、旧 JSON-RPC/二进制 RPC/OTA/RawStream/LogStream 协议迁移
+适用范围：AXTP v1 wire format freeze 规则、版本策略、USB HID、BLE、UART、TCP、WebSocket、旧 AXDP/Alpha/Beta/Common/CmdValue 类协议、旧 JSON-RPC/二进制 RPC/OTA/RawStream/LogStream 协议迁移
+
+---
+
+## 0. Wire Format Freeze Rules
+
+本节定义 AXTP v1 Core 的线格式冻结规则。所有实现必须遵守，所有后续扩展必须在此约束内进行。
+
+### 0.1 已冻结的线格式
+
+以下线格式在 v1.0.0 发布后不得修改：
+
+| 对象 | 规范归属 | 冻结内容 |
+|---|---|---|
+| Standard L1 Frame Header | 02 §7 | 12B 固定布局，字段顺序/长度/语义不变 |
+| Compact L1 Frame Header | 02 §8 | 4B 固定布局，VT/PayloadLength/MessageId/FrameInfo 不变 |
+| Standard CRC | 02 §10 | CRC16-CCITT-FALSE，覆盖 Header(12B)+Payload |
+| Compact CRC | 02 §10 | CRC8-MAXIM，覆盖 Header(4B)+Payload |
+| Control L2 Payload Header | 04 §2.1 | 5B 固定头：opcode/controlId/statusCode |
+| RPC Binary L2 Payload Header | 05 §19.1 | 11B 固定头：rpcEncoding/rpcOp/requestId/methodOrEventId/statusCode/bodyEncoding |
+| STREAM L2 Payload Header | 06 §3.1 | 16B 固定头：streamId/seqId/cursor |
+| PayloadType 枚举值 | 02 §5 | CONTROL=0x01 / RPC=0x02 / STREAM=0x03 |
+| 字节序 | 02 §9 | 所有多字节整数 Little-Endian |
+
+### 0.2 不兼容变更规则（必须升级 Header Version）
+
+以下变更属于不兼容变更，必须升级 AXTP Header `Version` 字段：
+
+```text
+- L1 Frame Header 字段长度、顺序或语义变化
+- PayloadLength 语义变化
+- PayloadType 编码重定义
+- CRC 算法或覆盖范围变化
+- Control L2 固定头布局变化
+- RPC Binary L2 固定头布局变化
+- STREAM L2 固定头布局变化
+```
+
+### 0.3 兼容扩展规则（不升级 Header Version）
+
+以下变更属于兼容扩展，不需要升级 Header Version：
+
+```text
+- 新增 methodId / eventId / errorCode / capabilityId
+- 新增 Control opcode（使用 0x10-0x6F 保留范围）
+- 新增 Control TLV 字段（旧 Parser 可跳过未知字段）
+- 新增 Stream Profile（不修改 STREAM Header 结构）
+- 新增 rpcEncoding 类型
+- 新增 Transport Profile（不修改既有 Transport Profile 的 wire format）
+- 新增 Frame Profile（不修改既有 Frame Profile 的解析规则）
+```
+
+### 0.4 ID 不复用规则
+
+已发布的以下 ID 不得复用，即使已废弃：
+
+```text
+- PayloadType 值（0x01/0x02/0x03 已占用）
+- Control opcode 值（0x00-0x10 已占用）
+- Stream flags bit（已分配的 bit 不得重新定义语义）
+- methodId / eventId / errorCode（deprecated 后保留编号，不得重新分配）
+```
+
+### 0.5 Reserved 字段规则
+
+```text
+- 发送方：reserved 字段必须置 0
+- 接收方：必须忽略未知 reserved 字段，不得因此断开连接
+- 不得将 reserved 字段用于私有扩展（使用 VENDOR/EXPERIMENTAL 范围）
+```
+
+### 0.6 Frame Profile 会话内不切换
+
+```text
+- 同一个 AXTP Session 内 Frame Profile 不切换
+- Transport Profile 固定决定 Frame Profile（见 01 §4、03 §1）
+- OPEN/ACCEPT 不协商 Header Profile
+- 如需使用其他 Frame Profile，必须选择其他 Transport Profile 或重新 OPEN
+```
+
+### 0.7 specVersion 与 registryVersion 分离
+
+```text
+- specVersion（如 1.0.0）：Core wire format 修改时升级，对应 Header Version 字段
+- registryVersion（如 0.1.0）：method/event/type/error/profile 增量时升级，不影响 wire format
+- 两者独立演进，不得混用
+```
+
+### 0.8 Protocol Definition 与生成产物
+
+```text
+- 08-13 文档是 Protocol Definition 元规范，定义 protocol/axtp.protocol.yaml 的结构约束
+- protocol/axtp.protocol.yaml 是具体业务内容的单一事实源
+- generated/ 目录下的产物由 axtpc 生成，不得手写修改
+- 如需修改生成产物，必须修改 protocol/axtp.protocol.yaml 后重新生成
+```
 
 ---
 
@@ -580,16 +675,19 @@ CRC32 / SHA256 负责 chunk 或镜像级完整性
 
 ### 8.3 OTA Chunk 字段映射
 
-| 旧字段 | AXTP 字段 | 位置 |
-| --- |---| --- |
-| `transferId` | `transferId` | STREAM Header / metadata |
-| `seqId` | `seqId` | STREAM Header |
-| `offset` | `offset` | STREAM Header / metadata |
-| `totalLength` | `totalLength` | firmware.begin result 或 STREAM metadata |
-| `chunkLength` | `dataLength` | STREAM Header |
-| `chunkCrc32` | `chunkCrc32` | STREAM metadata |
-| `imageType` | `imageType` | STREAM metadata |
-| `sha256` | `imageHash` | firmware.begin / verify |
+AXTP v1 STREAM Header 固定 16B，只含 `streamId / seqId / cursor`，不携带业务字段。
+旧 OTA 字段按以下规则分流：
+
+| 旧字段 | AXTP 字段 | 位置 | 说明 |
+| --- |---| --- | --- |
+| `transferId` | `streamId` | STREAM Header（wire） | 由 `firmware.begin` Response 分配，绑定到 Stream Context |
+| `seqId` | `seqId` | STREAM Header（wire） | uint32，从 0 开始，自然回绕 |
+| `offset` | `cursor` | STREAM Header（wire） | cursorUnit=byteOffset，见 06《Stream Spec》§3.2 |
+| `totalLength` | `totalSize` | `firmware.begin` params（RPC 控制面） | 不在 STREAM Header 中 |
+| `chunkLength` | 派生值 | `Frame.payloadLength - 16`（Frame Header） | 不在 STREAM Header 中，接收端从帧长度反推 |
+| `chunkCrc32` | 可选 | profile trailer 或 CONTROL ACK/NACK body | 不在 STREAM Header 中 |
+| `imageType` | `imageType` | `firmware.begin` params（RPC 控制面） | 不在 STREAM Header 中 |
+| `sha256` | `verifyValue` | `firmware.begin` params + `firmware.verify`（RPC 控制面） | 不在 STREAM Header 中 |
 
 ### 8.4 OTA ACK/NACK 映射
 
@@ -1023,16 +1121,16 @@ Tunnel 模式仅用于：
 | `legacyMaxPacketSize` | uint16 | 旧协议最大包 |
 | `legacyCmdNamespace` | enum | CmdValue 命名空间 |
 
-示例：
+示例（CONTROL OPEN body TLV 中携带 legacy 兼容字段）：
 
 ```yaml
-control.helloAck:
-  legacySupported:
-    - AXDP_HID
-    - OLD_BINARY_RPC
-  legacyMode: adapter
-  legacyVersion: 0x0102
-  legacyMaxPacketSize: 64
+# CONTROL OPEN body TLV（vendor 扩展字段，TLV type 0x70-0x7E 范围）
+legacySupported:
+  - AXDP_HID
+  - OLD_BINARY_RPC
+legacyMode: adapter
+legacyVersion: 0x0102
+legacyMaxPacketSize: 64
 ```
 
 ### 17.2 Capability 中声明业务兼容能力

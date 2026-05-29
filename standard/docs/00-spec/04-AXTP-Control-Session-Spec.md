@@ -498,6 +498,6 @@ reasonCode / messageId / frameIndex / targetType / selectedRpcEncoding
 
 | 文档 | 关系 |
 |---|---|
-| 03《RPC 协议》 | CONTROL 建立 Session 后，RPC 才能承载业务命令 |
-| 04《Stream 协议》 | STREAM 由 RPC 打开，CONTROL ACK/NACK/WINDOW_UPDATE 负责传输确认和流控 |
+| 05《AXTP RPC Session Spec》 | CONTROL 建立 Session 后，RPC 才能承载业务命令 |
+| 06《AXTP Stream Spec》 | STREAM 由 RPC 打开，CONTROL ACK/NACK/WINDOW_UPDATE 负责传输确认和流控 |
 | Registry | CONTROL 不进入 Method Registry，业务命令通过 RPC 查询 capability |
