@@ -174,7 +174,7 @@ compatibility:
     - protocol-source/legacy-docs/registry-v2/
   rules:
     - Stable methodId, eventId and error code values must not be reused.
-    - Legacy command mappings may be preserved as metadata under requests[].legacy.
+    - Legacy command mappings may be preserved as metadata under methods[].legacy.
     - WebSocket Text and HTTP JSON may exist only as debug or legacy adapter paths.
 
 types:
@@ -201,7 +201,7 @@ types:
     kind: object
     fields:
       - { fieldId: 0x01, name: methodCount, type: uint16, required: true }
-      - { fieldId: 0x02, name: methodIds, type: array<uint16>, required: false, derivedFrom: requests.methodId }
+      - { fieldId: 0x02, name: methodIds, type: array<uint16>, required: false, derivedFrom: methods.methodId }
   DisplayGetBrightnessRequest:
     kind: object
     fields: []
@@ -268,12 +268,13 @@ types:
       - { fieldId: 0x01, name: maxImageSize, type: uint32, required: true }
       - { fieldId: 0x02, name: maxChunkSize, type: uint16, required: true }
 
-requests:
+methods:
   - name: device.getInfo
     methodId: 0x0101
+    bitmapId: 0
     domain: device
     since: 1.0.0
-    status: mvp
+    status: stable
     request: { type: DeviceGetInfoRequest }
     response: { type: DeviceGetInfoResponse }
     encodings: [json, binary_tlv]
@@ -285,9 +286,10 @@ requests:
       payloadFormat: fixed_struct
   - name: capability.supportedMethods
     methodId: 0x0301
+    bitmapId: 0
     domain: capability
     since: 1.0.0
-    status: mvp
+    status: stable
     request: { type: CapabilitySupportedMethodsRequest }
     response: { type: CapabilitySupportedMethodsResponse }
     encodings: [json, binary_tlv]
@@ -295,9 +297,10 @@ requests:
     errors: [SUCCESS, RPC_METHOD_NOT_FOUND]
   - name: display.getBrightness
     methodId: 0x0501
+    bitmapId: 0
     domain: display
     since: 1.0.0
-    status: mvp
+    status: stable
     request: { type: DisplayGetBrightnessRequest }
     response: { type: DisplayGetBrightnessResponse }
     encodings: [json, binary_tlv]
@@ -305,9 +308,10 @@ requests:
     errors: [SUCCESS, RPC_METHOD_NOT_FOUND]
   - name: display.setBrightness
     methodId: 0x0502
+    bitmapId: 1
     domain: display
     since: 1.0.0
-    status: mvp
+    status: stable
     request: { type: DisplaySetBrightnessRequest }
     response: { type: CommonEmptyResponse }
     encodings: [json, binary_tlv]
@@ -320,9 +324,10 @@ requests:
       payloadFormat: fixed_struct
   - name: firmware.begin
     methodId: 0x0B02
+    bitmapId: 0
     domain: firmware
     since: 1.0.0
-    status: mvp
+    status: stable
     request: { type: FirmwareBeginRequest }
     response: { type: FirmwareBeginResponse }
     encodings: [json, binary_tlv]
@@ -331,9 +336,10 @@ requests:
     errors: [SUCCESS, RPC_PARAM_INVALID, BUSY]
   - name: firmware.end
     methodId: 0x0B03
+    bitmapId: 1
     domain: firmware
     since: 1.0.0
-    status: mvp
+    status: stable
     request: { type: FirmwareEndRequest }
     response: { type: CommonEmptyResponse }
     encodings: [json, binary_tlv]
@@ -341,9 +347,10 @@ requests:
     errors: [SUCCESS, STREAM_NOT_FOUND, BUSY]
   - name: firmware.verify
     methodId: 0x0B04
+    bitmapId: 2
     domain: firmware
     since: 1.0.0
-    status: mvp
+    status: stable
     request: { type: FirmwareVerifyRequest }
     response: { type: CommonEmptyResponse }
     encodings: [json, binary_tlv]
@@ -352,9 +359,10 @@ requests:
     errors: [SUCCESS, STREAM_CRC_ERROR, BUSY]
   - name: firmware.apply
     methodId: 0x0B05
+    bitmapId: 3
     domain: firmware
     since: 1.0.0
-    status: mvp
+    status: stable
     request: { type: FirmwareApplyRequest }
     response: { type: CommonEmptyResponse }
     encodings: [json, binary_tlv]
@@ -365,70 +373,74 @@ requests:
 events:
   - name: display.brightnessChanged
     eventId: 0x8507
+    bitmapId: 0
     domain: display
     since: 1.0.0
-    status: mvp
+    status: stable
     payload: { type: DisplayBrightnessChangedEvent }
     severity: info
     trigger: [display.setBrightness, device_local_change]
     capabilities: [display.brightness]
   - name: firmware.updateProgress
     eventId: 0x8B02
+    bitmapId: 0
     domain: firmware
     since: 1.0.0
-    status: mvp
+    status: stable
     payload: { type: FirmwareUpdateProgressEvent }
     severity: info
     trigger: [firmware.begin, stream.ota.chunk]
     capabilities: [firmware.ota]
   - name: firmware.updateCompleted
     eventId: 0x8B03
+    bitmapId: 1
     domain: firmware
     since: 1.0.0
-    status: mvp
+    status: stable
     payload: { type: FirmwareUpdateCompletedEvent }
     severity: info
     trigger: [firmware.verify, firmware.apply]
     capabilities: [firmware.ota]
   - name: firmware.updateFailed
     eventId: 0x8B04
+    bitmapId: 2
     domain: firmware
     since: 1.0.0
-    status: mvp
+    status: stable
     payload: { type: FirmwareUpdateFailedEvent }
     severity: error
     trigger: [firmware.verify, firmware.apply, stream.error]
     capabilities: [firmware.ota]
 
 errors:
-  - { name: SUCCESS, code: 0x0000, category: common, status: mvp, severity: success, retryable: false, message: Operation completed successfully. }
-  - { name: UNKNOWN_ERROR, code: 0x0001, category: common, status: mvp, severity: error, retryable: false, message: Unknown error. }
-  - { name: BUSY, code: 0x0005, category: common, status: mvp, severity: warning, retryable: true, message: Device or resource is busy. }
-  - { name: FRAME_VERSION_UNSUPPORTED, code: 0x0102, category: frame, status: mvp, severity: error, retryable: false, message: Frame version is not supported. }
-  - { name: FRAME_CRC_ERROR, code: 0x0106, category: frame, status: mvp, severity: error, retryable: true, message: Frame CRC check failed. }
-  - { name: FRAME_FRAGMENT_MISSING, code: 0x0108, category: frame, status: mvp, severity: error, retryable: true, message: One or more frame fragments are missing. }
-  - { name: CONTROL_OPCODE_INVALID, code: 0x0201, category: control, status: mvp, severity: error, retryable: false, message: Control opcode is invalid. }
-  - { name: CONTROL_PAYLOAD_INVALID, code: 0x0202, category: control, status: mvp, severity: error, retryable: false, message: Control payload is invalid. }
-  - { name: CONTROL_OPEN_REQUIRED, code: 0x0204, category: control, status: mvp, severity: error, retryable: false, message: Session has not completed CONTROL OPEN. }
-  - { name: CONTROL_OPEN_REJECTED, code: 0x0205, category: control, status: mvp, severity: error, retryable: false, message: Control OPEN was rejected. }
-  - { name: RESERVED_CONTROL_PROFILE_UNSUPPORTED, code: 0x0206, category: control, status: reserved, severity: error, retryable: false, message: Historical header profile negotiation error. }
-  - { name: CONTROL_NEGOTIATION_FAILED, code: 0x0207, category: control, status: mvp, severity: error, retryable: false, message: Control negotiation failed. }
-  - { name: CONTROL_SESSION_INVALID, code: 0x0208, category: control, status: mvp, severity: error, retryable: false, message: SessionId is invalid. }
-  - { name: CONTROL_RESUME_FAILED, code: 0x020A, category: control, status: mvp, severity: error, retryable: false, message: Session resume failed. }
-  - { name: CONTROL_WINDOW_EXCEEDED, code: 0x020C, category: control, status: mvp, severity: warning, retryable: true, message: Flow-control window was exceeded. }
-  - { name: RPC_ENCODING_UNSUPPORTED, code: 0x0301, category: rpc, status: mvp, severity: error, retryable: false, message: RPC encoding is not supported. }
-  - { name: RPC_METHOD_NOT_FOUND, code: 0x0306, category: rpc, status: mvp, severity: error, retryable: false, message: MethodId or method name is not supported. }
-  - { name: RPC_PARAM_INVALID, code: 0x030B, category: rpc, status: mvp, severity: error, retryable: false, message: RPC parameters are invalid. }
-  - { name: STREAM_NOT_FOUND, code: 0x0401, category: stream, status: mvp, severity: error, retryable: false, message: Stream context does not exist. }
-  - { name: STREAM_TIMEOUT, code: 0x0402, category: stream, status: mvp, severity: error, retryable: true, message: Stream timed out. }
-  - { name: STREAM_CRC_ERROR, code: 0x0403, category: stream, status: mvp, severity: error, retryable: true, message: Stream chunk CRC check failed. }
-  - { name: FW_VERIFY_FAILED, code: 0x060B, category: firmware, status: mvp, severity: error, retryable: false, message: Firmware verification failed. }
+  - { name: SUCCESS, code: 0x0000, category: common, since: 1.0.0, status: stable, severity: info, retryable: false, message: Operation completed successfully. }
+  - { name: UNKNOWN_ERROR, code: 0x0001, category: common, since: 1.0.0, status: stable, severity: error, retryable: false, message: Unknown error. }
+  - { name: BUSY, code: 0x0005, category: common, since: 1.0.0, status: stable, severity: warning, retryable: true, message: Device or resource is busy. }
+  - { name: FRAME_VERSION_UNSUPPORTED, code: 0x0102, category: frame, since: 1.0.0, status: stable, severity: error, retryable: false, message: Frame version is not supported. }
+  - { name: FRAME_CRC_ERROR, code: 0x0106, category: frame, since: 1.0.0, status: stable, severity: error, retryable: true, message: Frame CRC check failed. }
+  - { name: FRAME_FRAGMENT_MISSING, code: 0x0108, category: frame, since: 1.0.0, status: stable, severity: error, retryable: true, message: One or more frame fragments are missing. }
+  - { name: CONTROL_OPCODE_INVALID, code: 0x0201, category: control, since: 1.0.0, status: stable, severity: error, retryable: false, message: Control opcode is invalid. }
+  - { name: CONTROL_PAYLOAD_INVALID, code: 0x0202, category: control, since: 1.0.0, status: stable, severity: error, retryable: false, message: Control payload is invalid. }
+  - { name: CONTROL_OPEN_REQUIRED, code: 0x0204, category: control, since: 1.0.0, status: stable, severity: error, retryable: false, message: Session has not completed CONTROL OPEN. }
+  - { name: CONTROL_OPEN_REJECTED, code: 0x0205, category: control, since: 1.0.0, status: stable, severity: error, retryable: false, message: Control OPEN was rejected. }
+  - { name: RESERVED_CONTROL_PROFILE_UNSUPPORTED, code: 0x0206, category: control, since: 1.0.0, status: reserved, severity: error, retryable: false, message: Historical header profile negotiation error. }
+  - { name: CONTROL_NEGOTIATION_FAILED, code: 0x0207, category: control, since: 1.0.0, status: stable, severity: error, retryable: false, message: Control negotiation failed. }
+  - { name: CONTROL_SESSION_INVALID, code: 0x0208, category: control, since: 1.0.0, status: stable, severity: error, retryable: false, message: SessionId is invalid. }
+  - { name: CONTROL_RESUME_FAILED, code: 0x020A, category: control, since: 1.0.0, status: stable, severity: error, retryable: false, message: Session resume failed. }
+  - { name: CONTROL_WINDOW_EXCEEDED, code: 0x020C, category: control, since: 1.0.0, status: stable, severity: warning, retryable: true, message: Flow-control window was exceeded. }
+  - { name: RPC_ENCODING_UNSUPPORTED, code: 0x0301, category: rpc, since: 1.0.0, status: stable, severity: error, retryable: false, message: RPC encoding is not supported. }
+  - { name: RPC_METHOD_NOT_FOUND, code: 0x0306, category: rpc, since: 1.0.0, status: stable, severity: error, retryable: false, message: MethodId or method name is not supported. }
+  - { name: RPC_PARAM_INVALID, code: 0x030B, category: rpc, since: 1.0.0, status: stable, severity: error, retryable: false, message: RPC parameters are invalid. }
+  - { name: STREAM_NOT_FOUND, code: 0x0401, category: stream, since: 1.0.0, status: stable, severity: error, retryable: false, message: Stream context does not exist. }
+  - { name: STREAM_TIMEOUT, code: 0x0402, category: stream, since: 1.0.0, status: stable, severity: error, retryable: true, message: Stream timed out. }
+  - { name: STREAM_CRC_ERROR, code: 0x0403, category: stream, since: 1.0.0, status: stable, severity: error, retryable: true, message: Stream chunk CRC check failed. }
+  - { name: FW_VERIFY_FAILED, code: 0x060B, category: firmware, since: 1.0.0, status: stable, severity: error, retryable: false, message: Firmware verification failed. }
 
 profiles:
   - name: AXTP-MVP
     since: 1.0.0
-    status: mvp
-    requiredRequests:
+    status: stable
+    requiredMethods:
       - device.getInfo
       - capability.supportedMethods
       - display.getBrightness
@@ -466,10 +478,35 @@ profiles:
       - AXTP-HID-64
       - AXTP-BLE-RPC
       - AXTP-UART
+    frameProfiles:
+      - STANDARD_FRAME
+      - COMPACT_FRAME
+      - COMPACT_FRAME_CRC
   - name: AXTP-MVP-HID
     since: 1.0.0
-    status: mvp
+    status: stable
     extends: AXTP-MVP
+    requiredMethods:
+      - device.getInfo
+      - capability.supportedMethods
+      - display.getBrightness
+      - display.setBrightness
+      - firmware.begin
+      - firmware.end
+      - firmware.verify
+      - firmware.apply
+    requiredEvents:
+      - display.brightnessChanged
+      - firmware.updateProgress
+      - firmware.updateCompleted
+      - firmware.updateFailed
+    requiredErrors:
+      - SUCCESS
+      - RPC_METHOD_NOT_FOUND
+      - RPC_PARAM_INVALID
+      - STREAM_NOT_FOUND
+      - STREAM_CRC_ERROR
+      - BUSY
     transportProfiles:
       - AXTP-HID-64
     frameProfile: COMPACT_FRAME

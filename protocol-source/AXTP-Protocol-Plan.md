@@ -15,7 +15,7 @@ AXTP v1 now separates the documentation system into three layers:
 
 ## 2. Source Of Truth
 
-`protocol/axtp.protocol.yaml` is the only machine-readable protocol definition for v1 request, event, error, type and profile facts.
+`protocol/axtp.protocol.yaml` is the only machine-readable protocol definition for v1 method, event, error, type and profile facts.
 
 The previous 08-13 hand-written registry documents have been moved to:
 
@@ -32,7 +32,7 @@ The stable normative layer defines rules and constraints:
 | File | Role |
 |---|---|
 | `08-AXTP-Protocol-Definition-Mapping-Spec.md` | Mapping between JSON-RPC, Binary-RPC and `protocol.yaml`. |
-| `09-AXTP-Requests-Registry-Spec.md` | `requests:` entry model and validation rules. |
+| `09-AXTP-Methods-Registry-Spec.md` | `methods:` entry model and validation rules. |
 | `10-AXTP-Events-Registry-Spec.md` | `events:` entry model and validation rules. |
 | `11-AXTP-Errors-Registry-Spec.md` | `errors:` entry model and error mapping rules. |
 | `12-AXTP-Types-and-Capability-Spec.md` | `types:` model, fieldId rules and v1 capability scope. |
@@ -49,7 +49,7 @@ These files must not contain full business request/event/error tables.
 - frame profiles and transport profile bindings
 - payload type facts
 - CONTROL and STREAM decisions
-- types, requests, events, errors and profiles
+- types, methods, events, errors and profiles
 
 New protocol content must be added to `protocol/axtp.protocol.yaml` first. Generated documentation, schemas, SDK enums, bitmaps and conformance tests must be derived from it.
 
@@ -97,11 +97,10 @@ generated/
 
 ## 8. Change Workflow
 
-For a new request/event/type/error/profile:
+For a new method/event/type/error/profile:
 
 1. Update `protocol/axtp.protocol.yaml`.
 2. Run protocol validation.
 3. Regenerate `generated/protocol.md` and code artifacts.
 4. Review generated diffs.
 5. Do not manually edit generated files.
-

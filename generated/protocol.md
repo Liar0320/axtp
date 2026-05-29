@@ -78,7 +78,7 @@ READY is reserved as an optional lifecycle extension for transports that need an
 
 AXTP v1 keeps the capability domain, but only requires `capability.supportedMethods`.
 
-The supported method bitmap is derived from `requests[].methodId` and reflects the methods available to the current device, firmware, session and authentication state.
+The supported method bitmap is derived from `methods[].methodId` and reflects the methods available to the current device, firmware, session and authentication state.
 
 Full dynamic capability modeling is reserved for v2/P1.
 
@@ -96,7 +96,7 @@ Production STREAM uses a unified 16-byte stream header:
 
 The historical 8-byte stream header is not part of AXTP v1 Core.
 
-## Reference: Requests
+## Reference: Methods
 
 | methodId | name | request | response |
 |---|---|---|---|

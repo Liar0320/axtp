@@ -51,7 +51,8 @@ profiles:
 | `requiredTypes` | 否 | 必须引用 `types` |
 | `requiredErrors` | 是 | 必须引用 `errors[].name` |
 | `transportProfiles` | 是 | 必须引用 `transports[].name` |
-| `frameProfile` | 是 | 必须与 transportProfiles 的固定映射一致 |
+| `frameProfile` | 条件必填 | 单一 Frame Profile 的 profile 必填，必须与 transportProfiles 的固定映射一致 |
+| `frameProfiles` | 条件必填 | 聚合 profile 可使用，列出允许的 Frame Profile 集合 |
 | `notes` | 否 | 实现说明 |
 
 ---
@@ -60,10 +61,11 @@ profiles:
 
 1. `profiles[].name` 必须唯一。
 2. Profile 不得要求未定义 method/event/type/error。
-3. Profile 的 `frameProfile` 必须与每个 `transportProfiles[].frameProfile` 一致。
-4. AXTP v1 不允许在同一 session 内切换 Frame Profile。
-5. HID/BLE/UART Compact profile 不得要求 WebSocket Text / HTTP JSON 生产 STREAM。
-6. Profile 的具体内容进入 `protocol.yaml`；新增 Profile 不应修改 08-13 元规范。
+3. Profile 使用 `frameProfile` 时，必须与每个 `transportProfiles[].frameProfile` 一致。
+4. Profile 使用 `frameProfiles` 时，必须覆盖每个 `transportProfiles[].frameProfile`，且不得引入未被 transportProfiles 使用的 Frame Profile。
+5. AXTP v1 不允许在同一 session 内切换 Frame Profile。
+6. HID/BLE/UART Compact profile 不得要求 WebSocket Text / HTTP JSON 生产 STREAM。
+7. Profile 的具体内容进入 `protocol.yaml`；新增 Profile 不应修改 08-13 元规范。
 
 ---
 
