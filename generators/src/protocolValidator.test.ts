@@ -211,12 +211,15 @@ describe("protocol definition emitters", () => {
       const json = await readFile(path.join(dir, "protocol.json"), "utf8");
       const markdown = await readFile(path.join(dir, "protocol.md"), "utf8");
       expect(markdown).toContain("## Main Table of Contents");
+      expect(markdown).toContain("## firmware Methods");
+      expect(markdown).toContain("### firmware.begin");
       expect(markdown).toContain("#### Request Fields");
       expect(markdown).toContain("#### Response Fields");
       expect(markdown).toContain("#### Payload Fields");
       expect(markdown).not.toContain("## Frame Profiles");
-      expect(markdown).not.toContain("## Transport Profiles");
-      expect(markdown).not.toContain("## Payload Types");
+      expect(markdown).toContain("## Transport Profiles");
+      expect(markdown).toContain("## Payload Types");
+      expect(markdown).toContain("## Wire Format Examples");
       expect(markdown).not.toContain("## Control Rules");
       expect(markdown).not.toContain("## Stream Transfer Model");
       expect(markdown).not.toContain("## Types Reference");

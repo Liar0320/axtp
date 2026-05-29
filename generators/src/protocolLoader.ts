@@ -19,7 +19,9 @@ import type {
   SchemaDefinition,
   SchemaField,
   StreamDefinition,
-  TransportProfile
+  TransportProfile,
+  WireExample,
+  WireExampleStep
 } from "./protocolModel.js";
 import { normalizeId } from "./util.js";
 
@@ -211,7 +213,24 @@ function mapTransports(value: unknown): TransportProfile[] {
     frameProfile: String(item.frameProfile),
     production: Boolean(item.production),
     maxFrameSize: optionalNumber(item.maxFrameSize),
-    usage: item.usage === undefined ? undefined : String(item.usage)
+    usage: item.usage === undefined ? undefined : String(item.usage),
+    notes: item.notes === undefined ? undefined : String(item.notes)
+  }));
+}
+
+function mapWireExamples(value: unknown): WireExample[] {
+  return asArray(value).map((item) => ({
+    title: String(item.title),
+    transport: String(item.transport),
+    frameProfile: String(item.frameProfile),
+    description: String(item.description ?? ""),
+    steps: asArray(item.steps).map((step: any): WireExampleStep => ({
+      direction: String(step.direction),
+      label: String(step.label),
+      asciiLayout: String(step.asciiLayout ?? ""),
+      hexBytes: String(step.hexBytes ?? ""),
+      fieldAnnotations: asStringArray(step.fieldAnnotations)
+    }))
   }));
 }
 
@@ -220,7 +239,14 @@ function mapPayloadTypes(value: unknown): PayloadType[] {
     name: String(item.name),
     id: normalizeId(item.id, `payloadTypes.${item.name}.id`),
     headerBytes: normalizeId(item.headerBytes, `payloadTypes.${item.name}.headerBytes`),
-    description: String(item.description)
+    description: String(item.description),
+    selectionRule: item.selectionRule === undefined ? undefined : String(item.selectionRule),
+    headerFields: item.headerFields === undefined ? undefined : asArray(item.headerFields).map((f: any) => ({
+      name: String(f.name),
+      type: String(f.type),
+      bytes: typeof f.bytes === "number" ? f.bytes : String(f.bytes),
+      description: String(f.description)
+    }))
   }));
 }
 
@@ -289,6 +315,7 @@ export function loadProtocolDefinitionFromRaw(specRoot: string, sourcePath: stri
     stream: mapStream(raw.stream),
     compatibility: mapCompatibility(raw.compatibility),
     schemas: mapSchemas(raw),
+    wireExamples: mapWireExamples(raw.wire_examples ?? raw.wireExamples),
     methods: mapMethods(raw.methods),
     events: mapEvents(raw.events),
     errors: mapErrors(raw.errors),

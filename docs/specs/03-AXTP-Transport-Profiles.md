@@ -38,8 +38,8 @@ WebSocket Text / HTTP JSON 只作为 Debug 或 Legacy Adapter，不承载正式 
 | Transport Profile 到 Frame Profile 的固定绑定 | 本文档 |
 | Standard / Compact Frame Header 字段 | 02《Frame and Payload Spec》 |
 | Control / RPC / STREAM L2 固定头 | 04 / 05 / 06 |
-| Profile 条目的机器可读描述 | `protocol/axtp.protocol.yaml` 的 `profiles:` |
-| 完整业务 profile 清单 | `protocol-source/AXTP-Protocol-Full-Reference.md` |
+| Profile 条目的机器可读描述 | Source YAML 中的 `profiles:`，由 Generator 聚合到 `protocol/axtp.protocol.yaml` |
+| 完整业务 profile 清单 | `docs/source/AXTP-Protocol-Full-Reference.md` |
 
 ---
 
@@ -982,3 +982,62 @@ Cloud  → Device: capability.supportedMethods
 | `STREAM_TIMEOUT` | Stream | 发 `CONTROL NACK(STREAM_TIMEOUT)`，携带 streamId/seqId；等待重传或发起 RESUME |
 | `STREAM_CRC_ERROR` | Stream | 发 `CONTROL NACK(STREAM_CRC_ERROR)`，携带 streamId/seqId；等待重传 |
 | `CONTROL_HEARTBEAT_TIMEOUT` | Control | 连续 3 次无响应后断开连接，重新建立传输层连接 |
+
+---
+
+## 15. Compact 降级路径
+
+### 15.1 主路径声明
+
+Standard Frame（12B L1 Header + CRC16）是 AXTP v1 的主要实现目标，适用于：
+
+- TCP 直连
+- WebSocket Binary 直连
+- USB HID 高速（Report Size > 64B，使用 AXTP-HID-HS Transport Profile）
+- USB Bulk / 网关中继
+
+Compact Frame（4B L1 Header + CRC8）是低带宽受限传输的降级补充，不是默认实现路径。
+
+### 15.2 何时降级
+
+当底层传输满足以下任一条件时，使用 Compact Frame Profile：
+
+- MTU ≤ 64B（HID-64 Report、BLE ATT 默认 MTU、UART 固定包长）
+- 目标平台内存极小，无法承担 Standard Frame 的 12B Header 开销
+- 底层传输有固定帧边界（无需 Magic 字段做字节流同步）
+
+### 15.3 HID 高速原则
+
+USB HID Report Size > 64B 时，应使用 Standard Frame Profile，定义独立 Transport Profile（`AXTP-HID-HS`）。具体 Report Size 由实现决定（常见值：512B、1024B），不在协议层写死。
+
+HID-64（64B Report）固定使用 Compact Frame。两种模式不得在同一 AXTP Session 内混用。
+
+### 15.4 降级能力限制
+
+| 能力 | Standard Frame | Compact Frame |
+| --- | --- | --- |
+| Magic 字段 | 有（`AX`，用于字节流同步） | 无（依赖底层帧边界） |
+| CRC | CRC16-CCITT-FALSE（2B） | CRC8-MAXIM（1B） |
+| 分片上限 | 65535 片（16 bit） | 15 片（4 bit FrameIndex/FrameCount） |
+| SourceId / DestinationId | 有（支持路由和多设备） | 无（点对点） |
+| 最大单帧 Payload | 65535B | 受底层 MTU 限制 |
+| 适用场景 | TCP / WebSocket / USB HID 高速 / USB Bulk | BLE / UART / HID-64 |
+
+### 15.5 降级判断决策表
+
+| 传输类型 | MTU 典型值 | 推荐 Frame Profile | Transport Profile |
+| --- | --- | --- | --- |
+| TCP | 4KB–64KB | Standard | AXTP-TCP |
+| WebSocket Binary | 4KB–64KB | Standard | AXTP-WS |
+| USB HID 高速（Report > 64B） | 512B–1024B | Standard | AXTP-HID-HS |
+| USB HID-64（64B Report） | 58B 可用 | Compact | AXTP-HID-64 |
+| BLE GATT | 20B–247B | Compact | AXTP-BLE-RPC |
+| UART + COBS | 64B–512B | Compact | AXTP-UART |
+| WebSocket Text（调试） | — | Unframed（DS-RPC） | AXTP-WS-TEXT |
+
+### 15.6 从 Standard 降级到 Compact 的注意事项
+
+1. **分片策略变化**：Compact 最多 15 片，超过时必须拆分为多个独立消息，不能依赖 Standard 的大分片能力。
+2. **无路由字段**：Compact 不携带 SourceId/DestinationId，网关中继场景必须使用 Standard。
+3. **CRC 强度降低**：CRC8 检错能力弱于 CRC16，对于高误码率链路（如 BLE 弱信号），应在应用层增加额外校验。
+4. **Frame Profile 在 Session 内不切换**：一旦选定 Compact，整个 Session 内不得切换到 Standard。如需切换，必须重新建立传输层连接并重新 OPEN。

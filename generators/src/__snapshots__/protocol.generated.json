@@ -105,6 +105,43 @@
           "Query capability.supportedMethods.",
           "Start RPC requests."
         ]
+      },
+      {
+        "title": "Cloud Reverse Connection",
+        "steps": [
+          "Role mapping: Device = Physical Client + Logical Server. Cloud = Physical Server + Logical Client.",
+          "Device initiates WebSocket connection to cloud endpoint.",
+          "Device sends CONTROL OPEN (device is Physical Client but drives session setup).",
+          "Cloud sends CONTROL ACCEPT.",
+          "Device sends RPC Hello (op=0) — device is Logical Server, so device always sends Hello.",
+          "Cloud sends RPC Identify (op=2).",
+          "Device sends RPC Identified (op=3) with session ID.",
+          "Cloud sends capability.supportedMethods request to discover device capabilities.",
+          "Cloud issues RPC requests to device as normal."
+        ]
+      },
+      {
+        "title": "DS-RPC Debug Adapter",
+        "steps": [
+          "Purpose: browser or curl debugging only. Not for production. No STREAM support.",
+          "Connect via WebSocket Text (ws://device/axtp-debug or similar endpoint).",
+          "No CONTROL OPEN/ACCEPT handshake — connection enters FRAMING_READY directly.",
+          "Device sends DS-RPC Hello: {\"sid\":\"\",\"op\":0,\"d\":{\"rpcVersion\":\"...\"}}",
+          "Client sends DS-RPC Identify: {\"sid\":\"\",\"op\":2,\"d\":{\"clientName\":\"...\"}}",
+          "Device sends DS-RPC Identified: {\"sid\":\"<uuid>\",\"op\":3,\"d\":{\"negotiatedRpcVersion\":\"...\"}}",
+          "Issue RPC calls as JSON: {\"sid\":\"<uuid>\",\"op\":7,\"d\":{\"id\":\"00000001\",\"method\":\"display.setBrightness\",\"params\":{\"value\":80}}}",
+          "Receive response: {\"sid\":\"<uuid>\",\"op\":8,\"d\":{\"id\":\"00000001\",\"status\":{\"ok\":true,\"code\":0}}}"
+        ]
+      },
+      {
+        "title": "Compact Fallback",
+        "steps": [
+          "Use Compact Frame only when transport MTU <= 64B (HID-64, BLE ATT, UART fixed packet).",
+          "Use Standard Frame for USB HID with Report Size > 64B (define AXTP-HID-HS Transport Profile).",
+          "Compact limitations: no Magic field, CRC8 only, max 15 fragments, no SourceId/DestinationId.",
+          "Frame Profile is fixed for the entire session — no runtime switching.",
+          "If Standard is needed later, close the session and reconnect with a Standard-capable transport."
+        ]
       }
     ]
   },
@@ -136,39 +173,61 @@
       "name": "AXTP-WS",
       "family": "websocket",
       "frameProfile": "STANDARD_FRAME",
-      "production": true
+      "production": true,
+      "notes": "One AXTP Frame per WebSocket Binary Message. No extra framing needed."
     },
     {
       "name": "AXTP-TCP",
       "family": "tcp",
       "frameProfile": "STANDARD_FRAME",
-      "production": true
+      "production": true,
+      "notes": "Byte-stream transport. Receiver must reassemble frames using Magic+Length."
+    },
+    {
+      "name": "AXTP-HID-HS",
+      "family": "usb-hid",
+      "frameProfile": "STANDARD_FRAME",
+      "production": true,
+      "usage": "hid-report-size-gt-64",
+      "notes": "USB HID with Report Size > 64B. Specific report size is implementation-defined."
     },
     {
       "name": "AXTP-HID-64",
       "family": "usb-hid",
       "frameProfile": "COMPACT_FRAME",
       "production": true,
-      "maxFrameSize": 64
+      "maxFrameSize": 64,
+      "notes": "USB HID with 64B Report. 58B usable payload after 4B header and 1B CRC8 and 1B ReportID."
     },
     {
       "name": "AXTP-BLE-RPC",
       "family": "ble",
       "frameProfile": "COMPACT_FRAME",
-      "production": true
+      "production": true,
+      "notes": "BLE GATT. MTU negotiated at BLE layer; typical range 20B-247B."
     },
     {
       "name": "AXTP-UART",
       "family": "uart",
       "frameProfile": "COMPACT_FRAME_CRC",
-      "production": true
+      "production": true,
+      "notes": "UART with COBS or SLIP framing at transport layer."
+    },
+    {
+      "name": "AXTP-WS-CLOUD-REVERSE",
+      "family": "websocket",
+      "frameProfile": "STANDARD_FRAME",
+      "production": true,
+      "usage": "device-initiates-cloud-connection-logical-server-is-device",
+      "notes": "Device is Physical Client but Logical Server. Device sends Hello after ACCEPT."
     },
     {
       "name": "AXTP-WS-TEXT",
       "family": "websocket",
       "frameProfile": "none",
       "production": false,
-      "usage": "debug-or-legacy-adapter"
+      "usage": "debug-or-legacy-adapter",
+      "notes": "DS-RPC JSON mode. No AXTP Frame Header. No STREAM support. Debug only."
     },
     {
       "name": "AXTP-HTTP-JSON",
@@ -183,19 +242,106 @@
       "name": "CONTROL",
       "id": 1,
       "headerBytes": 5,
-      "description": "Logical session control payload."
+      "description": "Logical session control payload.",
+      "selectionRule": "Use for session lifecycle signals — OPEN, ACCEPT, HEARTBEAT, ACK, NACK, CLOSE, RESUME. Never use for business data.",
+      "headerFields": [
+        {
+          "name": "opcode",
+          "type": "uint8",
+          "bytes": 1,
+          "description": "Control operation code."
+        },
+        {
+          "name": "controlId",
+          "type": "uint16",
+          "bytes": 2,
+          "description": "Correlates OPEN/ACCEPT, ACK/NACK pairs. Little-Endian."
+        },
+        {
+          "name": "statusCode",
+          "type": "uint16",
+          "bytes": 2,
+          "description": "Result code. 0x0000 = SUCCESS. Little-Endian."
+        },
+        {
+          "name": "body",
+          "type": "bytes",
+          "bytes": "variable",
+          "description": "TLV-encoded fields. Length = Frame.payloadLength - 5."
+        }
+      ]
     },
     {
       "name": "RPC",
       "id": 2,
       "headerBytes": 11,
-      "description": "Binary request, response, event and error payload."
+      "description": "Binary request, response, event and error payload.",
+      "selectionRule": "Use for all business operations — method calls, responses, events, and batch. Choose JSON or BINARY encoding per capability.",
+      "headerFields": [
+        {
+          "name": "rpcEncoding",
+          "type": "uint8",
+          "bytes": 1,
+          "description": "Encoding: 0x01=JSON, 0x02=BINARY, 0x03=CBOR, 0x04=MSGPACK."
+        },
+        {
+          "name": "rpcOp",
+          "type": "uint8",
+          "bytes": 1,
+          "description": "Operation: 0x00=Hello, 0x02=Identify, 0x03=Identified, 0x06=Event, 0x07=Request, 0x08=RequestResponse."
+        },
+        {
+          "name": "requestId",
+          "type": "uint32",
+          "bytes": 4,
+          "description": "Client-assigned request correlation ID. Little-Endian. 0 for events."
+        },
+        {
+          "name": "methodOrEventId",
+          "type": "uint16",
+          "bytes": 2,
+          "description": "methodId for Request/Response; eventId for Event. Little-Endian."
+        },
+        {
+          "name": "statusCode",
+          "type": "uint16",
+          "bytes": 2,
+          "description": "0x0000 = SUCCESS. Non-zero = error. Little-Endian."
+        },
+        {
+          "name": "bodyEncoding",
+          "type": "uint8",
+          "bytes": 1,
+          "description": "Body encoding: 0x00=NONE, 0x01=TLV8, 0x02=TLV16. Only meaningful when rpcEncoding=BINARY."
+        }
+      ]
     },
     {
       "name": "STREAM",
       "id": 3,
       "headerBytes": 16,
-      "description": "Chunk-oriented data plane payload."
+      "description": "Chunk-oriented data plane payload.",
+      "selectionRule": "Use for high-throughput data — OTA firmware chunks, video/audio frames, file transfer, log streaming. Never carry business metadata in STREAM; use RPC for setup and teardown.",
+      "headerFields": [
+        {
+          "name": "streamId",
+          "type": "uint32",
+          "bytes": 4,
+          "description": "Stream identifier assigned by firmware.begin or stream.open response. Little-Endian."
+        },
+        {
+          "name": "seqId",
+          "type": "uint32",
+          "bytes": 4,
+          "description": "Monotonically increasing chunk sequence number. Starts at 0. Little-Endian."
+        },
+        {
+          "name": "cursor",
+          "type": "uint64",
+          "bytes": 8,
+          "description": "Byte offset of this chunk within the stream. Used for resume and integrity checks. Little-Endian."
+        }
+      ]
     }
   ],
   "control": {
@@ -856,6 +1002,50 @@
       ]
     },
     {
+      "name": "StreamHidMediaCapability",
+      "kind": "object",
+      "description": "Describes HID-backed media STREAM support.",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "transportProfile",
+          "type": "string",
+          "required": true,
+          "maxLength": 32,
+          "description": "Supported HID Transport Profile, usually AXTP-HID-64."
+        },
+        {
+          "fieldId": 2,
+          "name": "maxStreamCount",
+          "type": "uint8",
+          "required": true,
+          "description": "Maximum simultaneously opened media streams."
+        },
+        {
+          "fieldId": 3,
+          "name": "maxChunkSize",
+          "type": "uint16",
+          "required": true,
+          "max": 42,
+          "description": "Maximum STREAM data bytes per HID-64 report after the 16B STREAM header."
+        },
+        {
+          "fieldId": 4,
+          "name": "supportsVideo",
+          "type": "bool",
+          "required": true,
+          "description": "Device can open media.video streams over HID."
+        },
+        {
+          "fieldId": 5,
+          "name": "supportsAudio",
+          "type": "bool",
+          "required": true,
+          "description": "Device can open media.audio streams over HID."
+        }
+      ]
+    },
+    {
       "name": "StreamOpenRequest",
       "kind": "object",
       "description": "Parameters for opening a HID-backed media STREAM channel.",
@@ -1081,48 +1271,116 @@
           "description": "Optional diagnostic text."
         }
       ]
-    },
+    }
+  ],
+  "wireExamples": [
     {
-      "name": "StreamHidMediaCapability",
-      "kind": "object",
-      "description": "Describes HID-backed media STREAM support.",
-      "fields": [
+      "title": "USB HID High Speed — Full Session Establishment",
+      "transport": "AXTP-HID-HS",
+      "frameProfile": "STANDARD_FRAME",
+      "description": "Complete session establishment over USB HID with Report Size > 64B. Standard Frame Profile (12B L1 Header + CRC16). All integers Little-Endian.\n",
+      "steps": [
         {
-          "fieldId": 1,
-          "name": "transportProfile",
-          "type": "string",
-          "required": true,
-          "maxLength": 32,
-          "description": "Supported HID Transport Profile, usually AXTP-HID-64."
+          "direction": "Client → Device",
+          "label": "1. CONTROL OPEN",
+          "asciiLayout": "Standard L1 Header (12B)\n+--------+--------+--------+--------+--------+--------+\n| Magic  | Magic  | Ver/PT | PayLen | PayLen | MsgId  |\n| 0x41   | 0x58   | 0x11   | 0x0F   | 0x00   | 0x01   |\n+--------+--------+--------+--------+--------+--------+\n| MsgId  | FrInfo | SrcId  | DstId  | (reserved)      |\n| 0x00   | 0x01   | 0x01   | 0x10   | 0x00   | 0x00   |\n+--------+--------+--------+--------+--------+--------+\nControl Payload (15B)\n+--------+--------+--------+--------+--------+\n| opcode | ctrlId | ctrlId | status | status |\n| 0x01   | 0x01   | 0x00   | 0x00   | 0x00   |\n+--------+--------+--------+--------+--------+\n| TLV body: protocolVersion=1, maxFrameSize=512, mtu=512, ...  |\n+--------------------------------------------------------------|\nCRC16 (2B)\n+--------+--------+\n| CRC16L | CRC16H |\n+--------+--------+\n",
+          "hexBytes": "41 58 11 0F 00 01 00 01 01 10 00 00  01 01 00 00 00  02 01 01 04 02 00 02 06 02 00 02 07 01 07 0A 04 88 13 00 00 0B 01 01  XX XX",
+          "fieldAnnotations": [
+            "41 58 = Magic 'AX'",
+            "11 = Version(0x1) | PayloadType(0x1=CONTROL)",
+            "0F 00 = payloadLength=15 (Little-Endian)",
+            "01 00 = messageId=1",
+            "01 = frameInfo (single frame, index=0, count=1)",
+            "01 = sourceId=0x01 (client)",
+            "10 = destinationId=0x10 (device)",
+            "01 = opcode=OPEN",
+            "01 00 = controlId=1",
+            "00 00 = statusCode=SUCCESS",
+            "02 01 01 = TLV: fieldId=0x02 protocolVersion=1",
+            "04 02 00 02 = TLV: fieldId=0x04 maxFrameSize=512",
+            "06 02 00 02 = TLV: fieldId=0x06 mtu=512",
+            "07 01 07 = TLV: fieldId=0x07 supportedPayloadTypes=0x07 (CONTROL|RPC|STREAM)",
+            "0A 04 88 13 00 00 = TLV: fieldId=0x0A heartbeatIntervalMs=5000",
+            "0B 01 01 = TLV: fieldId=0x0B ackMode=1 (MESSAGE_ACK)",
+            "XX XX = CRC16 over Header+Payload"
+          ]
         },
         {
-          "fieldId": 2,
-          "name": "maxStreamCount",
-          "type": "uint8",
-          "required": true,
-          "description": "Maximum simultaneously opened media streams."
+          "direction": "Device → Client",
+          "label": "2. CONTROL ACCEPT",
+          "asciiLayout": "Standard L1 Header (12B) + Control Payload (17B) + CRC16 (2B)\nopcode=0x02 (ACCEPT), controlId=1, statusCode=0x0000\nTLV body: sessionId=0x00000001, protocolVersion=1, maxFrameSize=512, mtu=512\n",
+          "hexBytes": "41 58 11 11 00 01 00 01 10 01 00 00  02 01 00 00 00  01 04 01 00 00 00 02 01 01 04 02 00 02 06 02 00 02  XX XX",
+          "fieldAnnotations": [
+            "02 = opcode=ACCEPT",
+            "01 04 01 00 00 00 = TLV: fieldId=0x01 sessionId=1",
+            "02 01 01 = TLV: fieldId=0x02 protocolVersion=1",
+            "04 02 00 02 = TLV: fieldId=0x04 maxFrameSize=512",
+            "06 02 00 02 = TLV: fieldId=0x06 mtu=512"
+          ]
         },
         {
-          "fieldId": 3,
-          "name": "maxChunkSize",
-          "type": "uint16",
-          "required": true,
-          "max": 42,
-          "description": "Maximum STREAM data bytes per HID-64 report after the 16B STREAM header."
+          "direction": "Device → Client",
+          "label": "3. RPC Hello (JSON)",
+          "asciiLayout": "Standard L1 Header (12B) + RPC Binary Header (11B) + JSON body + CRC16 (2B)\nrpcEncoding=0x01 (JSON), rpcOp=0x00 (Hello), requestId=0, methodOrEventId=0\n",
+          "hexBytes": "41 58 12 <payLen> 02 00 01 10 01 00 00  01 00 00 00 00 00 00 00 00 00 00  7B...7D  XX XX",
+          "fieldAnnotations": [
+            "12 = Version(0x1) | PayloadType(0x2=RPC)",
+            "01 = rpcEncoding=JSON",
+            "00 = rpcOp=Hello",
+            "00 00 00 00 = requestId=0 (server-push, no correlation)",
+            "00 00 = methodOrEventId=0 (Hello has no methodId)",
+            "00 00 = statusCode=0",
+            "00 = bodyEncoding=NONE (JSON body follows directly)",
+            "7B...7D = JSON body: {\"rpcVersion\":\"2026.05\",\"authRequired\":false}"
+          ]
         },
         {
-          "fieldId": 4,
-          "name": "supportsVideo",
-          "type": "bool",
-          "required": true,
-          "description": "Device can open media.video streams over HID."
+          "direction": "Client → Device",
+          "label": "4. RPC Identify (JSON)",
+          "asciiLayout": "Standard L1 Header (12B) + RPC Binary Header (11B) + JSON body + CRC16 (2B)\nrpcEncoding=0x01 (JSON), rpcOp=0x02 (Identify), requestId=1\n",
+          "hexBytes": "41 58 12 <payLen> 03 00 01 01 10 00 00  01 02 01 00 00 00 00 00 00 00 00  7B...7D  XX XX",
+          "fieldAnnotations": [
+            "02 = rpcOp=Identify",
+            "01 00 00 00 = requestId=1",
+            "7B...7D = JSON body: {\"clientName\":\"MyApp\",\"clientVersion\":\"1.0\"}"
+          ]
         },
         {
-          "fieldId": 5,
-          "name": "supportsAudio",
-          "type": "bool",
-          "required": true,
-          "description": "Device can open media.audio streams over HID."
+          "direction": "Device → Client",
+          "label": "5. RPC Identified (JSON)",
+          "asciiLayout": "Standard L1 Header (12B) + RPC Binary Header (11B) + JSON body + CRC16 (2B)\nrpcEncoding=0x01 (JSON), rpcOp=0x03 (Identified), requestId=1\n",
+          "hexBytes": "41 58 12 <payLen> 03 00 01 10 01 00 00  01 03 01 00 00 00 00 00 00 00 00  7B...7D  XX XX",
+          "fieldAnnotations": [
+            "03 = rpcOp=Identified",
+            "01 00 00 00 = requestId=1 (correlates with Identify)",
+            "7B...7D = JSON body: {\"sid\":\"a1b2c3d4\",\"negotiatedRpcVersion\":\"2026.05\"}"
+          ]
+        },
+        {
+          "direction": "Client → Device",
+          "label": "6. capability.supportedMethods Request (Binary TLV)",
+          "asciiLayout": "Standard L1 Header (12B) + RPC Binary Header (11B) + TLV body (empty) + CRC16 (2B)\nrpcEncoding=0x02 (BINARY), rpcOp=0x07 (Request), methodId=0x0301\n",
+          "hexBytes": "41 58 12 0B 00 04 00 01 10 00 00  02 07 02 00 00 01 03 00 00 01 00  XX XX",
+          "fieldAnnotations": [
+            "02 = rpcEncoding=BINARY",
+            "07 = rpcOp=Request",
+            "02 00 00 00 = requestId=2",
+            "01 03 = methodOrEventId=0x0301 (capability.supportedMethods)",
+            "00 00 = statusCode=0",
+            "01 = bodyEncoding=TLV8",
+            "(no TLV fields — empty request body)"
+          ]
+        },
+        {
+          "direction": "Device → Client",
+          "label": "7. capability.supportedMethods Response (Binary TLV)",
+          "asciiLayout": "Standard L1 Header (12B) + RPC Binary Header (11B) + TLV body + CRC16 (2B)\nrpcOp=0x08 (RequestResponse), methodId=0x0301\nTLV body: methodMasks field containing per-domain bitmasks\n",
+          "hexBytes": "41 58 12 <payLen> 04 00 01 10 01 00 00  02 08 02 00 00 01 03 00 00 01 00  <TLV methodMasks>  XX XX",
+          "fieldAnnotations": [
+            "08 = rpcOp=RequestResponse",
+            "02 00 00 00 = requestId=2 (correlates with Request)",
+            "TLV methodMasks example: 01 04 05 01 00 00 = fieldId=0x01 len=4 value=[DomainId=0x05 MaskLen=0x01 Bitmask=0x03] meaning display domain supports getBrightness(bit0) and setBrightness(bit1)"
+          ]
         }
       ]
     }

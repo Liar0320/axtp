@@ -6,7 +6,8 @@ import type {
   ProfileDefinition,
   ProtocolModel,
   SchemaDefinition,
-  SchemaField
+  SchemaField,
+  WireExample
 } from "../protocolModel.js";
 import { hex, writeTextFile } from "../util.js";
 
@@ -241,19 +242,184 @@ function renderMainToc(model: ProtocolModel): string[] {
     "- [Connection Lifecycle](#connection-lifecycle)",
     "- [Capability Discovery](#capability-discovery)",
     "- [Methods](#methods)",
-    ...methodDomains.flatMap((domain) => [
-      `  - [${domain} Methods](#${anchor(`${domain} Methods`)})`,
-      ...methodsInDomain(model, domain).map((method) => `    - [${method.name}](#${anchor(method.name)})`)
-    ]),
+    ...methodDomains.map((domain) => `  - [${domain} Methods](#${anchor(`${domain} Methods`)})`),
     "- [Events](#events)",
-    ...eventDomains.flatMap((domain) => [
-      `  - [${domain} Events](#${anchor(`${domain} Events`)})`,
-      ...eventsInDomain(model, domain).map((event) => `    - [${event.name}](#${anchor(event.name)})`)
-    ]),
+    ...eventDomains.map((domain) => `  - [${domain} Events](#${anchor(`${domain} Events`)})`),
     ...(hasAdditionalTypes ? ["- [Additional Types](#additional-types)"] : []),
     "- [Errors Reference](#errors-reference)",
     "- [Profiles Reference](#profiles-reference)"
   ];
+}
+
+function renderImplementedDomainDirectory(model: ProtocolModel): string[] {
+  return [
+    "## Implemented Domains",
+    "",
+    ...table(
+      ["Domain", "Methods", "Events"],
+      domainsFor(model.methods).map((domain) => [
+        domain,
+        String(methodsInDomain(model, domain).length),
+        String(eventsInDomain(model, domain).length)
+      ])
+    )
+  ];
+}
+
+function renderMethodDomainToc(model: ProtocolModel, domain: string): string[] {
+  return [
+    "### Methods in this domain",
+    "",
+    ...methodsInDomain(model, domain).map((method) => `- [${method.name}](#${anchor(method.name)})`)
+  ];
+}
+
+function renderEventDomainToc(model: ProtocolModel, domain: string): string[] {
+  return [
+    "### Events in this domain",
+    "",
+    ...eventsInDomain(model, domain).map((event) => `- [${event.name}](#${anchor(event.name)})`)
+  ];
+}
+
+function renderTransportProfiles(model: ProtocolModel): string[] {
+  const rows = model.transports.map((t) => [
+    t.name,
+    t.family,
+    t.frameProfile === "none" ? "Unframed" : t.frameProfile,
+    t.production ? "Yes" : "No (debug)",
+    t.notes ?? t.usage ?? "-"
+  ]);
+  const lines: string[] = [
+    "## Transport Profiles",
+    "",
+    "AXTP runs over multiple transports. Each transport binds to a fixed Frame Profile for the lifetime of the session.",
+    "",
+    ...table(
+      ["Transport", "Family", "Frame Profile", "Production", "Notes"],
+      rows
+    ),
+    "",
+    "**Standard Frame** (12B L1 Header + CRC16) is the primary implementation target for TCP, WebSocket Binary, and USB HID High Speed.",
+    "",
+    "**Compact Frame** (4B L1 Header + CRC8) is a fallback for constrained transports with MTU ≤ 64B (HID-64, BLE, UART). See §15 of the Transport Profiles spec for the full degradation guide."
+  ];
+
+  const cloudEntry = model.guide.quickStart.find((g) => g.title === "Cloud Reverse Connection");
+  if (cloudEntry) {
+    lines.push(
+      "",
+      "### Cloud Reverse Connection",
+      "",
+      "When a device initiates a connection to a cloud endpoint, the Physical Client/Server roles are reversed from the typical local scenario, but the Logical Server role stays with the device:",
+      "",
+      "```text",
+      "Physical Client: Device    Physical Server: Cloud",
+      "Logical Client:  Cloud     Logical Server:  Device",
+      "",
+      ...cloudEntry.steps.map((s) => `  ${s}`),
+      "```",
+      "",
+      "The key invariant: **the Logical Server always sends Hello**, regardless of who initiated the TCP/WebSocket connection."
+    );
+  }
+
+  const dsRpcEntry = model.guide.quickStart.find((g) => g.title === "DS-RPC Debug Adapter");
+  if (dsRpcEntry) {
+    lines.push(
+      "",
+      "### DS-RPC Debug Adapter (WebSocket Text)",
+      "",
+      "For browser debugging and development tooling only. Not for production.",
+      "",
+      ...dsRpcEntry.steps.map((s) => `- ${s}`),
+      "",
+      "| DS-RPC (Unframed) | Framed Mode (AXTP) |",
+      "| --- | --- |",
+      "| WebSocket Upgrade | CONTROL OPEN/ACCEPT |",
+      "| Hello (op=0) | RPC Hello |",
+      "| Identify (op=2) | RPC Identify |",
+      "| Identified (op=3) | RPC Identified |",
+      "| REQUEST (op=7) | RPC Request |",
+      "| REQUEST_RESPONSE (op=8) | RPC RequestResponse |",
+      "| EVENT (op=6) | RPC Event |",
+      "| WebSocket Close | CONTROL CLOSE |",
+      "| — | STREAM (not supported in DS-RPC) |"
+    );
+  }
+
+  return lines;
+}
+
+function renderPayloadTypes(model: ProtocolModel): string[] {
+  const lines: string[] = [
+    "## Payload Types",
+    "",
+    "Every AXTP Frame carries exactly one payload. The `PayloadType` field in the Frame Header selects the parser.",
+    "",
+    ...table(
+      ["Type", "ID", "Header Size", "When to Use"],
+      model.payloadTypes.map((pt) => [
+        `\`${pt.name}\``,
+        `0x${pt.id.toString(16).padStart(2, "0")}`,
+        `${pt.headerBytes}B`,
+        pt.selectionRule ?? pt.description
+      ])
+    )
+  ];
+
+  for (const pt of model.payloadTypes) {
+    if (!pt.headerFields || pt.headerFields.length === 0) continue;
+    lines.push(
+      "",
+      `### ${pt.name} Payload Header (${pt.headerBytes}B)`,
+      "",
+      pt.description,
+      "",
+      ...table(
+        ["Field", "Type", "Size", "Description"],
+        pt.headerFields.map((f) => [
+          `\`${f.name}\``,
+          f.type,
+          typeof f.bytes === "number" ? `${f.bytes}B` : f.bytes,
+          f.description
+        ])
+      )
+    );
+  }
+
+  return lines;
+}
+
+function renderWireExamples(examples: WireExample[]): string[] {
+  if (examples.length === 0) return [];
+  const lines: string[] = [
+    "## Wire Format Examples",
+    "",
+    "The following examples show the exact byte layout for a complete session establishment over USB HID High Speed (Standard Frame Profile). All integers are Little-Endian."
+  ];
+
+  for (const example of examples) {
+    lines.push("", `### ${example.title}`, "", example.description, "");
+    for (const step of example.steps) {
+      lines.push(`#### ${step.label}`, "", `**Direction:** ${step.direction}`, "");
+      if (step.asciiLayout) {
+        lines.push("```text", step.asciiLayout.trimEnd(), "```", "");
+      }
+      if (step.hexBytes) {
+        lines.push("**Hex bytes:**", "", "```text", step.hexBytes, "```", "");
+      }
+      if (step.fieldAnnotations.length > 0) {
+        lines.push("**Field annotations:**", "");
+        for (const ann of step.fieldAnnotations) {
+          lines.push(`- \`${ann}\``);
+        }
+        lines.push("");
+      }
+    }
+  }
+
+  return lines;
 }
 
 export function renderProtocolMarkdown(model: ProtocolModel): string {
@@ -268,6 +434,8 @@ export function renderProtocolMarkdown(model: ProtocolModel): string {
     `# ${model.overview.title}`,
     "",
     ...renderMainToc(model),
+    "",
+    ...renderImplementedDomainDirectory(model),
     "",
     "## Overview",
     "",
@@ -320,6 +488,12 @@ export function renderProtocolMarkdown(model: ProtocolModel): string {
       ])
     ),
     "",
+    ...renderTransportProfiles(model),
+    "",
+    ...renderPayloadTypes(model),
+    "",
+    ...renderWireExamples(model.wireExamples),
+    "",
     "## Capability Discovery",
     "",
     "Capability discovery is exposed through `capability.supportedMethods`. The `CapabilitySupportedMethodsResponse.methodMasks` field is derived from `methods[].bitOffset` within each method domain.",
@@ -337,14 +511,22 @@ export function renderProtocolMarkdown(model: ProtocolModel): string {
     ...domainsFor(model.methods).flatMap((domain) => [
       `## ${domain} Methods`,
       "",
-      ...methodsInDomain(model, domain).flatMap((method) => [...renderMethod(method, schemas), "", "---", ""])
+      ...renderMethodDomainToc(model, domain),
+      "",
+      ...methodsInDomain(model, domain).flatMap((method) => ["---", "", ...renderMethod(method, schemas), ""]),
+      "---",
+      ""
     ]),
     "# Events",
     "",
     ...domainsFor(model.events).flatMap((domain) => [
       `## ${domain} Events`,
       "",
-      ...eventsInDomain(model, domain).flatMap((event) => [...renderEvent(event, schemas), "", "---", ""])
+      ...renderEventDomainToc(model, domain),
+      "",
+      ...eventsInDomain(model, domain).flatMap((event) => ["---", "", ...renderEvent(event, schemas), ""]),
+      "---",
+      ""
     ]),
     ...(additionalTypes.length > 0 ? [
       "# Additional Types",

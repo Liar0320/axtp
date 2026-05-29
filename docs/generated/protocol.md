@@ -10,32 +10,27 @@
 - [Capability Discovery](#capability-discovery)
 - [Methods](#methods)
   - [capability Methods](#capability-methods)
-    - [capability.supportedMethods](#capabilitysupportedmethods)
   - [device Methods](#device-methods)
-    - [device.getInfo](#devicegetinfo)
   - [display Methods](#display-methods)
-    - [display.getBrightness](#displaygetbrightness)
-    - [display.setBrightness](#displaysetbrightness)
   - [firmware Methods](#firmware-methods)
-    - [firmware.begin](#firmwarebegin)
-    - [firmware.end](#firmwareend)
-    - [firmware.verify](#firmwareverify)
-    - [firmware.apply](#firmwareapply)
   - [stream Methods](#stream-methods)
-    - [stream.open](#streamopen)
 - [Events](#events)
   - [display Events](#display-events)
-    - [display.brightnessChanged](#displaybrightnesschanged)
   - [firmware Events](#firmware-events)
-    - [firmware.updateProgress](#firmwareupdateprogress)
-    - [firmware.updateCompleted](#firmwareupdatecompleted)
-    - [firmware.updateFailed](#firmwareupdatefailed)
   - [stream Events](#stream-events)
-    - [stream.opened](#streamopened)
-    - [stream.error](#streamerror)
 - [Additional Types](#additional-types)
 - [Errors Reference](#errors-reference)
 - [Profiles Reference](#profiles-reference)
+
+## Implemented Domains
+
+| Domain | Methods | Events |
+| ---- | ---- | ---- |
+| capability | 1 | 0 |
+| device | 1 | 0 |
+| display | 2 | 1 |
+| firmware | 4 | 3 |
+| stream | 1 | 2 |
 
 ## Overview
 
@@ -98,6 +93,12 @@ Capability discovery is exposed through `capability.supportedMethods`. The `Capa
 
 ## capability Methods
 
+### Methods in this domain
+
+- [capability.supportedMethods](#capabilitysupportedmethods)
+
+---
+
 ### capability.supportedMethods
 
 Return the per-domain method bitmap supported by the current session.
@@ -130,6 +131,12 @@ Type: `CapabilitySupportedMethodsResponse`
 ---
 
 ## device Methods
+
+### Methods in this domain
+
+- [device.getInfo](#devicegetinfo)
+
+---
 
 ### device.getInfo
 
@@ -165,6 +172,13 @@ Type: `DeviceGetInfoResponse`
 ---
 
 ## display Methods
+
+### Methods in this domain
+
+- [display.getBrightness](#displaygetbrightness)
+- [display.setBrightness](#displaysetbrightness)
+
+---
 
 ### display.getBrightness
 
@@ -228,6 +242,15 @@ No fields.
 ---
 
 ## firmware Methods
+
+### Methods in this domain
+
+- [firmware.begin](#firmwarebegin)
+- [firmware.end](#firmwareend)
+- [firmware.verify](#firmwareverify)
+- [firmware.apply](#firmwareapply)
+
+---
 
 ### firmware.begin
 
@@ -383,6 +406,12 @@ Type: `FirmwareApplyResponse`
 
 ## stream Methods
 
+### Methods in this domain
+
+- [stream.open](#streamopen)
+
+---
+
 ### stream.open
 
 Open an AXTP STREAM media channel over HID using media.video or media.audio, without UVC or UAC.
@@ -437,6 +466,12 @@ Type: `StreamOpenResponse`
 
 ## display Events
 
+### Events in this domain
+
+- [display.brightnessChanged](#displaybrightnesschanged)
+
+---
+
 ### display.brightnessChanged
 
 Emitted when display brightness changes.
@@ -462,6 +497,14 @@ Type: `DisplayBrightnessChangedEvent`
 ---
 
 ## firmware Events
+
+### Events in this domain
+
+- [firmware.updateProgress](#firmwareupdateprogress)
+- [firmware.updateCompleted](#firmwareupdatecompleted)
+- [firmware.updateFailed](#firmwareupdatefailed)
+
+---
 
 ### firmware.updateProgress
 
@@ -535,6 +578,13 @@ Type: `FirmwareUpdateFailedEvent`
 ---
 
 ## stream Events
+
+### Events in this domain
+
+- [stream.opened](#streamopened)
+- [stream.error](#streamerror)
+
+---
 
 ### stream.opened
 

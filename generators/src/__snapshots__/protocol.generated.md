@@ -10,32 +10,27 @@
 - [Capability Discovery](#capability-discovery)
 - [Methods](#methods)
   - [capability Methods](#capability-methods)
-    - [capability.supportedMethods](#capabilitysupportedmethods)
   - [device Methods](#device-methods)
-    - [device.getInfo](#devicegetinfo)
   - [display Methods](#display-methods)
-    - [display.getBrightness](#displaygetbrightness)
-    - [display.setBrightness](#displaysetbrightness)
   - [firmware Methods](#firmware-methods)
-    - [firmware.begin](#firmwarebegin)
-    - [firmware.end](#firmwareend)
-    - [firmware.verify](#firmwareverify)
-    - [firmware.apply](#firmwareapply)
   - [stream Methods](#stream-methods)
-    - [stream.open](#streamopen)
 - [Events](#events)
   - [display Events](#display-events)
-    - [display.brightnessChanged](#displaybrightnesschanged)
   - [firmware Events](#firmware-events)
-    - [firmware.updateProgress](#firmwareupdateprogress)
-    - [firmware.updateCompleted](#firmwareupdatecompleted)
-    - [firmware.updateFailed](#firmwareupdatefailed)
   - [stream Events](#stream-events)
-    - [stream.opened](#streamopened)
-    - [stream.error](#streamerror)
 - [Additional Types](#additional-types)
 - [Errors Reference](#errors-reference)
 - [Profiles Reference](#profiles-reference)
+
+## Implemented Domains
+
+| Domain | Methods | Events |
+| ---- | ---- | ---- |
+| capability | 1 | 0 |
+| device | 1 | 0 |
+| display | 2 | 1 |
+| firmware | 4 | 3 |
+| stream | 1 | 2 |
 
 ## Overview
 
@@ -82,6 +77,315 @@ AXTP is a transport-independent device communication protocol for CONTROL, RPC a
 | ---- | ---- | ---- | ---- | ---- |
 | READY | - | - | optional | Reserved for transports that need an explicit client acknowledgement after ACCEPT; not required by AXTP v1 Core. |
 
+## Transport Profiles
+
+AXTP runs over multiple transports. Each transport binds to a fixed Frame Profile for the lifetime of the session.
+
+| Transport | Family | Frame Profile | Production | Notes |
+| ---- | ---- | ---- | ---- | ---- |
+| AXTP-WS | websocket | STANDARD_FRAME | Yes | One AXTP Frame per WebSocket Binary Message. No extra framing needed. |
+| AXTP-TCP | tcp | STANDARD_FRAME | Yes | Byte-stream transport. Receiver must reassemble frames using Magic+Length. |
+| AXTP-HID-HS | usb-hid | STANDARD_FRAME | Yes | USB HID with Report Size > 64B. Specific report size is implementation-defined. |
+| AXTP-HID-64 | usb-hid | COMPACT_FRAME | Yes | USB HID with 64B Report. 58B usable payload after 4B header and 1B CRC8 and 1B ReportID. |
+| AXTP-BLE-RPC | ble | COMPACT_FRAME | Yes | BLE GATT. MTU negotiated at BLE layer; typical range 20B-247B. |
+| AXTP-UART | uart | COMPACT_FRAME_CRC | Yes | UART with COBS or SLIP framing at transport layer. |
+| AXTP-WS-CLOUD-REVERSE | websocket | STANDARD_FRAME | Yes | Device is Physical Client but Logical Server. Device sends Hello after ACCEPT. |
+| AXTP-WS-TEXT | websocket | Unframed | No (debug) | DS-RPC JSON mode. No AXTP Frame Header. No STREAM support. Debug only. |
+| AXTP-HTTP-JSON | http | Unframed | No (debug) | debug-or-legacy-adapter |
+
+**Standard Frame** (12B L1 Header + CRC16) is the primary implementation target for TCP, WebSocket Binary, and USB HID High Speed.
+
+**Compact Frame** (4B L1 Header + CRC8) is a fallback for constrained transports with MTU ≤ 64B (HID-64, BLE, UART). See §15 of the Transport Profiles spec for the full degradation guide.
+
+### Cloud Reverse Connection
+
+When a device initiates a connection to a cloud endpoint, the Physical Client/Server roles are reversed from the typical local scenario, but the Logical Server role stays with the device:
+
+```text
+Physical Client: Device    Physical Server: Cloud
+Logical Client:  Cloud     Logical Server:  Device
+
+  Role mapping: Device = Physical Client + Logical Server. Cloud = Physical Server + Logical Client.
+  Device initiates WebSocket connection to cloud endpoint.
+  Device sends CONTROL OPEN (device is Physical Client but drives session setup).
+  Cloud sends CONTROL ACCEPT.
+  Device sends RPC Hello (op=0) — device is Logical Server, so device always sends Hello.
+  Cloud sends RPC Identify (op=2).
+  Device sends RPC Identified (op=3) with session ID.
+  Cloud sends capability.supportedMethods request to discover device capabilities.
+  Cloud issues RPC requests to device as normal.
+```
+
+The key invariant: **the Logical Server always sends Hello**, regardless of who initiated the TCP/WebSocket connection.
+
+### DS-RPC Debug Adapter (WebSocket Text)
+
+For browser debugging and development tooling only. Not for production.
+
+- Purpose: browser or curl debugging only. Not for production. No STREAM support.
+- Connect via WebSocket Text (ws://device/axtp-debug or similar endpoint).
+- No CONTROL OPEN/ACCEPT handshake — connection enters FRAMING_READY directly.
+- Device sends DS-RPC Hello: {"sid":"","op":0,"d":{"rpcVersion":"..."}}
+- Client sends DS-RPC Identify: {"sid":"","op":2,"d":{"clientName":"..."}}
+- Device sends DS-RPC Identified: {"sid":"<uuid>","op":3,"d":{"negotiatedRpcVersion":"..."}}
+- Issue RPC calls as JSON: {"sid":"<uuid>","op":7,"d":{"id":"00000001","method":"display.setBrightness","params":{"value":80}}}
+- Receive response: {"sid":"<uuid>","op":8,"d":{"id":"00000001","status":{"ok":true,"code":0}}}
+
+| DS-RPC (Unframed) | Framed Mode (AXTP) |
+| --- | --- |
+| WebSocket Upgrade | CONTROL OPEN/ACCEPT |
+| Hello (op=0) | RPC Hello |
+| Identify (op=2) | RPC Identify |
+| Identified (op=3) | RPC Identified |
+| REQUEST (op=7) | RPC Request |
+| REQUEST_RESPONSE (op=8) | RPC RequestResponse |
+| EVENT (op=6) | RPC Event |
+| WebSocket Close | CONTROL CLOSE |
+| — | STREAM (not supported in DS-RPC) |
+
+## Payload Types
+
+Every AXTP Frame carries exactly one payload. The `PayloadType` field in the Frame Header selects the parser.
+
+| Type | ID | Header Size | When to Use |
+| ---- | ---- | ---- | ---- |
+| `CONTROL` | 0x01 | 5B | Use for session lifecycle signals — OPEN, ACCEPT, HEARTBEAT, ACK, NACK, CLOSE, RESUME. Never use for business data. |
+| `RPC` | 0x02 | 11B | Use for all business operations — method calls, responses, events, and batch. Choose JSON or BINARY encoding per capability. |
+| `STREAM` | 0x03 | 16B | Use for high-throughput data — OTA firmware chunks, video/audio frames, file transfer, log streaming. Never carry business metadata in STREAM; use RPC for setup and teardown. |
+
+### CONTROL Payload Header (5B)
+
+Logical session control payload.
+
+| Field | Type | Size | Description |
+| ---- | ---- | ---- | ---- |
+| `opcode` | uint8 | 1B | Control operation code. |
+| `controlId` | uint16 | 2B | Correlates OPEN/ACCEPT, ACK/NACK pairs. Little-Endian. |
+| `statusCode` | uint16 | 2B | Result code. 0x0000 = SUCCESS. Little-Endian. |
+| `body` | bytes | variable | TLV-encoded fields. Length = Frame.payloadLength - 5. |
+
+### RPC Payload Header (11B)
+
+Binary request, response, event and error payload.
+
+| Field | Type | Size | Description |
+| ---- | ---- | ---- | ---- |
+| `rpcEncoding` | uint8 | 1B | Encoding: 0x01=JSON, 0x02=BINARY, 0x03=CBOR, 0x04=MSGPACK. |
+| `rpcOp` | uint8 | 1B | Operation: 0x00=Hello, 0x02=Identify, 0x03=Identified, 0x06=Event, 0x07=Request, 0x08=RequestResponse. |
+| `requestId` | uint32 | 4B | Client-assigned request correlation ID. Little-Endian. 0 for events. |
+| `methodOrEventId` | uint16 | 2B | methodId for Request/Response; eventId for Event. Little-Endian. |
+| `statusCode` | uint16 | 2B | 0x0000 = SUCCESS. Non-zero = error. Little-Endian. |
+| `bodyEncoding` | uint8 | 1B | Body encoding: 0x00=NONE, 0x01=TLV8, 0x02=TLV16. Only meaningful when rpcEncoding=BINARY. |
+
+### STREAM Payload Header (16B)
+
+Chunk-oriented data plane payload.
+
+| Field | Type | Size | Description |
+| ---- | ---- | ---- | ---- |
+| `streamId` | uint32 | 4B | Stream identifier assigned by firmware.begin or stream.open response. Little-Endian. |
+| `seqId` | uint32 | 4B | Monotonically increasing chunk sequence number. Starts at 0. Little-Endian. |
+| `cursor` | uint64 | 8B | Byte offset of this chunk within the stream. Used for resume and integrity checks. Little-Endian. |
+
+## Wire Format Examples
+
+The following examples show the exact byte layout for a complete session establishment over USB HID High Speed (Standard Frame Profile). All integers are Little-Endian.
+
+### USB HID High Speed — Full Session Establishment
+
+Complete session establishment over USB HID with Report Size > 64B. Standard Frame Profile (12B L1 Header + CRC16). All integers Little-Endian.
+
+#### 1. CONTROL OPEN
+
+**Direction:** Client → Device
+
+```text
+Standard L1 Header (12B)
++--------+--------+--------+--------+--------+--------+
+| Magic  | Magic  | Ver/PT | PayLen | PayLen | MsgId  |
+| 0x41   | 0x58   | 0x11   | 0x0F   | 0x00   | 0x01   |
++--------+--------+--------+--------+--------+--------+
+| MsgId  | FrInfo | SrcId  | DstId  | (reserved)      |
+| 0x00   | 0x01   | 0x01   | 0x10   | 0x00   | 0x00   |
++--------+--------+--------+--------+--------+--------+
+Control Payload (15B)
++--------+--------+--------+--------+--------+
+| opcode | ctrlId | ctrlId | status | status |
+| 0x01   | 0x01   | 0x00   | 0x00   | 0x00   |
++--------+--------+--------+--------+--------+
+| TLV body: protocolVersion=1, maxFrameSize=512, mtu=512, ...  |
++--------------------------------------------------------------|
+CRC16 (2B)
++--------+--------+
+| CRC16L | CRC16H |
++--------+--------+
+```
+
+**Hex bytes:**
+
+```text
+41 58 11 0F 00 01 00 01 01 10 00 00  01 01 00 00 00  02 01 01 04 02 00 02 06 02 00 02 07 01 07 0A 04 88 13 00 00 0B 01 01  XX XX
+```
+
+**Field annotations:**
+
+- `41 58 = Magic 'AX'`
+- `11 = Version(0x1) | PayloadType(0x1=CONTROL)`
+- `0F 00 = payloadLength=15 (Little-Endian)`
+- `01 00 = messageId=1`
+- `01 = frameInfo (single frame, index=0, count=1)`
+- `01 = sourceId=0x01 (client)`
+- `10 = destinationId=0x10 (device)`
+- `01 = opcode=OPEN`
+- `01 00 = controlId=1`
+- `00 00 = statusCode=SUCCESS`
+- `02 01 01 = TLV: fieldId=0x02 protocolVersion=1`
+- `04 02 00 02 = TLV: fieldId=0x04 maxFrameSize=512`
+- `06 02 00 02 = TLV: fieldId=0x06 mtu=512`
+- `07 01 07 = TLV: fieldId=0x07 supportedPayloadTypes=0x07 (CONTROL|RPC|STREAM)`
+- `0A 04 88 13 00 00 = TLV: fieldId=0x0A heartbeatIntervalMs=5000`
+- `0B 01 01 = TLV: fieldId=0x0B ackMode=1 (MESSAGE_ACK)`
+- `XX XX = CRC16 over Header+Payload`
+
+#### 2. CONTROL ACCEPT
+
+**Direction:** Device → Client
+
+```text
+Standard L1 Header (12B) + Control Payload (17B) + CRC16 (2B)
+opcode=0x02 (ACCEPT), controlId=1, statusCode=0x0000
+TLV body: sessionId=0x00000001, protocolVersion=1, maxFrameSize=512, mtu=512
+```
+
+**Hex bytes:**
+
+```text
+41 58 11 11 00 01 00 01 10 01 00 00  02 01 00 00 00  01 04 01 00 00 00 02 01 01 04 02 00 02 06 02 00 02  XX XX
+```
+
+**Field annotations:**
+
+- `02 = opcode=ACCEPT`
+- `01 04 01 00 00 00 = TLV: fieldId=0x01 sessionId=1`
+- `02 01 01 = TLV: fieldId=0x02 protocolVersion=1`
+- `04 02 00 02 = TLV: fieldId=0x04 maxFrameSize=512`
+- `06 02 00 02 = TLV: fieldId=0x06 mtu=512`
+
+#### 3. RPC Hello (JSON)
+
+**Direction:** Device → Client
+
+```text
+Standard L1 Header (12B) + RPC Binary Header (11B) + JSON body + CRC16 (2B)
+rpcEncoding=0x01 (JSON), rpcOp=0x00 (Hello), requestId=0, methodOrEventId=0
+```
+
+**Hex bytes:**
+
+```text
+41 58 12 <payLen> 02 00 01 10 01 00 00  01 00 00 00 00 00 00 00 00 00 00  7B...7D  XX XX
+```
+
+**Field annotations:**
+
+- `12 = Version(0x1) | PayloadType(0x2=RPC)`
+- `01 = rpcEncoding=JSON`
+- `00 = rpcOp=Hello`
+- `00 00 00 00 = requestId=0 (server-push, no correlation)`
+- `00 00 = methodOrEventId=0 (Hello has no methodId)`
+- `00 00 = statusCode=0`
+- `00 = bodyEncoding=NONE (JSON body follows directly)`
+- `7B...7D = JSON body: {"rpcVersion":"2026.05","authRequired":false}`
+
+#### 4. RPC Identify (JSON)
+
+**Direction:** Client → Device
+
+```text
+Standard L1 Header (12B) + RPC Binary Header (11B) + JSON body + CRC16 (2B)
+rpcEncoding=0x01 (JSON), rpcOp=0x02 (Identify), requestId=1
+```
+
+**Hex bytes:**
+
+```text
+41 58 12 <payLen> 03 00 01 01 10 00 00  01 02 01 00 00 00 00 00 00 00 00  7B...7D  XX XX
+```
+
+**Field annotations:**
+
+- `02 = rpcOp=Identify`
+- `01 00 00 00 = requestId=1`
+- `7B...7D = JSON body: {"clientName":"MyApp","clientVersion":"1.0"}`
+
+#### 5. RPC Identified (JSON)
+
+**Direction:** Device → Client
+
+```text
+Standard L1 Header (12B) + RPC Binary Header (11B) + JSON body + CRC16 (2B)
+rpcEncoding=0x01 (JSON), rpcOp=0x03 (Identified), requestId=1
+```
+
+**Hex bytes:**
+
+```text
+41 58 12 <payLen> 03 00 01 10 01 00 00  01 03 01 00 00 00 00 00 00 00 00  7B...7D  XX XX
+```
+
+**Field annotations:**
+
+- `03 = rpcOp=Identified`
+- `01 00 00 00 = requestId=1 (correlates with Identify)`
+- `7B...7D = JSON body: {"sid":"a1b2c3d4","negotiatedRpcVersion":"2026.05"}`
+
+#### 6. capability.supportedMethods Request (Binary TLV)
+
+**Direction:** Client → Device
+
+```text
+Standard L1 Header (12B) + RPC Binary Header (11B) + TLV body (empty) + CRC16 (2B)
+rpcEncoding=0x02 (BINARY), rpcOp=0x07 (Request), methodId=0x0301
+```
+
+**Hex bytes:**
+
+```text
+41 58 12 0B 00 04 00 01 10 00 00  02 07 02 00 00 01 03 00 00 01 00  XX XX
+```
+
+**Field annotations:**
+
+- `02 = rpcEncoding=BINARY`
+- `07 = rpcOp=Request`
+- `02 00 00 00 = requestId=2`
+- `01 03 = methodOrEventId=0x0301 (capability.supportedMethods)`
+- `00 00 = statusCode=0`
+- `01 = bodyEncoding=TLV8`
+- `(no TLV fields — empty request body)`
+
+#### 7. capability.supportedMethods Response (Binary TLV)
+
+**Direction:** Device → Client
+
+```text
+Standard L1 Header (12B) + RPC Binary Header (11B) + TLV body + CRC16 (2B)
+rpcOp=0x08 (RequestResponse), methodId=0x0301
+TLV body: methodMasks field containing per-domain bitmasks
+```
+
+**Hex bytes:**
+
+```text
+41 58 12 <payLen> 04 00 01 10 01 00 00  02 08 02 00 00 01 03 00 00 01 00  <TLV methodMasks>  XX XX
+```
+
+**Field annotations:**
+
+- `08 = rpcOp=RequestResponse`
+- `02 00 00 00 = requestId=2 (correlates with Request)`
+- `TLV methodMasks example: 01 04 05 01 00 00 = fieldId=0x01 len=4 value=[DomainId=0x05 MaskLen=0x01 Bitmask=0x03] meaning display domain supports getBrightness(bit0) and setBrightness(bit1)`
+
 ## Capability Discovery
 
 Capability discovery is exposed through `capability.supportedMethods`. The `CapabilitySupportedMethodsResponse.methodMasks` field is derived from `methods[].bitOffset` within each method domain.
@@ -97,6 +401,12 @@ Capability discovery is exposed through `capability.supportedMethods`. The `Capa
 # Methods
 
 ## capability Methods
+
+### Methods in this domain
+
+- [capability.supportedMethods](#capabilitysupportedmethods)
+
+---
 
 ### capability.supportedMethods
 
@@ -130,6 +440,12 @@ Type: `CapabilitySupportedMethodsResponse`
 ---
 
 ## device Methods
+
+### Methods in this domain
+
+- [device.getInfo](#devicegetinfo)
+
+---
 
 ### device.getInfo
 
@@ -165,6 +481,13 @@ Type: `DeviceGetInfoResponse`
 ---
 
 ## display Methods
+
+### Methods in this domain
+
+- [display.getBrightness](#displaygetbrightness)
+- [display.setBrightness](#displaysetbrightness)
+
+---
 
 ### display.getBrightness
 
@@ -228,6 +551,15 @@ No fields.
 ---
 
 ## firmware Methods
+
+### Methods in this domain
+
+- [firmware.begin](#firmwarebegin)
+- [firmware.end](#firmwareend)
+- [firmware.verify](#firmwareverify)
+- [firmware.apply](#firmwareapply)
+
+---
 
 ### firmware.begin
 
@@ -383,6 +715,12 @@ Type: `FirmwareApplyResponse`
 
 ## stream Methods
 
+### Methods in this domain
+
+- [stream.open](#streamopen)
+
+---
+
 ### stream.open
 
 Open an AXTP STREAM media channel over HID using media.video or media.audio, without UVC or UAC.
@@ -437,6 +775,12 @@ Type: `StreamOpenResponse`
 
 ## display Events
 
+### Events in this domain
+
+- [display.brightnessChanged](#displaybrightnesschanged)
+
+---
+
 ### display.brightnessChanged
 
 Emitted when display brightness changes.
@@ -462,6 +806,14 @@ Type: `DisplayBrightnessChangedEvent`
 ---
 
 ## firmware Events
+
+### Events in this domain
+
+- [firmware.updateProgress](#firmwareupdateprogress)
+- [firmware.updateCompleted](#firmwareupdatecompleted)
+- [firmware.updateFailed](#firmwareupdatefailed)
+
+---
 
 ### firmware.updateProgress
 
@@ -535,6 +887,13 @@ Type: `FirmwareUpdateFailedEvent`
 ---
 
 ## stream Events
+
+### Events in this domain
+
+- [stream.opened](#streamopened)
+- [stream.error](#streamerror)
+
+---
 
 ### stream.opened
 

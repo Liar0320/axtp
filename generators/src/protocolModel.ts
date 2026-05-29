@@ -56,6 +56,7 @@ export interface TransportProfile {
   production: boolean;
   maxFrameSize?: number;
   usage?: string;
+  notes?: string;
 }
 
 export interface PayloadType {
@@ -63,6 +64,13 @@ export interface PayloadType {
   id: number;
   headerBytes: number;
   description: string;
+  selectionRule?: string;
+  headerFields?: Array<{
+    name: string;
+    type: string;
+    bytes: number | string;
+    description: string;
+  }>;
 }
 
 export interface ControlDefinition {
@@ -171,6 +179,22 @@ export interface ProfileDefinition {
   notes?: string;
 }
 
+export interface WireExampleStep {
+  direction: string;
+  label: string;
+  asciiLayout: string;
+  hexBytes: string;
+  fieldAnnotations: string[];
+}
+
+export interface WireExample {
+  title: string;
+  transport: string;
+  frameProfile: string;
+  description: string;
+  steps: WireExampleStep[];
+}
+
 export interface ProtocolModel {
   specRoot: string;
   sourcePath: string;
@@ -185,6 +209,7 @@ export interface ProtocolModel {
   stream: StreamDefinition;
   compatibility: CompatibilityDefinition;
   schemas: SchemaDefinition[];
+  wireExamples: WireExample[];
   methods: MethodDefinition[];
   events: EventDefinition[];
   errors: ErrorDefinition[];

@@ -249,7 +249,7 @@
       "WebSocket Text and HTTP JSON may exist only as debug or legacy adapter paths."
     ]
   },
-  "types": [
+  "schemas": [
     {
       "name": "Empty",
       "kind": "object",
@@ -856,6 +856,50 @@
       ]
     },
     {
+      "name": "StreamHidMediaCapability",
+      "kind": "object",
+      "description": "Describes HID-backed media STREAM support.",
+      "fields": [
+        {
+          "fieldId": 1,
+          "name": "transportProfile",
+          "type": "string",
+          "required": true,
+          "maxLength": 32,
+          "description": "Supported HID Transport Profile, usually AXTP-HID-64."
+        },
+        {
+          "fieldId": 2,
+          "name": "maxStreamCount",
+          "type": "uint8",
+          "required": true,
+          "description": "Maximum simultaneously opened media streams."
+        },
+        {
+          "fieldId": 3,
+          "name": "maxChunkSize",
+          "type": "uint16",
+          "required": true,
+          "max": 42,
+          "description": "Maximum STREAM data bytes per HID-64 report after the 16B STREAM header."
+        },
+        {
+          "fieldId": 4,
+          "name": "supportsVideo",
+          "type": "bool",
+          "required": true,
+          "description": "Device can open media.video streams over HID."
+        },
+        {
+          "fieldId": 5,
+          "name": "supportsAudio",
+          "type": "bool",
+          "required": true,
+          "description": "Device can open media.audio streams over HID."
+        }
+      ]
+    },
+    {
       "name": "StreamOpenRequest",
       "kind": "object",
       "description": "Parameters for opening a HID-backed media STREAM channel.",
@@ -1079,50 +1123,6 @@
           "required": false,
           "maxLength": 128,
           "description": "Optional diagnostic text."
-        }
-      ]
-    },
-    {
-      "name": "StreamHidMediaCapability",
-      "kind": "object",
-      "description": "Describes HID-backed media STREAM support.",
-      "fields": [
-        {
-          "fieldId": 1,
-          "name": "transportProfile",
-          "type": "string",
-          "required": true,
-          "maxLength": 32,
-          "description": "Supported HID Transport Profile, usually AXTP-HID-64."
-        },
-        {
-          "fieldId": 2,
-          "name": "maxStreamCount",
-          "type": "uint8",
-          "required": true,
-          "description": "Maximum simultaneously opened media streams."
-        },
-        {
-          "fieldId": 3,
-          "name": "maxChunkSize",
-          "type": "uint16",
-          "required": true,
-          "max": 42,
-          "description": "Maximum STREAM data bytes per HID-64 report after the 16B STREAM header."
-        },
-        {
-          "fieldId": 4,
-          "name": "supportsVideo",
-          "type": "bool",
-          "required": true,
-          "description": "Device can open media.video streams over HID."
-        },
-        {
-          "fieldId": 5,
-          "name": "supportsAudio",
-          "type": "bool",
-          "required": true,
-          "description": "Device can open media.audio streams over HID."
         }
       ]
     }

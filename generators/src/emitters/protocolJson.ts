@@ -16,6 +16,7 @@ export function toProtocolJson(model: ProtocolModel): Record<string, unknown> {
     stream: model.stream,
     compatibility: model.compatibility,
     schemas: model.schemas,
+    wireExamples: model.wireExamples,
     methods: model.methods,
     events: model.events,
     errors: model.errors,
