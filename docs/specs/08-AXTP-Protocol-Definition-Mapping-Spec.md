@@ -18,7 +18,7 @@
 
 ```text
 registry/**/*.yaml
-domains/**/*.yaml
+registry/domains/**/*.yaml
 ```
 
 聚合后的 Protocol IR 由 Generator 输出到：
@@ -47,7 +47,7 @@ tooling/*/
 | 旧协议兼容映射 | 07 与 `docs/source/` legacy 材料 |
 | 完整 Capability Model | `docs/source/AXTP-Capability-Model-v2.md` |
 | method/event/error/type/profile entry 元模型 | 09-13 |
-| 具体业务 method/event/type/error/profile | `registry/` 与 `domains/` YAML |
+| 具体业务 method/event/type/error/profile | `registry/` 与 `registry/domains/` YAML |
 
 ---
 
@@ -84,7 +84,7 @@ profiles: []
 ```text
 docs/specs/08-13 + docs/source/09-13 + 业务需求
         ↓
-registry/**/*.yaml + domains/**/*.yaml
+registry/**/*.yaml + registry/domains/**/*.yaml
         ↓
 protocol/axtp.protocol.yaml
         ↓
@@ -92,9 +92,10 @@ docs/generated/protocol.md + protocol.json + SDK/bitmap/test-vector
 ```
 
 - `registry/` 保存核心常量、公共 schema、MVP 已采纳条目和 legacy 映射。
-- `domains/` 保存新增业务域的扩展 YAML，是新增业务的推荐入口。
+- `registry/domains/` 保存新增业务域的扩展 YAML，是新增业务的默认入口。
+- 新增业务事实不得同时写入 core registry 与 domain YAML；domain 业务晋升为 MVP/Core 时，必须迁移而不是复制。
 - `registry/core/protocol_meta.yaml` 保存 overview、frameProfiles、transports、payloadTypes、control、stream、compatibility 等非业务 IR 输入。
-- `protocol/axtp.protocol.yaml` 不得手写修改；任何变更必须回到 `registry/` 或 `domains/`。
+- `protocol/axtp.protocol.yaml` 不得手写修改；任何变更必须回到 `registry/` 或 `registry/domains/`。
 
 ---
 
@@ -181,8 +182,6 @@ AXTP Protocol Compiler
 
 ```bash
 axtpc validate-sources --spec .
-axtpc build-protocol --spec . --out protocol/axtp.protocol.yaml
-axtpc emit-protocol --spec . --out docs/generated
 axtpc generate --spec .
 axtpc emit schema
 axtpc emit cpp
@@ -196,6 +195,6 @@ axtpc emit conformance
 ## 7. 稳定性规则
 
 1. 08-13 是 Normative Core 元规范，长期稳定。
-2. 新增业务 method/event/error/profile 不应修改 08-13，只修改 `registry/` 或 `domains/` YAML。
+2. 新增业务 method/event/error/profile 不应修改 08-13，只修改 `registry/` 或 `registry/domains/` YAML。
 3. `protocol/axtp.protocol.yaml` 与 generated 目录下文件不得手写修改。
 4. CI 必须验证 ID 唯一性、引用完整性、schema 完整性、bitmap 一致性和 stable ID 不复用。

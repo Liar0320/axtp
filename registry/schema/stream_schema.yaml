@@ -1,1 +1,36 @@
-schemas: {}
+schemas:
+  StreamHidMediaCapability:
+    type: object
+    description: Describes HID-backed media STREAM support.
+    fields:
+      - id: 0x01
+        name: transportProfile
+        type: string
+        required: true
+        maxLength: 32
+        description: Supported HID Transport Profile, usually AXTP-USB-HID.
+        deprecated: false
+      - id: 0x02
+        name: maxStreamCount
+        type: uint8
+        required: true
+        description: Maximum simultaneously opened media streams.
+        deprecated: false
+      - id: 0x03
+        name: maxChunkSize
+        type: uint16
+        required: true
+        description: Maximum STREAM data bytes per Standard Frame after the 16B STREAM header.
+        deprecated: false
+      - id: 0x04
+        name: supportsVideo
+        type: bool
+        required: true
+        description: Device can open media.video streams over HID.
+        deprecated: false
+      - id: 0x05
+        name: supportsAudio
+        type: bool
+        required: true
+        description: Device can open media.audio streams over HID.
+        deprecated: false

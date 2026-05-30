@@ -152,10 +152,18 @@ function mapSchemas(doc: any, file: string): Schema[] {
 }
 
 export async function loadProtocolSources(specRoot: string): Promise<ProtocolSourceModel> {
+  const legacyDomainFiles = await listYamlFiles(path.join(specRoot, "domains"));
+  if (legacyDomainFiles.length > 0) {
+    throw new GeneratorError({
+      code: "AXTP-GEN-1004",
+      file: "domains/",
+      message: `top-level domains/ is deprecated; move YAML files to registry/domains/. Found: ${legacyDomainFiles.map((file) => path.relative(specRoot, file)).join(", ")}`
+    });
+  }
   const spec = await loadSpec(specRoot);
   const protocolMetaPath = path.join(specRoot, "registry", "core", "protocol_meta.yaml");
   const protocolMeta = await loadYamlFile(protocolMetaPath);
-  const domainFiles = await listYamlFiles(path.join(specRoot, "domains"));
+  const domainFiles = await listYamlFiles(path.join(specRoot, "registry", "domains"));
   const sourceFiles = [protocolMetaPath, ...domainFiles];
   const profiles: Array<Record<string, unknown>> = [];
 

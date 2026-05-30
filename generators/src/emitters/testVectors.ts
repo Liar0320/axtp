@@ -12,7 +12,10 @@ interface Vector {
 }
 
 export async function emitTestVectors(_spec: SpecModel, outDir: string): Promise<void> {
-  const dir = path.join(outDir, "test_vectors");
+  await emitTestVectorFiles(_spec, path.join(outDir, "test_vectors"));
+}
+
+export async function emitTestVectorFiles(_spec: SpecModel, dir: string): Promise<void> {
   const vectors: Vector[] = [
     { name: "control_open", payloadType: "CONTROL", encoding: "binary_tlv", hexFile: "control_open.hex", expectDecode: { opcode: "OPEN" } },
     { name: "rpc_device_get_info_request", payloadType: "RPC", encoding: "binary_tlv", hexFile: "rpc_device_get_info.hex", expectDecode: { method: "device.getInfo" } },

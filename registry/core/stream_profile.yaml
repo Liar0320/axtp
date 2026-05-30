@@ -9,6 +9,11 @@ stream_profiles:
     domain: file
     status: draft
     description: File transfer stream profile.
+  - id: 0x0401
+    name: log.realtime
+    domain: log
+    status: draft
+    description: Realtime log stream profile.
   - id: 0x1001
     name: media.video
     domain: media
@@ -19,3 +24,18 @@ stream_profiles:
     domain: media
     status: draft
     description: Audio frame stream profile bound by RPC stream.open.
+  - id: 0x3001
+    name: control.hid_raw
+    domain: control
+    status: draft
+    description: HID/KVM raw input stream profile.
+  - id: 0x4001
+    name: sensor.sample
+    domain: sensor
+    status: draft
+    description: Sensor sample stream profile.
+  - id: 0x8001
+    name: legacy.tunnel
+    domain: legacy
+    status: draft
+    description: Legacy continuous byte stream tunnel profile.

@@ -16,7 +16,7 @@
     "build:protocol": "node dist/cli.js build-protocol --spec .. --out ../protocol/axtp.protocol.yaml",
     "emit:protocol": "node dist/cli.js emit-protocol --spec .. --out ../docs/generated",
     "generate": "node dist/cli.js generate --spec ..",
-    "generate:registry": "node dist/cli.js generate-registry --spec .. --out ../runtimes/cpp-core/include/axtp/generated",
+    "generate:registry": "node dist/cli.js generate-registry --spec ..",
     "validate:protocol": "node dist/cli.js validate-protocol --spec ..",
     "generate:protocol": "node dist/cli.js generate-protocol --spec .. --out ../docs/generated"
   },

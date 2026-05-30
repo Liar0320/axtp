@@ -8,6 +8,7 @@
 | `0x0101` | `device.info` | device | mvp | bool | - |
 | `0x0301` | `capability.supportedMethods` | capability | mvp | bool | - |
 | `0x0309` | `reserved.requestIdWidth` | reserved | reserved | reserved | - |
+| `0x040A` | `stream.hidMedia` | stream | draft | object | StreamHidMediaCapability |
 | `0x0601` | `display.brightness` | display | mvp | bool | - |
 | `0x0602` | `display.brightnessMin` | display | mvp | uint16 | - |
 | `0x0603` | `display.brightnessMax` | display | mvp | uint16 | - |

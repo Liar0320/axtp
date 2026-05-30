@@ -212,7 +212,7 @@ bool isCapabilitySupported(const uint8_t* bitmask, uint8_t maskLen, uint8_t bitO
 | `0x0102` | `reserved` | - | reserved | 历史 Header Profile 能力位，v1 不使用 |
 | `0x0103` | `protocol.frameVersion` | uint8 | mvp | Frame Header 版本 |
 | `0x0104` | `reserved` | - | reserved | 历史扩展头能力位，v1 不使用 |
-| `0x0105` | `protocol.frameCrcProfiles` | bitmap | mvp | Frame CRC 能力：Standard=CRC16，Compact=CRC8 |
+| `0x0105` | `protocol.frameCrcProfiles` | bitmap | mvp | Frame CRC 能力：v1 Core 为 Standard=CRC16；Compact=CRC8 属于低带宽降级 |
 | `0x0106` | `protocol.extendedCrc` | bitmap | draft | 扩展 CRC 能力 |
 | `0x0107` | `protocol.compression` | bitmap | draft | 支持的压缩方式 |
 | `0x0108` | `protocol.encryption` | bitmap | draft | 支持的加密方式 |
@@ -316,6 +316,7 @@ bool isCapabilitySupported(const uint8_t* bitmask, uint8_t maskLen, uint8_t bitO
 | `0x0407` | `stream.chunkCrc32` | bool | mvp | 是否支持 chunkCrc32 |
 | `0x0408` | `stream.objectHash` | bitmap | draft | 支持的对象级 hash |
 | `0x0409` | `stream.qos` | bool | draft | 是否支持 QoS |
+| `0x040A` | `stream.hidMedia` | object | draft | 支持在 HID 通道上打开音视频 STREAM |
 
 ### 9.1 stream.profiles
 
@@ -323,9 +324,13 @@ Stream Profile 是具体可建流协议档案，存在于 Registry/Capability/St
 
 | profileId | Profile |
 |---:| --- |
-| `0x0101` | `firmware.ota` |
+| `0x0001` | `firmware.ota` |
 | `0x0002` | `file.transfer` |
 | `0x0401` | `log.realtime` |
+| `0x1001` | `media.video` |
+| `0x1002` | `media.audio` |
+| `0x3001` | `control.hid_raw` |
+| `0x4001` | `sensor.sample` |
 | `0x8001` | `legacy.tunnel` |
 
 ### 9.2 stream.reliableModes bitmap
@@ -415,7 +420,7 @@ Stream Profile 是具体可建流协议档案，存在于 Registry/Capability/St
 
 | capabilityId | name | 类型 | 状态 | 说明 |
 |---:| --- |---| --- |---|
-| `0x0A01` | `firmware.supported` | bool | mvp | 是否支持固件升级 |
+| `0x0B01` | `firmware.ota` | object | mvp | 支持基于 STREAM 的 OTA |
 | `0x0A02` | `firmware.imageTypes` | bitmap | mvp | 支持的 imageType |
 | `0x0A03` | `firmware.maxImageSize` | uint64 | mvp | 最大镜像大小 |
 | `0x0A04` | `firmware.chunkSize` | uint32 | mvp | 推荐 chunk 大小 |
@@ -586,16 +591,16 @@ v2/P1 建议后续实现：
 {
   "protocol": {
     "payloadTypes": ["CONTROL", "RPC", "STREAM"],
-    "frameProfile": "COMPACT_FRAME",
+    "frameProfile": "STANDARD_FRAME",
     "frameVersion": 1,
-    "frameCrcProfiles": { "STANDARD": "CRC16", "COMPACT": "CRC8" },
+    "frameCrcProfiles": { "STANDARD": "CRC16" },
     "sessionResume": true
   },
   "transport": {
-    "type": "HID",
-    "mtu": 64,
-    "maxFrameSize": 64,
-    "maxPayloadSize": 58,
+    "type": "USB_HID",
+    "mtu": 1024,
+    "maxFrameSize": 1024,
+    "maxPayloadSize": 1008,
     "ackMode": "MESSAGE_ACK",
     "windowSize": 1
   },
@@ -627,7 +632,7 @@ capability.getAll.result
   transport.mtu / transport.maxFrameSize
   rpc.encodings / rpc.bodyEncodings
   stream.profiles
-  display.brightness / firmware.supported
+  display.brightness / firmware.ota
 ```
 
 ---
@@ -677,15 +682,15 @@ capability.getAll.result
 | 老协议能力 | AXTP capability | 说明 |
 | --- |---| --- |
 | `CmdValue 0xC0021 exists` | `video.supported = true` | 支持视频模式设置 |
-| `AlphaUpgradeInfo exists` | `firmware.supported = true` | 支持升级 |
+| `AlphaUpgradeInfo exists` | `firmware.ota = true` | 支持基于 STREAM 的 OTA |
 | `FeatureBitmap.bit0` | `display.brightness = true` | 支持亮度 |
 | `FeatureBitmap.bit1` | `firmware.resume = true` | 支持续传 |
 
 legacyMapping 字段：
 
 ```yaml
-- id: 0x0A01
-  name: firmware.supported
+- id: 0x0B01
+  name: firmware.ota
   domain: firmware
   type: bool
   status: mvp
@@ -700,7 +705,7 @@ legacyMapping 字段：
 
 ## 31. MVP Capability 集合
 
-MVP Capability 集合以 `standard/registry/capability_registry.yaml` 为事实源，采用单项能力或单项配置值表达。下列集合是当前 AXTP v1 MVP 合同。
+MVP Capability 集合以 `registry/capability/capability_registry.yaml` 与 `registry/domains/<domain>/domain.yaml` 为事实源，采用单项能力或单项配置值表达。下列集合是当前 AXTP v1 MVP 合同。
 
 | capabilityId | capabilityName | Type | 说明 |
 |---:| --- |---| --- |

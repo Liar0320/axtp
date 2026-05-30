@@ -6,13 +6,15 @@
 
 版本：v1.0.0-rc1
 状态：Protocol Definition 元规范
-适用范围：`registry/method/` 与 `domains/*/domain.yaml` 中 method 源条目的字段、约束和生成规则
+适用范围：`registry/method/` 与 `registry/domains/<domain>/domain.yaml` 中 method 源条目的字段、约束和生成规则
 
 ---
 
 ## 1. 文档定位
 
-本文档只定义 method registry 的元模型，不手写完整 MethodId 表。具体 method 内容必须写入 `registry/method/` 或 `domains/*/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `methods:` 由 Generator 聚合生成。
+本文档只定义 method registry 的元模型，不手写完整 MethodId 表。具体 method 内容必须写入 `registry/method/` 或 `registry/domains/<domain>/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `methods:` 由 Generator 聚合生成。
+
+新增业务 method 默认写入 `registry/domains/<domain>/domain.yaml`。`registry/method/method_registry.yaml` 只承载 Core/MVP 已采纳 method；业务 method 晋升为 Core/MVP 时必须迁移并删除 domain 中的原条目，不得两边重复定义。
 
 ---
 
@@ -66,7 +68,7 @@ methods:
 5. `methodId` stable 后不得复用；废弃只能标记 `deprecated`。
 6. `requestSchema` / `responseSchema` 必须存在。
 7. `errors[]` 必须存在于 `errors:`。
-8. methodId 和 bitOffset 范围由 Protocol Plan 分配；具体业务分配只写入 `registry/` 或 `domains/` YAML。
+8. methodId 和 bitOffset 范围由 Protocol Plan 分配；具体业务分配只写入 `registry/` 或 `registry/domains/` YAML。
 9. `capability.supportedMethods` bitmap 按 domain 分段，每个 domain 内第 N bit 对应该 domain 下 `bitOffset=N` 的 method。
 10. methodId 的高字节定义 method DomainId；`capability.supportedMethods` 的 Domain Block 必须使用该高字节。
 

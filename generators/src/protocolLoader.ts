@@ -210,9 +210,18 @@ function mapTransports(value: unknown): TransportProfile[] {
   return asArray(value).map((item) => ({
     name: String(item.name),
     family: String(item.family),
+    mode: item.mode === undefined ? undefined : String(item.mode),
     frameProfile: String(item.frameProfile),
     production: Boolean(item.production),
     maxFrameSize: optionalNumber(item.maxFrameSize),
+    rpcEncodings: item.rpcEncodings === undefined ? undefined : asStringArray(item.rpcEncodings),
+    supportsControl: item.supportsControl === undefined ? undefined : Boolean(item.supportsControl),
+    supportsStream: item.supportsStream === undefined ? undefined : Boolean(item.supportsStream),
+    physicalClient: item.physicalClient === undefined ? undefined : String(item.physicalClient),
+    physicalServer: item.physicalServer === undefined ? undefined : String(item.physicalServer),
+    logicalClient: item.logicalClient === undefined ? undefined : String(item.logicalClient),
+    logicalServer: item.logicalServer === undefined ? undefined : String(item.logicalServer),
+    helloSender: item.helloSender === undefined ? undefined : String(item.helloSender),
     usage: item.usage === undefined ? undefined : String(item.usage),
     notes: item.notes === undefined ? undefined : String(item.notes)
   }));

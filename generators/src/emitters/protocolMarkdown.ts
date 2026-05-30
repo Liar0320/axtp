@@ -238,6 +238,8 @@ function renderMainToc(model: ProtocolModel): string[] {
     "## Main Table of Contents",
     "",
     "- [Overview](#overview)",
+    "- [Protocol Framework](#protocol-framework)",
+    "- [Supported Connection Profiles](#supported-connection-profiles)",
     "- [Design Goals / Non-Goals](#design-goals--non-goals)",
     "- [Connection Lifecycle](#connection-lifecycle)",
     "- [Capability Discovery](#capability-discovery)",
@@ -282,27 +284,88 @@ function renderEventDomainToc(model: ProtocolModel, domain: string): string[] {
   ];
 }
 
-function renderTransportProfiles(model: ProtocolModel): string[] {
+function transportModeLabel(mode: string | undefined, frameProfile: string): string {
+  if (mode) return mode;
+  return frameProfile === "none" ? "unframed" : "standard-framed";
+}
+
+function yesNo(value: boolean | undefined): string {
+  return value === undefined ? "-" : value ? "Yes" : "No";
+}
+
+function renderProtocolFramework(model: ProtocolModel): string[] {
+  const framed = model.transports.filter((transport) => transport.frameProfile !== "none");
+  const unframed = model.transports.filter((transport) => transport.frameProfile === "none");
+  return [
+    "## Protocol Framework",
+    "",
+    "AXTP v1 has two formal integration paths:",
+    "",
+    "- **Standard Framed**: uses the 12-byte Standard Frame header, CONTROL OPEN/ACCEPT, RPC, STREAM, fragmentation, CRC16, and optional ACK/NACK.",
+    "- **WebSocket Unframed JSON**: uses the JSON `sid`/`op`/`d` envelope directly over WebSocket. It is RPC-only and does not carry CONTROL or STREAM payloads.",
+    "",
+    ...table(
+      ["Path", "Transports", "Frame", "RPC Encodings", "CONTROL", "STREAM"],
+      [
+        [
+          "Standard Framed",
+          list(framed.map((transport) => transport.name)),
+          "STANDARD_FRAME",
+          "`BINARY`, `JSON`",
+          "Yes",
+          "Yes"
+        ],
+        [
+          "WebSocket Unframed JSON",
+          list(unframed.map((transport) => transport.name)),
+          "None",
+          "`JSON`",
+          "No",
+          "No"
+        ]
+      ]
+    ),
+    "",
+    "Compact/HID-64/BLE/UART framing is a low-bandwidth degradation path, not an AXTP v1 Core requirement. See `docs/specs/17-AXTP-Low-Bandwidth-Degradation.md` for that path."
+  ];
+}
+
+function renderConnectionProfiles(model: ProtocolModel): string[] {
   const rows = model.transports.map((t) => [
     t.name,
     t.family,
-    t.frameProfile === "none" ? "Unframed" : t.frameProfile,
-    t.production ? "Yes" : "No (debug)",
+    transportModeLabel(t.mode, t.frameProfile),
+    t.frameProfile === "none" ? "None" : t.frameProfile,
+    inlineList(t.rpcEncodings),
+    yesNo(t.supportsControl),
+    yesNo(t.supportsStream),
     t.notes ?? t.usage ?? "-"
   ]);
   const lines: string[] = [
-    "## Transport Profiles",
+    "## Supported Connection Profiles",
     "",
-    "AXTP runs over multiple transports. Each transport binds to a fixed Frame Profile for the lifetime of the session.",
+    "The current protocol definition exposes the connection profiles that are intended for AXTP v1 readers and SDKs.",
     "",
     ...table(
-      ["Transport", "Family", "Frame Profile", "Production", "Notes"],
+      ["Profile", "Family", "Mode", "Frame", "RPC Encodings", "CONTROL", "STREAM", "Notes"],
       rows
     ),
     "",
-    "**Standard Frame** (12B L1 Header + CRC16) is the primary implementation target for TCP, WebSocket Binary, and USB HID High Speed.",
+    "### Role Matrix",
     "",
-    "**Compact Frame** (4B L1 Header + CRC8) is a fallback for constrained transports with MTU ≤ 64B (HID-64, BLE, UART). See §15 of the Transport Profiles spec for the full degradation guide."
+    ...table(
+      ["Profile", "Physical Client", "Physical Server", "Logical Client", "Logical Server", "Hello Sender"],
+      model.transports.map((t) => [
+        t.name,
+        optional(t.physicalClient),
+        optional(t.physicalServer),
+        optional(t.logicalClient),
+        optional(t.logicalServer),
+        optional(t.helloSender)
+      ])
+    ),
+    "",
+    "**Logical Server sends Hello.** This is true even when the device is the Physical Client in `AXTP-WS-CLOUD-REVERSE`."
   ];
 
   const cloudEntry = model.guide.quickStart.find((g) => g.title === "Cloud Reverse Connection");
@@ -311,7 +374,7 @@ function renderTransportProfiles(model: ProtocolModel): string[] {
       "",
       "### Cloud Reverse Connection",
       "",
-      "When a device initiates a connection to a cloud endpoint, the Physical Client/Server roles are reversed from the typical local scenario, but the Logical Server role stays with the device:",
+      "In `AXTP-WS-CLOUD-REVERSE`, the device initiates the WebSocket connection to the cloud endpoint, but the device remains the Logical Server:",
       "",
       "```text",
       "Physical Client: Device    Physical Server: Cloud",
@@ -320,31 +383,31 @@ function renderTransportProfiles(model: ProtocolModel): string[] {
       ...cloudEntry.steps.map((s) => `  ${s}`),
       "```",
       "",
-      "The key invariant: **the Logical Server always sends Hello**, regardless of who initiated the TCP/WebSocket connection."
+      "The key invariant: **the Logical Server sends Hello** after the WebSocket is established."
     );
   }
 
-  const dsRpcEntry = model.guide.quickStart.find((g) => g.title === "DS-RPC Debug Adapter");
-  if (dsRpcEntry) {
+  const jsonEntry = model.guide.quickStart.find((g) => g.title === "WebSocket Unframed JSON Startup");
+  if (jsonEntry) {
     lines.push(
       "",
-      "### DS-RPC Debug Adapter (WebSocket Text)",
+      "### WebSocket Unframed JSON",
       "",
-      "For browser debugging and development tooling only. Not for production.",
+      "This profile is a formal RPC-only path. It skips the Frame and CONTROL layers, uses JSON `sid`/`op`/`d`, and does not carry STREAM data.",
       "",
-      ...dsRpcEntry.steps.map((s) => `- ${s}`),
+      ...jsonEntry.steps.map((s) => `- ${s}`),
       "",
-      "| DS-RPC (Unframed) | Framed Mode (AXTP) |",
+      "| WebSocket Unframed JSON | Standard Framed AXTP |",
       "| --- | --- |",
-      "| WebSocket Upgrade | CONTROL OPEN/ACCEPT |",
+      "| WebSocket Upgrade | Transport connect + CONTROL OPEN/ACCEPT |",
       "| Hello (op=0) | RPC Hello |",
       "| Identify (op=2) | RPC Identify |",
       "| Identified (op=3) | RPC Identified |",
       "| REQUEST (op=7) | RPC Request |",
       "| REQUEST_RESPONSE (op=8) | RPC RequestResponse |",
       "| EVENT (op=6) | RPC Event |",
-      "| WebSocket Close | CONTROL CLOSE |",
-      "| — | STREAM (not supported in DS-RPC) |"
+      "| WebSocket Close | CONTROL CLOSE or transport close |",
+      "| Not supported | STREAM |"
     );
   }
 
@@ -355,7 +418,7 @@ function renderPayloadTypes(model: ProtocolModel): string[] {
   const lines: string[] = [
     "## Payload Types",
     "",
-    "Every AXTP Frame carries exactly one payload. The `PayloadType` field in the Frame Header selects the parser.",
+    "Every Standard Framed AXTP Frame carries exactly one payload. WebSocket Unframed JSON skips this layer and carries only RPC JSON envelopes.",
     "",
     ...table(
       ["Type", "ID", "Header Size", "When to Use"],
@@ -452,6 +515,8 @@ export function renderProtocolMarkdown(model: ProtocolModel): string {
       ]
     ),
     "",
+    ...renderProtocolFramework(model),
+    "",
     "## Design Goals / Non-Goals",
     "",
     "### Goals",
@@ -488,7 +553,7 @@ export function renderProtocolMarkdown(model: ProtocolModel): string {
       ])
     ),
     "",
-    ...renderTransportProfiles(model),
+    ...renderConnectionProfiles(model),
     "",
     ...renderPayloadTypes(model),
     "",

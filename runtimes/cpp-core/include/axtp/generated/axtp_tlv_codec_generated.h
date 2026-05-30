@@ -8,6 +8,10 @@ namespace axtp {
 class TlvWriter;
 class TlvReader;
 
+namespace fields::empty {
+
+}
+
 namespace fields::common_empty_request {
 
 }
@@ -55,8 +59,8 @@ namespace fields::capability_supported_methods_request {
 }
 
 namespace fields::capability_supported_methods_response {
-constexpr std::uint8_t METHOD_COUNT = 0x01;
-constexpr std::uint8_t METHOD_IDS = 0x02;
+constexpr std::uint8_t METHOD_MASK_COUNT = 0x01;
+constexpr std::uint8_t METHOD_MASKS = 0x02;
 }
 
 namespace fields::firmware_ota_capability {
@@ -83,36 +87,63 @@ constexpr std::uint8_t PREVIOUS_VALUE = 0x02;
 }
 
 namespace fields::firmware_begin_request {
-constexpr std::uint8_t TOTAL_SIZE = 0x01;
-constexpr std::uint8_t HASH_ALGO = 0x02;
-constexpr std::uint8_t HASH = 0x03;
-constexpr std::uint8_t CHUNK_SIZE = 0x04;
+constexpr std::uint8_t IMAGE_TYPE = 0x01;
+constexpr std::uint8_t IMAGE_SIZE = 0x02;
+constexpr std::uint8_t IMAGE_VERSION = 0x03;
+constexpr std::uint8_t VERIFY_TYPE = 0x04;
+constexpr std::uint8_t VERIFY_VALUE = 0x05;
+constexpr std::uint8_t CHUNK_SIZE_HINT = 0x06;
+constexpr std::uint8_t WINDOW_SIZE_HINT = 0x07;
+constexpr std::uint8_t FLAGS = 0x08;
 }
 
 namespace fields::firmware_begin_response {
-constexpr std::uint8_t STREAM_ID = 0x01;
-constexpr std::uint8_t PROFILE = 0x02;
-constexpr std::uint8_t CHUNK_SIZE = 0x03;
-constexpr std::uint8_t ACK_MODE = 0x04;
-constexpr std::uint8_t CURSOR_UNIT = 0x05;
-constexpr std::uint8_t RESERVED_STREAM_HEADER_PROFILE = 0x06;
-constexpr std::uint8_t MAX_DATA_SIZE = 0x07;
+constexpr std::uint8_t TRANSFER_ID = 0x01;
+constexpr std::uint8_t STREAM_ID = 0x02;
+constexpr std::uint8_t ACCEPTED_OFFSET = 0x03;
+constexpr std::uint8_t CHUNK_SIZE = 0x04;
+constexpr std::uint8_t WINDOW_SIZE = 0x05;
+constexpr std::uint8_t RESUME_TOKEN = 0x06;
+constexpr std::uint8_t OTA_STATE = 0x07;
+constexpr std::uint8_t PROFILE = 0x08;
+constexpr std::uint8_t ACK_MODE = 0x09;
+constexpr std::uint8_t CURSOR_UNIT = 0x0A;
+constexpr std::uint8_t MAX_DATA_SIZE = 0x0B;
 }
 
 namespace fields::firmware_end_request {
-constexpr std::uint8_t STREAM_ID = 0x01;
+constexpr std::uint8_t TRANSFER_ID = 0x01;
+constexpr std::uint8_t TOTAL_BYTES_SENT = 0x02;
+constexpr std::uint8_t TOTAL_CHUNKS = 0x03;
+}
+
+namespace fields::firmware_end_response {
+constexpr std::uint8_t RECEIVED_BYTES = 0x01;
+constexpr std::uint8_t RECEIVED_CHUNKS = 0x02;
+constexpr std::uint8_t OTA_STATE = 0x03;
 }
 
 namespace fields::firmware_verify_request {
-constexpr std::uint8_t STREAM_ID = 0x01;
+constexpr std::uint8_t TRANSFER_ID = 0x01;
+}
+
+namespace fields::firmware_verify_response {
+constexpr std::uint8_t VERIFY_RESULT = 0x01;
+constexpr std::uint8_t OTA_STATE = 0x02;
 }
 
 namespace fields::firmware_apply_request {
-constexpr std::uint8_t STREAM_ID = 0x01;
+constexpr std::uint8_t TRANSFER_ID = 0x01;
+constexpr std::uint8_t APPLY_MODE = 0x02;
+}
+
+namespace fields::firmware_apply_response {
+constexpr std::uint8_t OTA_STATE = 0x01;
+constexpr std::uint8_t REBOOT_REQUIRED = 0x02;
 }
 
 namespace fields::firmware_update_progress_event {
-constexpr std::uint8_t STREAM_ID = 0x01;
+constexpr std::uint8_t TRANSFER_ID = 0x01;
 constexpr std::uint8_t PERCENT = 0x02;
 }
 
@@ -124,6 +155,57 @@ namespace fields::firmware_update_failed_event {
 constexpr std::uint8_t ERROR_CODE = 0x01;
 constexpr std::uint8_t MESSAGE = 0x02;
 }
+
+namespace fields::stream_hid_media_capability {
+constexpr std::uint8_t TRANSPORT_PROFILE = 0x01;
+constexpr std::uint8_t MAX_STREAM_COUNT = 0x02;
+constexpr std::uint8_t MAX_CHUNK_SIZE = 0x03;
+constexpr std::uint8_t SUPPORTS_VIDEO = 0x04;
+constexpr std::uint8_t SUPPORTS_AUDIO = 0x05;
+}
+
+namespace fields::stream_open_request {
+constexpr std::uint8_t PROFILE = 0x01;
+constexpr std::uint8_t TRANSPORT_PROFILE = 0x02;
+constexpr std::uint8_t DIRECTION = 0x03;
+constexpr std::uint8_t MEDIA_KIND = 0x04;
+constexpr std::uint8_t SOURCE_ID = 0x05;
+constexpr std::uint8_t CODEC = 0x06;
+constexpr std::uint8_t WIDTH = 0x07;
+constexpr std::uint8_t HEIGHT = 0x08;
+constexpr std::uint8_t FRAME_RATE = 0x09;
+constexpr std::uint8_t SAMPLE_RATE = 0x0A;
+constexpr std::uint8_t CHANNEL_COUNT = 0x0B;
+constexpr std::uint8_t CHUNK_SIZE_HINT = 0x0C;
+constexpr std::uint8_t WINDOW_SIZE_HINT = 0x0D;
+}
+
+namespace fields::stream_open_response {
+constexpr std::uint8_t STREAM_ID = 0x01;
+constexpr std::uint8_t PROFILE = 0x02;
+constexpr std::uint8_t TRANSPORT_PROFILE = 0x03;
+constexpr std::uint8_t CHUNK_SIZE = 0x04;
+constexpr std::uint8_t WINDOW_SIZE = 0x05;
+constexpr std::uint8_t ACK_MODE = 0x06;
+constexpr std::uint8_t CURSOR_UNIT = 0x07;
+}
+
+namespace fields::stream_opened_event {
+constexpr std::uint8_t STREAM_ID = 0x01;
+constexpr std::uint8_t PROFILE = 0x02;
+constexpr std::uint8_t TRANSPORT_PROFILE = 0x03;
+constexpr std::uint8_t MEDIA_KIND = 0x04;
+}
+
+namespace fields::stream_error_event {
+constexpr std::uint8_t STREAM_ID = 0x01;
+constexpr std::uint8_t ERROR_CODE = 0x02;
+constexpr std::uint8_t MESSAGE = 0x03;
+}
+
+struct Empty {
+
+};
 
 struct CommonEmptyRequest {
 
@@ -178,9 +260,8 @@ struct CapabilitySupportedMethodsRequest {
 };
 
 struct CapabilitySupportedMethodsResponse {
-    std::uint16_t methodCount = 0;
-    std::uint32_t methodIds = 0;
-    bool has_methodIds = false;
+    std::uint16_t methodMaskCount = 0;
+    const std::uint8_t* methodMasks = nullptr;
 };
 
 struct FirmwareOtaCapability {
@@ -209,38 +290,71 @@ struct DisplayBrightnessChangedEvent {
 };
 
 struct FirmwareBeginRequest {
-    std::uint32_t totalSize = 0;
-    const char* hashAlgo = nullptr;
-    const std::uint8_t* hash = nullptr;
-    std::uint16_t chunkSize = 0;
+    std::uint32_t imageType = 0;
+    std::uint64_t imageSize = 0;
+    const char* imageVersion = nullptr;
+    const char* verifyType = nullptr;
+    const char* verifyValue = nullptr;
+    std::uint16_t chunkSizeHint = 0;
+    bool has_chunkSizeHint = false;
+    std::uint16_t windowSizeHint = 0;
+    bool has_windowSizeHint = false;
+    std::uint16_t flags = 0;
+    bool has_flags = false;
 };
 
 struct FirmwareBeginResponse {
+    std::uint32_t transferId = 0;
     std::uint32_t streamId = 0;
-    const char* profile = nullptr;
+    std::uint64_t acceptedOffset = 0;
     std::uint16_t chunkSize = 0;
+    std::uint16_t windowSize = 0;
+    const std::uint8_t* resumeToken = nullptr;
+    bool has_resumeToken = false;
+    std::uint32_t otaState = 0;
+    const char* profile = nullptr;
     std::uint32_t ackMode = 0;
     std::uint32_t cursorUnit = 0;
-    std::uint32_t reservedStreamHeaderProfile = 0;
-    bool has_reservedStreamHeaderProfile = false;
     std::uint16_t maxDataSize = 0;
     bool has_maxDataSize = false;
 };
 
 struct FirmwareEndRequest {
-    std::uint32_t streamId = 0;
+    std::uint32_t transferId = 0;
+    std::uint64_t totalBytesSent = 0;
+    bool has_totalBytesSent = false;
+    std::uint32_t totalChunks = 0;
+    bool has_totalChunks = false;
+};
+
+struct FirmwareEndResponse {
+    std::uint64_t receivedBytes = 0;
+    std::uint32_t receivedChunks = 0;
+    bool has_receivedChunks = false;
+    std::uint32_t otaState = 0;
 };
 
 struct FirmwareVerifyRequest {
-    std::uint32_t streamId = 0;
+    std::uint32_t transferId = 0;
+};
+
+struct FirmwareVerifyResponse {
+    std::uint32_t verifyResult = 0;
+    std::uint32_t otaState = 0;
 };
 
 struct FirmwareApplyRequest {
-    std::uint32_t streamId = 0;
+    std::uint32_t transferId = 0;
+    std::uint32_t applyMode = 0;
+};
+
+struct FirmwareApplyResponse {
+    std::uint32_t otaState = 0;
+    bool rebootRequired = false;
 };
 
 struct FirmwareUpdateProgressEvent {
-    std::uint32_t streamId = 0;
+    std::uint32_t transferId = 0;
     std::uint8_t percent = 0;
 };
 
@@ -254,6 +368,66 @@ struct FirmwareUpdateFailedEvent {
     const char* message = nullptr;
     bool has_message = false;
 };
+
+struct StreamHidMediaCapability {
+    const char* transportProfile = nullptr;
+    std::uint8_t maxStreamCount = 0;
+    std::uint16_t maxChunkSize = 0;
+    bool supportsVideo = false;
+    bool supportsAudio = false;
+};
+
+struct StreamOpenRequest {
+    const char* profile = nullptr;
+    const char* transportProfile = nullptr;
+    std::uint32_t direction = 0;
+    std::uint32_t mediaKind = 0;
+    std::uint16_t sourceId = 0;
+    bool has_sourceId = false;
+    const char* codec = nullptr;
+    std::uint16_t width = 0;
+    bool has_width = false;
+    std::uint16_t height = 0;
+    bool has_height = false;
+    std::uint16_t frameRate = 0;
+    bool has_frameRate = false;
+    std::uint32_t sampleRate = 0;
+    bool has_sampleRate = false;
+    std::uint8_t channelCount = 0;
+    bool has_channelCount = false;
+    std::uint16_t chunkSizeHint = 0;
+    bool has_chunkSizeHint = false;
+    std::uint16_t windowSizeHint = 0;
+    bool has_windowSizeHint = false;
+};
+
+struct StreamOpenResponse {
+    std::uint32_t streamId = 0;
+    const char* profile = nullptr;
+    const char* transportProfile = nullptr;
+    std::uint16_t chunkSize = 0;
+    std::uint16_t windowSize = 0;
+    std::uint32_t ackMode = 0;
+    std::uint32_t cursorUnit = 0;
+};
+
+struct StreamOpenedEvent {
+    std::uint32_t streamId = 0;
+    const char* profile = nullptr;
+    const char* transportProfile = nullptr;
+    std::uint32_t mediaKind = 0;
+};
+
+struct StreamErrorEvent {
+    std::uint32_t streamId = 0;
+    bool has_streamId = false;
+    std::uint16_t errorCode = 0;
+    const char* message = nullptr;
+    bool has_message = false;
+};
+
+bool EncodeEmpty(const Empty& input, TlvWriter& writer, ErrorCode* error);
+bool DecodeEmpty(TlvReader& reader, Empty* output, ErrorCode* error);
 
 bool EncodeCommonEmptyRequest(const CommonEmptyRequest& input, TlvWriter& writer, ErrorCode* error);
 bool DecodeCommonEmptyRequest(TlvReader& reader, CommonEmptyRequest* output, ErrorCode* error);
@@ -303,11 +477,20 @@ bool DecodeFirmwareBeginResponse(TlvReader& reader, FirmwareBeginResponse* outpu
 bool EncodeFirmwareEndRequest(const FirmwareEndRequest& input, TlvWriter& writer, ErrorCode* error);
 bool DecodeFirmwareEndRequest(TlvReader& reader, FirmwareEndRequest* output, ErrorCode* error);
 
+bool EncodeFirmwareEndResponse(const FirmwareEndResponse& input, TlvWriter& writer, ErrorCode* error);
+bool DecodeFirmwareEndResponse(TlvReader& reader, FirmwareEndResponse* output, ErrorCode* error);
+
 bool EncodeFirmwareVerifyRequest(const FirmwareVerifyRequest& input, TlvWriter& writer, ErrorCode* error);
 bool DecodeFirmwareVerifyRequest(TlvReader& reader, FirmwareVerifyRequest* output, ErrorCode* error);
 
+bool EncodeFirmwareVerifyResponse(const FirmwareVerifyResponse& input, TlvWriter& writer, ErrorCode* error);
+bool DecodeFirmwareVerifyResponse(TlvReader& reader, FirmwareVerifyResponse* output, ErrorCode* error);
+
 bool EncodeFirmwareApplyRequest(const FirmwareApplyRequest& input, TlvWriter& writer, ErrorCode* error);
 bool DecodeFirmwareApplyRequest(TlvReader& reader, FirmwareApplyRequest* output, ErrorCode* error);
+
+bool EncodeFirmwareApplyResponse(const FirmwareApplyResponse& input, TlvWriter& writer, ErrorCode* error);
+bool DecodeFirmwareApplyResponse(TlvReader& reader, FirmwareApplyResponse* output, ErrorCode* error);
 
 bool EncodeFirmwareUpdateProgressEvent(const FirmwareUpdateProgressEvent& input, TlvWriter& writer, ErrorCode* error);
 bool DecodeFirmwareUpdateProgressEvent(TlvReader& reader, FirmwareUpdateProgressEvent* output, ErrorCode* error);
@@ -317,5 +500,20 @@ bool DecodeFirmwareUpdateCompletedEvent(TlvReader& reader, FirmwareUpdateComplet
 
 bool EncodeFirmwareUpdateFailedEvent(const FirmwareUpdateFailedEvent& input, TlvWriter& writer, ErrorCode* error);
 bool DecodeFirmwareUpdateFailedEvent(TlvReader& reader, FirmwareUpdateFailedEvent* output, ErrorCode* error);
+
+bool EncodeStreamHidMediaCapability(const StreamHidMediaCapability& input, TlvWriter& writer, ErrorCode* error);
+bool DecodeStreamHidMediaCapability(TlvReader& reader, StreamHidMediaCapability* output, ErrorCode* error);
+
+bool EncodeStreamOpenRequest(const StreamOpenRequest& input, TlvWriter& writer, ErrorCode* error);
+bool DecodeStreamOpenRequest(TlvReader& reader, StreamOpenRequest* output, ErrorCode* error);
+
+bool EncodeStreamOpenResponse(const StreamOpenResponse& input, TlvWriter& writer, ErrorCode* error);
+bool DecodeStreamOpenResponse(TlvReader& reader, StreamOpenResponse* output, ErrorCode* error);
+
+bool EncodeStreamOpenedEvent(const StreamOpenedEvent& input, TlvWriter& writer, ErrorCode* error);
+bool DecodeStreamOpenedEvent(TlvReader& reader, StreamOpenedEvent* output, ErrorCode* error);
+
+bool EncodeStreamErrorEvent(const StreamErrorEvent& input, TlvWriter& writer, ErrorCode* error);
+bool DecodeStreamErrorEvent(TlvReader& reader, StreamErrorEvent* output, ErrorCode* error);
 
 } // namespace axtp

@@ -14,11 +14,13 @@ struct EventDescriptor {
 
 inline constexpr EventDescriptor kEventRegistry[] = {
     { 0x8507, "display.brightnessChanged", "display", "DisplayBrightnessChangedEvent" },
+    { 0x8901, "stream.opened", "stream", "StreamOpenedEvent" },
+    { 0x8903, "stream.error", "stream", "StreamErrorEvent" },
     { 0x8B02, "firmware.updateProgress", "firmware", "FirmwareUpdateProgressEvent" },
     { 0x8B03, "firmware.updateCompleted", "firmware", "FirmwareUpdateCompletedEvent" },
     { 0x8B04, "firmware.updateFailed", "firmware", "FirmwareUpdateFailedEvent" },
 };
 
-inline constexpr std::size_t kEventRegistryCount = 4;
+inline constexpr std::size_t kEventRegistryCount = 6;
 
 } // namespace axtp

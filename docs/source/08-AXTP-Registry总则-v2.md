@@ -19,9 +19,11 @@ Vendor Extension / Legacy Mapping
 最终目标：
 
 ```text
-registry/*.yaml + schema/*.yaml
+registry/**/*.yaml + registry/domains/**/*.yaml
     ↓ Generator v1
-Markdown 文档 / C++ enum / struct / descriptor / TLV skeleton / 测试向量
+protocol/axtp.protocol.yaml
+    ↓ Generator v1
+docs/generated/* / runtime generated artifacts / tooling generated artifacts
 ```
 
 ---
@@ -55,37 +57,41 @@ registry/
 ├── core/
 │   ├── payload_type.yaml
 │   ├── control_opcode.yaml
+│   ├── protocol_meta.yaml
 │   ├── rpc_encoding.yaml
+│   ├── rpc_body_encoding.yaml
 │   ├── rpc_op.yaml
 │   └── stream_profile.yaml
-├── domain/
-│   └── domain_registry.yaml
 ├── method/
-│   ├── method_registry.yaml
-│   └── method_registry_mvp.yaml
+│   └── method_registry.yaml
 ├── event/
-│   ├── event_registry.yaml
-│   └── event_registry_mvp.yaml
+│   └── event_registry.yaml
 ├── error/
-│   ├── error_code.yaml
-│   └── error_code_mvp.yaml
+│   └── error_code.yaml
 ├── capability/
 │   ├── capability_registry.yaml
-│   └── capability_registry_mvp.yaml
+│   └── mvp_profile.yaml
+├── domains/
+│   └── <domain>/
+│       └── domain.yaml
 ├── schema/
 │   ├── common_fields.yaml
 │   ├── control_schema.yaml
-│   ├── rpc_schema.yaml
-│   └── business_schema.yaml
+│   ├── device_schema.yaml
+│   ├── display_schema.yaml
+│   ├── event_schema.yaml
+│   ├── firmware_schema.yaml
+│   ├── session_schema.yaml
+│   └── stream_schema.yaml
 ├── legacy/
-│   ├── legacy_cmd_mapping.yaml
-│   ├── legacy_error_mapping.yaml
-│   └── legacy_payload_mapping.yaml
+│   └── legacy_mapping.yaml
 └── vendor/
-    └── vendor_registry.yaml
+    └── .gitkeep
 ```
 
-`*_mvp.yaml` 用于第一阶段实现，Generator v1 只读取 MVP 文件。
+`registry/` 是唯一机器事实源根目录。其中 `registry/method|event|error|capability|schema|legacy/` 保存核心/公共/已采纳事实，`registry/domains/<domain>/domain.yaml` 保存新增业务域事实。Generator v1 读取两类 Source YAML 后生成 `protocol/axtp.protocol.yaml`，不得手写 Protocol IR 或 generated 目录成果物。
+
+新增业务默认只写 `registry/domains/<domain>/domain.yaml`，不同时复制到 `registry/method/`、`registry/event/`、`registry/schema/` 等核心文件。只有当该业务被治理为 MVP/Core 公共能力时，才执行晋升：保持原有 ID、fieldId、bitOffset 和语义不变，将条目迁入核心 registry，并从 domain YAML 删除对应条目，避免双事实源。
 
 ---
 
@@ -97,8 +103,8 @@ name: device.getInfo
 kind: method
 status: stable
 domain: device
-domainId: 0x01        # 域级掩码中的 DomainId（event/capability 专用，method 不需要）
-bitOffset: null       # 域内掩码位偏移（event/capability 专用，method 不需要）
+domainId: 0x01        # 域级掩码中的 DomainId（event/capability 可用；method 由 domain name 分组）
+bitOffset: 0          # 域内 method/event 掩码位偏移，必须在同 domain 内连续
 version:
   since: 1.0.0
   deprecated: null
@@ -118,8 +124,8 @@ legacy:
 | `kind` | 是 | `method/event/error/capability/enum/schema` |
 | `status` | 是 | 生命周期状态 |
 | `domain` | 视情况 | 所属业务域 |
-| `domainId` | event/capability 必填 | 域级掩码中的 DomainId（1B），与 MethodId/EventId 高字节对齐；method/error/schema 填 null |
-| `bitOffset` | event/capability 必填 | 该条目在 Domain 内的掩码位偏移（0-255），由 Registry 自增分配；method/error/schema 填 null |
+| `domainId` | event/capability 必填 | 域级掩码中的 DomainId（1B），与 MethodId/EventId 高字节对齐；method 可由 `domain` 推导 |
+| `bitOffset` | method/event 必填 | 该条目在 Domain 内的掩码位偏移（0-255），由 Registry 自增分配；capability 可按 v2 capability model 使用 |
 | `version.since` | 是 | 首次引入版本 |
 | `version.deprecated` | 否 | 废弃版本 |
 | `description` | 是 | 简短描述 |
@@ -273,7 +279,7 @@ Stream Profile 是具体可建流协议档案，不是 STREAM 数据包字段。
 | profileId | 名称 | 说明 |
 |---:| --- |---|
 | `0x0000` | `reserved` | 保留 |
-| `0x0101` | `firmware.ota` | 固件升级数据块上传 |
+| `0x0001` | `firmware.ota` | 固件升级数据块上传 |
 | `0x0002` | `file.transfer` | 文件传输 |
 | `0x0401` | `log.realtime` | 实时日志 |
 | `0x1001` | `media.video` | 视频帧流 |
@@ -573,39 +579,37 @@ Stream Profile: firmware.ota
 ### 20.2 MVP Method
 
 ```text
-device.getInfo / device.getVersion / device.getStatus
-capability.supportedMethods / capability.getAll / capability.getDomain
-system.reboot / system.setTime / system.factoryReset
-display.getBrightness / display.setBrightness / display.getBrightnessRange
-firmware.getInfo / firmware.begin / firmware.end / firmware.verify / firmware.apply / firmware.abort
-stream.open / stream.close / stream.getStatus
+device.getInfo
+capability.supportedMethods
+display.getBrightness / display.setBrightness
+firmware.begin / firmware.end / firmware.verify / firmware.apply
 ```
 
 ### 20.3 MVP Event
 
 ```text
-device.statusChanged / capability.changed
-system.rebooting
 display.brightnessChanged
 firmware.updateProgress / firmware.updateCompleted / firmware.updateFailed
-stream.opened / stream.closed / stream.error
 ```
 
 ### 20.4 MVP ErrorCode
 
 ```text
-SUCCESS / UNKNOWN_ERROR / NOT_SUPPORTED / INVALID_ARGUMENT
-TIMEOUT / BUSY / FRAME_CRC_ERROR / FRAME_TOO_LARGE
-CONTROL_NEGOTIATION_FAILED / RPC_ENCODING_UNSUPPORTED / RPC_METHOD_NOT_FOUND / RPC_PARAM_INVALID
+SUCCESS / UNKNOWN_ERROR / BUSY
+FRAME_VERSION_UNSUPPORTED / FRAME_CRC_ERROR / FRAME_FRAGMENT_MISSING
+CONTROL_OPCODE_INVALID / CONTROL_PAYLOAD_INVALID / CONTROL_OPEN_REQUIRED / CONTROL_OPEN_REJECTED
+CONTROL_NEGOTIATION_FAILED / CONTROL_SESSION_INVALID / CONTROL_RESUME_FAILED / CONTROL_WINDOW_EXCEEDED
+RPC_ENCODING_UNSUPPORTED / RPC_METHOD_NOT_FOUND / RPC_PARAM_INVALID
 STREAM_NOT_FOUND / STREAM_TIMEOUT / STREAM_CRC_ERROR / FW_VERIFY_FAILED
 ```
 
 ### 20.5 MVP Capability
 
 ```text
-protocol.payloadType.control / protocol.payloadType.rpc / protocol.payloadType.stream
-rpc.encoding.json / rpc.encoding.binary / rpc.bodyEncoding.tlv8
-stream.kind.ota / display.brightness / firmware.update / firmware.resume
+protocol.payload.control / protocol.payload.rpc / protocol.payload.stream
+device.info / capability.supportedMethods
+display.brightness / display.brightnessMin / display.brightnessMax / display.brightnessStep
+firmware.ota
 ```
 
 ---
@@ -639,7 +643,7 @@ stream.kind.ota / display.brightness / firmware.update / firmware.resume
 把 optional 字段改成 required
 在不同文档中手工维护不同 ID 表
 老协议适配只写文字不进 legacy mapping
-为 event/capability 新增条目时不分配 bitOffset
+为 method/event 新增条目时不分配 bitOffset
 ```
 
 ---
@@ -654,7 +658,7 @@ AXTP 使用统一的域级二进制掩码体系，同时应用于：
 ### 23.1 设计原则
 
 - 按域划分，本地偏移，按需携带，二进制扁平流传输
-- 每个 event/capability 在其 Domain 内分配唯一 `bitOffset`（0-255），由 Registry 自增管理
+- 每个 method/event 在其 Domain 内分配唯一 `bitOffset`（0-255），由 Registry 自增管理
 - 不同 Domain 的 bitOffset 独立计数，互不干扰
 - 设备端判定为 O(1) 位运算，无动态内存分配
 
@@ -723,7 +727,7 @@ bool isBitEnabled(const uint8_t* bitmask, uint8_t maskLen, uint8_t bitOffset) {
 
 ### 23.6 Registry 要求
 
-新增 event/capability 条目时必须：
+新增 method/event 条目时必须：
 
 1. 在 YAML 中填写 `domainId` 和 `bitOffset`
 2. `bitOffset` 在同一 Domain 内自增，不得重复

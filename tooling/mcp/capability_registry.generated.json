@@ -61,6 +61,17 @@
       "idHex": "0x0309"
     },
     {
+      "id": 1034,
+      "name": "stream.hidMedia",
+      "domain": "stream",
+      "status": "draft",
+      "description": "Device supports opening media.video and/or media.audio streams over AXTP-USB-HID.",
+      "deprecated": false,
+      "type": "object",
+      "schema": "StreamHidMediaCapability",
+      "idHex": "0x040A"
+    },
+    {
       "id": 1537,
       "name": "display.brightness",
       "domain": "display",

@@ -69,5 +69,4 @@ For v2 capability masks, `DomainId` uses the capability domain namespace. This m
 
 ## 5. Migration Rule
 
-When a v2 capability becomes stable, add its machine-readable fact to `protocol/axtp.protocol.yaml` or a future protocol definition extension. Do not add full capability tables to 08-13 meta specs.
-
+When a v2 capability becomes stable, add its machine-readable fact to `registry/**/*.yaml`, `registry/domains/**/*.yaml`, or a future protocol definition extension. Do not add full capability tables to 08-13 meta specs.

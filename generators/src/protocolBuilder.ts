@@ -130,8 +130,8 @@ function defaultProfiles(source: ProtocolSourceModel): Array<Record<string, unkn
       requiredMethods,
       requiredEvents,
       requiredErrors,
-      transportProfiles: ["AXTP-WS", "AXTP-TCP", "AXTP-HID-64", "AXTP-BLE-RPC", "AXTP-UART"],
-      frameProfiles: ["STANDARD_FRAME", "COMPACT_FRAME", "COMPACT_FRAME_CRC"]
+      transportProfiles: ["AXTP-USB-HID", "AXTP-TCP", "AXTP-WS-JSON", "AXTP-WS-CLOUD-REVERSE"],
+      frameProfiles: ["STANDARD_FRAME"]
     },
     {
       name: "AXTP-MVP-HID",
@@ -141,8 +141,8 @@ function defaultProfiles(source: ProtocolSourceModel): Array<Record<string, unkn
       requiredMethods,
       requiredEvents,
       requiredErrors,
-      transportProfiles: ["AXTP-HID-64"],
-      frameProfile: "COMPACT_FRAME"
+      transportProfiles: ["AXTP-USB-HID"],
+      frameProfile: "STANDARD_FRAME"
     }
   ];
 }

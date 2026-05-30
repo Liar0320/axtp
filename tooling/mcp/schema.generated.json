@@ -1,6 +1,11 @@
 {
   "schemas": [
     {
+      "name": "Empty",
+      "type": "object",
+      "fields": []
+    },
+    {
       "name": "CommonEmptyRequest",
       "type": "object",
       "fields": []
@@ -221,17 +226,18 @@
       "fields": [
         {
           "id": 1,
-          "name": "methodCount",
+          "name": "methodMaskCount",
           "type": "uint16",
           "required": true,
           "deprecated": false
         },
         {
           "id": 2,
-          "name": "methodIds",
-          "type": "array",
-          "required": false,
-          "deprecated": false
+          "name": "methodMasks",
+          "type": "bytes",
+          "required": true,
+          "deprecated": false,
+          "derivedFrom": "methods[].bitOffset"
         }
       ]
     },
@@ -329,33 +335,70 @@
       "fields": [
         {
           "id": 1,
-          "name": "totalSize",
-          "type": "uint32",
+          "name": "imageType",
+          "type": "enum",
           "required": true,
-          "deprecated": false
+          "deprecated": false,
+          "description": "Firmware image type."
         },
         {
           "id": 2,
-          "name": "hashAlgo",
-          "type": "string",
+          "name": "imageSize",
+          "type": "uint64",
           "required": true,
           "deprecated": false,
-          "maxLength": 16
+          "description": "Full firmware image size in bytes."
         },
         {
           "id": 3,
-          "name": "hash",
-          "type": "bytes",
+          "name": "imageVersion",
+          "type": "string",
           "required": true,
           "deprecated": false,
-          "maxLength": 64
+          "maxLength": 32,
+          "description": "Target firmware version."
         },
         {
           "id": 4,
-          "name": "chunkSize",
-          "type": "uint16",
+          "name": "verifyType",
+          "type": "string",
           "required": true,
-          "deprecated": false
+          "deprecated": false,
+          "maxLength": 16,
+          "description": "Object-level verification algorithm such as md5, crc32 or sha256."
+        },
+        {
+          "id": 5,
+          "name": "verifyValue",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 64,
+          "description": "Hex verification value for the full firmware image."
+        },
+        {
+          "id": 6,
+          "name": "chunkSizeHint",
+          "type": "uint16",
+          "required": false,
+          "deprecated": false,
+          "description": "Preferred STREAM chunk size in bytes."
+        },
+        {
+          "id": 7,
+          "name": "windowSizeHint",
+          "type": "uint16",
+          "required": false,
+          "deprecated": false,
+          "description": "Preferred stream-layer send window."
+        },
+        {
+          "id": 8,
+          "name": "flags",
+          "type": "uint16",
+          "required": false,
+          "deprecated": false,
+          "description": "OTA behavior flags such as resume or force-update hints."
         }
       ]
     },
@@ -365,53 +408,93 @@
       "fields": [
         {
           "id": 1,
-          "name": "streamId",
+          "name": "transferId",
           "type": "uint32",
           "required": true,
-          "deprecated": false
+          "deprecated": false,
+          "description": "OTA transfer identifier."
         },
         {
           "id": 2,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false,
+          "description": "STREAM data channel identifier."
+        },
+        {
+          "id": 3,
+          "name": "acceptedOffset",
+          "type": "uint64",
+          "required": true,
+          "deprecated": false,
+          "description": "First byte offset the sender should transmit."
+        },
+        {
+          "id": 4,
+          "name": "chunkSize",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false,
+          "description": "Negotiated STREAM chunk size in bytes."
+        },
+        {
+          "id": 5,
+          "name": "windowSize",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false,
+          "description": "Negotiated stream-layer send window."
+        },
+        {
+          "id": 6,
+          "name": "resumeToken",
+          "type": "bytes",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 32,
+          "description": "Opaque resume token."
+        },
+        {
+          "id": 7,
+          "name": "otaState",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Current OTA state."
+        },
+        {
+          "id": 8,
           "name": "profile",
           "type": "string",
           "required": true,
           "deprecated": false,
-          "maxLength": 32
+          "maxLength": 32,
+          "description": "Bound Stream Profile, usually firmware.ota."
         },
         {
-          "id": 3,
-          "name": "chunkSize",
-          "type": "uint16",
-          "required": true,
-          "deprecated": false
-        },
-        {
-          "id": 4,
+          "id": 9,
           "name": "ackMode",
           "type": "enum",
           "required": true,
-          "deprecated": false
+          "deprecated": false,
+          "description": "Stream-layer reliability mode."
         },
         {
-          "id": 5,
+          "id": 10,
           "name": "cursorUnit",
           "type": "enum",
           "required": true,
-          "deprecated": false
+          "deprecated": false,
+          "description": "Cursor unit used by STREAM packets, usually byteOffset."
         },
         {
-          "id": 6,
-          "name": "reservedStreamHeaderProfile",
-          "type": "enum",
-          "required": false,
-          "deprecated": true
-        },
-        {
-          "id": 7,
+          "id": 11,
           "name": "maxDataSize",
           "type": "uint16",
           "required": false,
-          "deprecated": false
+          "deprecated": false,
+          "description": "Maximum STREAM data bytes per packet."
         }
       ]
     },
@@ -421,10 +504,57 @@
       "fields": [
         {
           "id": 1,
-          "name": "streamId",
+          "name": "transferId",
           "type": "uint32",
           "required": true,
-          "deprecated": false
+          "deprecated": false,
+          "description": "OTA transfer identifier."
+        },
+        {
+          "id": 2,
+          "name": "totalBytesSent",
+          "type": "uint64",
+          "required": false,
+          "deprecated": false,
+          "description": "Total firmware bytes sent by the host."
+        },
+        {
+          "id": 3,
+          "name": "totalChunks",
+          "type": "uint32",
+          "required": false,
+          "deprecated": false,
+          "description": "Total STREAM chunks sent by the host."
+        }
+      ]
+    },
+    {
+      "name": "FirmwareEndResponse",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "receivedBytes",
+          "type": "uint64",
+          "required": true,
+          "deprecated": false,
+          "description": "Total bytes accepted by the device."
+        },
+        {
+          "id": 2,
+          "name": "receivedChunks",
+          "type": "uint32",
+          "required": false,
+          "deprecated": false,
+          "description": "Total chunks accepted by the device."
+        },
+        {
+          "id": 3,
+          "name": "otaState",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Current OTA state."
         }
       ]
     },
@@ -434,10 +564,33 @@
       "fields": [
         {
           "id": 1,
-          "name": "streamId",
+          "name": "transferId",
           "type": "uint32",
           "required": true,
-          "deprecated": false
+          "deprecated": false,
+          "description": "OTA transfer identifier."
+        }
+      ]
+    },
+    {
+      "name": "FirmwareVerifyResponse",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "verifyResult",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Verification result for the transferred image."
+        },
+        {
+          "id": 2,
+          "name": "otaState",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Current OTA state."
         }
       ]
     },
@@ -447,10 +600,41 @@
       "fields": [
         {
           "id": 1,
-          "name": "streamId",
+          "name": "transferId",
           "type": "uint32",
           "required": true,
-          "deprecated": false
+          "deprecated": false,
+          "description": "OTA transfer identifier."
+        },
+        {
+          "id": 2,
+          "name": "applyMode",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Apply mode such as APPLY_NOW, APPLY_ON_REBOOT or STAGE_ONLY."
+        }
+      ]
+    },
+    {
+      "name": "FirmwareApplyResponse",
+      "type": "object",
+      "fields": [
+        {
+          "id": 1,
+          "name": "otaState",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Current OTA state."
+        },
+        {
+          "id": 2,
+          "name": "rebootRequired",
+          "type": "bool",
+          "required": true,
+          "deprecated": false,
+          "description": "Whether applying the image requires reboot."
         }
       ]
     },
@@ -460,7 +644,7 @@
       "fields": [
         {
           "id": 1,
-          "name": "streamId",
+          "name": "transferId",
           "type": "uint32",
           "required": true,
           "deprecated": false
@@ -508,6 +692,306 @@
           "required": false,
           "deprecated": false,
           "maxLength": 96
+        }
+      ]
+    },
+    {
+      "name": "StreamHidMediaCapability",
+      "type": "object",
+      "description": "Describes HID-backed media STREAM support.",
+      "fields": [
+        {
+          "id": 1,
+          "name": "transportProfile",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 32,
+          "description": "Supported HID Transport Profile, usually AXTP-USB-HID."
+        },
+        {
+          "id": 2,
+          "name": "maxStreamCount",
+          "type": "uint8",
+          "required": true,
+          "deprecated": false,
+          "description": "Maximum simultaneously opened media streams."
+        },
+        {
+          "id": 3,
+          "name": "maxChunkSize",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false,
+          "description": "Maximum STREAM data bytes per Standard Frame after the 16B STREAM header."
+        },
+        {
+          "id": 4,
+          "name": "supportsVideo",
+          "type": "bool",
+          "required": true,
+          "deprecated": false,
+          "description": "Device can open media.video streams over HID."
+        },
+        {
+          "id": 5,
+          "name": "supportsAudio",
+          "type": "bool",
+          "required": true,
+          "deprecated": false,
+          "description": "Device can open media.audio streams over HID."
+        }
+      ]
+    },
+    {
+      "name": "StreamOpenRequest",
+      "type": "object",
+      "description": "Parameters for opening a HID-backed media STREAM channel.",
+      "fields": [
+        {
+          "id": 1,
+          "name": "profile",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 32,
+          "description": "Stream Profile name. For this method use media.video or media.audio."
+        },
+        {
+          "id": 2,
+          "name": "transportProfile",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 32,
+          "description": "Transport Profile name. HID media streams use AXTP-USB-HID."
+        },
+        {
+          "id": 3,
+          "name": "direction",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Stream direction; values are device_to_host, host_to_device, or bidirectional."
+        },
+        {
+          "id": 4,
+          "name": "mediaKind",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Media kind carried by this stream; values are video or audio."
+        },
+        {
+          "id": 5,
+          "name": "sourceId",
+          "type": "uint16",
+          "required": false,
+          "deprecated": false,
+          "description": "Device-local media source identifier."
+        },
+        {
+          "id": 6,
+          "name": "codec",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 32,
+          "description": "Codec or sample format, for example h264, mjpeg, pcm_s16le, or opus."
+        },
+        {
+          "id": 7,
+          "name": "width",
+          "type": "uint16",
+          "required": false,
+          "deprecated": false,
+          "description": "Video width in pixels. Required for video streams when not implied by sourceId."
+        },
+        {
+          "id": 8,
+          "name": "height",
+          "type": "uint16",
+          "required": false,
+          "deprecated": false,
+          "description": "Video height in pixels. Required for video streams when not implied by sourceId."
+        },
+        {
+          "id": 9,
+          "name": "frameRate",
+          "type": "uint16",
+          "required": false,
+          "deprecated": false,
+          "description": "Video frame rate in frames per second."
+        },
+        {
+          "id": 10,
+          "name": "sampleRate",
+          "type": "uint32",
+          "required": false,
+          "deprecated": false,
+          "description": "Audio sample rate in Hz."
+        },
+        {
+          "id": 11,
+          "name": "channelCount",
+          "type": "uint8",
+          "required": false,
+          "deprecated": false,
+          "description": "Number of audio channels."
+        },
+        {
+          "id": 12,
+          "name": "chunkSizeHint",
+          "type": "uint16",
+          "required": false,
+          "deprecated": false,
+          "description": "Preferred STREAM data bytes per Standard Frame after the 16B STREAM header."
+        },
+        {
+          "id": 13,
+          "name": "windowSizeHint",
+          "type": "uint16",
+          "required": false,
+          "deprecated": false,
+          "description": "Preferred stream flow-control window in chunks."
+        }
+      ]
+    },
+    {
+      "name": "StreamOpenResponse",
+      "type": "object",
+      "description": "Result of a successful STREAM media channel open.",
+      "fields": [
+        {
+          "id": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false,
+          "description": "STREAM channel identifier bound to the selected Stream Profile."
+        },
+        {
+          "id": 2,
+          "name": "profile",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 32,
+          "description": "Accepted Stream Profile name."
+        },
+        {
+          "id": 3,
+          "name": "transportProfile",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 32,
+          "description": "Accepted Transport Profile name."
+        },
+        {
+          "id": 4,
+          "name": "chunkSize",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false,
+          "description": "STREAM data bytes to place in each Standard Frame after the 16B STREAM header."
+        },
+        {
+          "id": 5,
+          "name": "windowSize",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false,
+          "description": "Negotiated stream flow-control window in chunks."
+        },
+        {
+          "id": 6,
+          "name": "ackMode",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Stream acknowledgement mode, such as best_effort or stop_and_wait."
+        },
+        {
+          "id": 7,
+          "name": "cursorUnit",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Cursor unit used in the 64-bit STREAM cursor, usually timestampUs for media streams."
+        }
+      ]
+    },
+    {
+      "name": "StreamOpenedEvent",
+      "type": "object",
+      "description": "Payload emitted when a STREAM media channel is opened.",
+      "fields": [
+        {
+          "id": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": true,
+          "deprecated": false,
+          "description": "Opened STREAM channel identifier."
+        },
+        {
+          "id": 2,
+          "name": "profile",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 32,
+          "description": "Bound Stream Profile name."
+        },
+        {
+          "id": 3,
+          "name": "transportProfile",
+          "type": "string",
+          "required": true,
+          "deprecated": false,
+          "maxLength": 32,
+          "description": "Bound Transport Profile name."
+        },
+        {
+          "id": 4,
+          "name": "mediaKind",
+          "type": "enum",
+          "required": true,
+          "deprecated": false,
+          "description": "Media kind carried by the stream; values are video or audio."
+        }
+      ]
+    },
+    {
+      "name": "StreamErrorEvent",
+      "type": "object",
+      "description": "Payload emitted when a STREAM media channel fails.",
+      "fields": [
+        {
+          "id": 1,
+          "name": "streamId",
+          "type": "uint32",
+          "required": false,
+          "deprecated": false,
+          "description": "STREAM channel identifier, absent if the failure happened before allocation."
+        },
+        {
+          "id": 2,
+          "name": "errorCode",
+          "type": "uint16",
+          "required": true,
+          "deprecated": false,
+          "description": "AXTP ErrorCode value describing the stream failure."
+        },
+        {
+          "id": 3,
+          "name": "message",
+          "type": "string",
+          "required": false,
+          "deprecated": false,
+          "maxLength": 128,
+          "description": "Optional diagnostic text."
         }
       ]
     }

@@ -145,7 +145,7 @@ priority: P0
 
 ## 5. MVP 最小方法集合
 
-MVP 方法表以 `standard/registry/method_registry.yaml` 为事实源。当前 AXTP v1 MVP 只包含下列已注册方法；其他方法即使出现在后续规划表中，也不得视为当前实现合同。
+MVP 方法表以 `registry/method/method_registry.yaml` 与 `registry/domains/<domain>/domain.yaml` 为事实源。当前 AXTP v1 MVP 只包含下列已注册为 `mvp` 的方法；其他方法即使出现在后续规划表中，也不得视为当前 MVP 实现合同。
 
 | methodId | methodName | Domain | 优先级 | 说明 |
 |---:|---|---|---|---|
@@ -164,7 +164,7 @@ MVP 方法表以 `standard/registry/method_registry.yaml` 为事实源。当前 
 
 ## 6. 完整 MethodId 规划表
 
-以下表格是领域规划草案，用于保留编号空间和讨论未来能力；当前实现状态以 `standard/registry/method_registry.yaml` 及生成产物为准。
+以下表格是领域规划草案，用于保留编号空间和讨论未来能力；当前实现状态以 `registry/method/method_registry.yaml`、`registry/domains/<domain>/domain.yaml` 及生成产物为准。
 
 ### 6.1 device.*
 
@@ -457,7 +457,7 @@ MVP 方法表以 `standard/registry/method_registry.yaml` 为事实源。当前 
 
 ## 7. 老协议适配 MethodId 表
 
-老协议适配不要求保持原始 `CmdValue` 数值，但必须保留原有业务语义。映射必须记录在 `legacy_cmd_mapping.yaml` 中。
+老协议适配不要求保持原始 `CmdValue` 数值，但必须保留原有业务语义。映射必须记录在 `registry/legacy/legacy_mapping.yaml` 中。
 
 如果老协议 `CmdValue` 超过 `uint16`，不应直接作为 `methodId` 使用，应映射为 AXTP 新 methodId，并在 `legacy.cmdValue` 中记录原值。
 
@@ -465,14 +465,14 @@ MVP 方法表以 `standard/registry/method_registry.yaml` 为事实源。当前 
 |---|---:|---|---:|---|---:|---|
 | AXDP_HID | `0xB0002` | BetaDeviceInfo | `0x0101` | `device.getInfo` | 是 | 设备信息查询 |
 | AXDP_HID | `0xC0021` | CommonSetVideoMode | `0x0706` | `video.setMode` | 可选 | 视频模式设置，P1 适配 |
-| AXDP_HID | `0xA0001` | AlphaUpgradeInfo | `0x0B01` | `firmware.getInfo` | 是 | 固件升级信息查询 |
+| AXDP_HID | `0xA0001` | AlphaUpgradeInfo | `0x0B01` | `firmware.getInfo` | 可选 | 固件升级信息查询，属于 P1 规划 |
 | Legacy HID/BLE | TBD | GetBrightness | `0x0501` | `display.getBrightness` | 是 | 若旧协议存在亮度查询命令，应映射到此方法 |
 | Legacy HID/BLE | TBD | SetBrightness | `0x0502` | `display.setBrightness` | 是 | 若旧协议存在亮度设置命令，应映射到此方法 |
 | Legacy HID/BLE | TBD | UpgradeBegin | `0x0B02` | `firmware.begin` | 是 | 若旧协议存在升级开始命令，应映射到此方法 |
 | Legacy HID/BLE | TBD | UpgradeEnd | `0x0B03` | `firmware.end` | 是 | 若旧协议存在升级结束命令，应映射到此方法 |
 | Legacy HID/BLE | TBD | UpgradeVerify | `0x0B04` | `firmware.verify` | 是 | 若旧协议存在升级校验命令，应映射到此方法 |
 
-TBD 表示需要从老协议表中补充具体 CmdValue，后续在 `legacy_cmd_mapping.yaml` 中补齐。
+TBD 表示需要从老协议表中补充具体 CmdValue，后续在 `registry/legacy/legacy_mapping.yaml` 中补齐。
 
 ---
 

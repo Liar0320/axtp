@@ -52,9 +52,18 @@ export interface FrameProfile {
 export interface TransportProfile {
   name: string;
   family: string;
+  mode?: string;
   frameProfile: string;
   production: boolean;
   maxFrameSize?: number;
+  rpcEncodings?: string[];
+  supportsControl?: boolean;
+  supportsStream?: boolean;
+  physicalClient?: string;
+  physicalServer?: string;
+  logicalClient?: string;
+  logicalServer?: string;
+  helloSender?: string;
   usage?: string;
   notes?: string;
 }

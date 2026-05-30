@@ -7,7 +7,7 @@
 
 版本：v1.0.0-rc1
 状态：AXTP v1 Core Freeze Candidate
-适用范围：AXTP v1 wire format freeze 规则、版本策略、USB HID、BLE、UART、TCP、WebSocket、旧 AXDP/Alpha/Beta/Common/CmdValue 类协议、旧 JSON-RPC/二进制 RPC/OTA/RawStream/LogStream 协议迁移
+适用范围：AXTP v1 wire format freeze 规则、版本策略、USB HID、TCP、WebSocket JSON、旧 AXDP/Alpha/Beta/Common/CmdValue 类协议、旧 JSON-RPC/二进制 RPC/OTA/RawStream/LogStream 协议迁移
 
 ---
 
@@ -21,10 +21,8 @@
 
 | 对象 | 规范归属 | 冻结内容 |
 |---|---|---|
-| Standard L1 Frame Header | 02 §7 | 12B 固定布局，字段顺序/长度/语义不变 |
-| Compact L1 Frame Header | 02 §8 | 4B 固定布局，VT/PayloadLength/MessageId/FrameInfo 不变 |
-| Standard CRC | 02 §10 | CRC16-CCITT-FALSE，覆盖 Header(12B)+Payload |
-| Compact CRC | 02 §10 | CRC8-MAXIM，覆盖 Header(4B)+Payload |
+| Standard L1 Frame Header | 02 §4 | 12B 固定布局，字段顺序/长度/语义不变 |
+| Standard CRC | 02 §7 | CRC16-CCITT-FALSE，覆盖 Header(12B)+Payload |
 | Control L2 Payload Header | 04 §2.1 | 5B 固定头：opcode/controlId/statusCode |
 | RPC Binary L2 Payload Header | 05 §19.1 | 11B 固定头：rpcEncoding/rpcOp/requestId/methodOrEventId/statusCode/bodyEncoding |
 | STREAM L2 Payload Header | 06 §3.1 | 16B 固定头：streamId/seqId/cursor |
@@ -56,7 +54,7 @@
 - 新增 Stream Profile（不修改 STREAM Header 结构）
 - 新增 rpcEncoding 类型
 - 新增 Transport Profile（不修改既有 Transport Profile 的 wire format）
-- 新增 Frame Profile（不修改既有 Frame Profile 的解析规则）
+- 新增低带宽 Frame Profile（进入 17《AXTP Low-Bandwidth Degradation》，不修改 v1 Core Standard Frame）
 ```
 
 ### 0.4 ID 不复用规则
@@ -82,9 +80,9 @@
 
 ```text
 - 同一个 AXTP Session 内 Frame Profile 不切换
-- Transport Profile 固定决定 Frame Profile（见 01 §4、03 §1）
+- Transport Profile 固定决定是否使用 Standard Frame（见 01 §4、03 §1）
 - OPEN/ACCEPT 不协商 Header Profile
-- 如需使用其他 Frame Profile，必须选择其他 Transport Profile 或重新 OPEN
+- 如需使用低带宽降级 Frame Profile，必须选择独立降级 Transport Profile 或重新 OPEN
 ```
 
 ### 0.7 specVersion 与 registryVersion 分离
@@ -99,7 +97,7 @@
 
 ```text
 - 08-13 文档是 Protocol Definition 元规范，定义 registry/domain YAML 到 protocol/axtp.protocol.yaml 的映射约束
-- registry/**/*.yaml 与 domains/**/*.yaml 是具体业务内容的机器事实源
+- registry/**/*.yaml 与 registry/domains/**/*.yaml 是具体业务内容的机器事实源
 - protocol/axtp.protocol.yaml 是由 axtpc 聚合生成的 Protocol IR，不得手写修改
 - generated/ 目录下的产物由 axtpc 生成，不得手写修改
 - 如需修改生成产物，必须修改 registry/domain YAML 后重新生成
@@ -312,21 +310,9 @@ void dispatchFrame(const uint8_t* buf, size_t len) {
 }
 ```
 
-**Compact Frame 判定（BLE/HID/UART）：**
+**低带宽降级判定（HID-64/BLE/UART）：**
 
-Compact Frame 无 Magic，依赖传输层帧边界。判定策略：
-
-1. 读取第一个字节 `VT`，高 4 bit 为 Version，低 4 bit 为 PayloadType
-2. 若 Version == `0x01` 且 PayloadType ∈ `{0x01, 0x02, 0x03}`，视为 AXTP Compact Frame
-3. 否则抛给 Legacy Adapter
-
-```cpp
-bool isAxtpCompactFrame(uint8_t firstByte) {
-    uint8_t version     = (firstByte >> 4) & 0x0F;
-    uint8_t payloadType = firstByte & 0x0F;
-    return version == 0x01 && payloadType >= 0x01 && payloadType <= 0x03;
-}
-```
+Compact/HID-64/BLE/UART 不属于 AXTP v1 Core 必选路径。若后续启用低带宽降级，嗅探规则必须在对应降级 profile 中定义，并遵守 17《AXTP Low-Bandwidth Degradation》的边界：不得改变 PayloadType、CONTROL/RPC/STREAM Payload Header 或 STREAM 16B Header。
 
 **原则**：嗅探逻辑必须是无状态的 O(1) 判定，不得引入缓冲区等待。判定失败即走 Legacy 路径，不得丢弃数据。
 
@@ -496,15 +482,15 @@ legacy:
 
 迁移时，有两种模式。两种模式的边界必须严格区分：DS-RPC Text Profile 可以通过 Adapter 接收旧 JSON-RPC object；Framed AXTP RPC 不得把完整 JSON-RPC envelope 作为新的 wire payload。
 
-#### 模式 A：WebSocket Text / HTTP 调试模式
+#### 模式 A：WebSocket Unframed JSON
 
-可继续保持 Unframed JSON-RPC 作为 Legacy/Debug 输入：
+WebSocket Unframed JSON 是正式 RPC-only 通道，也可以作为 Legacy Adapter 的入口：
 
 ```text
-Transport = WebSocket Text / HTTP
+Transport = AXTP-WS-JSON / AXTP-WS-CLOUD-REVERSE
 Frame Header = none
-Input        = legacy JSON-RPC request object
-Output       = DS-RPC Text Profile object 或 Adapter 调用结果
+Input        = JSON sid/op/d envelope 或 Adapter 接收的 legacy JSON-RPC request object
+Output       = JSON sid/op/d envelope 或 Adapter 调用结果
 ```
 
 适合：
@@ -931,8 +917,8 @@ AXTP 拆成两类能力：
 | --- |---|
 | 支持命令列表 | `capability.supportedMethods` / `supportedMethods` |
 | 支持事件列表 | `supportedEvents` |
-| 支持升级 | `firmware.supported` |
-| 支持断点续传 | `firmware.resumeSupported` |
+| 支持升级 | `firmware.ota` |
+| 支持断点续传 | `firmware.resume` |
 | 支持亮度范围 | `display.brightnessMin / display.brightnessMax / display.brightnessStep` |
 | 支持视频模式 | `video.modes` |
 | 支持日志导出 | `log.exportSupported` |
@@ -1388,12 +1374,13 @@ removed from default SDK
 Generator v1 必须读取：
 
 ```text
-method_registry.yaml
-event_registry.yaml
-error_code.yaml
-capability_registry.yaml
-legacy_mapping.yaml
-schema/*.yaml
+registry/method/method_registry.yaml
+registry/event/event_registry.yaml
+registry/error/error_code.yaml
+registry/capability/capability_registry.yaml
+registry/legacy/legacy_mapping.yaml
+registry/schema/*.yaml
+registry/domains/<domain>/domain.yaml
 ```
 
 并生成：
@@ -1582,8 +1569,8 @@ AXTP 请求 -> 旧请求
 | `11-AXTP-Errors-Registry-Spec.md` | 定义 errors 元模型与错误码映射 |
 | `12-AXTP-Types-and-Capability-Spec.md` | 定义 types 元模型与 v1 capability 范围 |
 | `13-AXTP-Profiles-Registry-Spec.md` | 定义 profiles 元模型与实现范围 |
-| `protocol-source/legacy/AXTP-Legacy-Compatibility-Reference.md` | 保存旧协议兼容参考和映射候选 |
-| `protocol-source/legacy-docs/02-registry/` | 保存老 08-13 手写注册表原文，仅作迁移参考 |
+| `docs/source/AXTP-Legacy-Compatibility-Reference.md` | 保存旧协议兼容参考和映射候选 |
+| `docs/source/` | 保存 source/planning 文档，仅作迁移和审查参考 |
 
 ---
 
@@ -1593,7 +1580,7 @@ AXTP 请求 -> 旧请求
 
 | 内容类型 | 处理方式 |
 |---|---|
-| 旧 CmdValue / 旧 methodName | 写入 `docs/source/` legacy 材料，稳定后以 `legacy` 字段进入 `registry/` 或 `domains/` YAML |
+| 旧 CmdValue / 旧 methodName | 写入 `docs/source/` legacy 材料，稳定后以 `legacy` 字段进入 `registry/` 或 `registry/domains/` YAML |
 | 旧状态码 | 写入 legacy error mapping，稳定后映射到 `errors[].code` |
 | 旧事件名 / 旧推送格式 | 写入 legacy event mapping，稳定后映射到 `events[]` |
 | 旧能力表 / Feature bitmap | 写入 legacy capability mapping；完整 Capability Model 仍属于 v2/P1 |

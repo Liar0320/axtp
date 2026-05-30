@@ -9,19 +9,20 @@ This file records the migration plan from hand-written registry documents to a P
 
 AXTP v1 now separates the documentation system into three layers:
 
-1. Stable normative specs under `standard/docs/`.
-2. Protocol content source under `protocol-source/`.
-3. Machine-readable protocol facts under `protocol/axtp.protocol.yaml`, with generated outputs under `generated/`.
-4. Future and legacy source material under `protocol-source/future/` and `protocol-source/legacy/`.
+1. Stable normative specs under `docs/specs/`.
+2. Machine-readable protocol facts under `registry/**/*.yaml` and `registry/domains/**/*.yaml`.
+3. Generated Protocol IR under `protocol/axtp.protocol.yaml`.
+4. Generated outputs under `docs/generated/` and runtime/tooling generated directories.
+5. Source planning, future and legacy material under `docs/source/`.
 
 ## 2. Source Of Truth
 
-`protocol/axtp.protocol.yaml` is the only machine-readable protocol definition for v1 method, event, error, type and profile facts.
+`registry/**/*.yaml` and `registry/domains/**/*.yaml` are the machine-readable source of truth for v1 method, event, error, schema and profile facts. `protocol/axtp.protocol.yaml` is generated Protocol IR and must not be edited by hand.
 
 The previous 08-13 hand-written registry documents have been moved to:
 
 ```text
-protocol-source/legacy-docs/02-registry/
+docs/source/
 ```
 
 They are retained as migration reference material, not as current normative registry tables.
@@ -43,7 +44,7 @@ These files must not contain full business request/event/error tables.
 
 ## 4. Protocol Definition Layer
 
-`protocol/axtp.protocol.yaml` contains:
+Generated `protocol/axtp.protocol.yaml` contains:
 
 - protocol metadata
 - overview and architecture text used to generate `protocol.md`
@@ -52,14 +53,14 @@ These files must not contain full business request/event/error tables.
 - CONTROL and STREAM decisions
 - types, methods, events, errors and profiles
 
-New protocol content must be added to `protocol/axtp.protocol.yaml` first. Generated documentation, schemas, SDK enums, bitmaps and conformance tests must be derived from it.
+New protocol content must be added to `registry/**/*.yaml` or `registry/domains/<domain>/domain.yaml` first. Generated documentation, schemas, SDK enums, bitmaps and conformance tests must be derived from the generated Protocol IR.
 
 ## 5. Generation Targets
 
 The target generated tree is:
 
 ```text
-generated/
+docs/generated/
   protocol.md
   schema/
   cpp/
@@ -75,8 +76,7 @@ generated/
 - Transport Profile determines Frame Profile.
 - AXTP v1 does not negotiate Header/Profile combinations dynamically.
 - `STANDARD_FRAME = STANDARD_L1 + STANDARD_L2`.
-- `COMPACT_FRAME = COMPACT_L1 + COMPACT_L2`.
-- Mixed Standard/Compact L1/L2 combinations are not supported in v1.
+- Compact/HID-64/BLE/UART are low-bandwidth degradation paths outside AXTP v1 Core.
 - CONTROL payload uses one 5-byte fixed header.
 - Binary RPC payload uses one 11-byte fixed header.
 - STREAM payload uses one 16-byte fixed header.
@@ -85,26 +85,26 @@ generated/
 - READY is optional/reserved and not required by v1 Core.
 - v1 capability discovery is limited to `capability.supportedMethods`.
 - Full dynamic capability modeling is reserved for v2/P1.
-- WebSocket Text and HTTP JSON are debug or legacy adapter paths and must not carry production STREAM.
+- WebSocket Unframed JSON is a formal RPC-only path and must not carry production STREAM.
 - Domain-scoped method/event masks are wire-relevant and must be specified in v1 Core docs, not only in legacy registry tables.
 
 ## 7. Migration Steps
 
-1. Keep existing stable specs in `standard/docs/00-spec/`.
+1. Keep existing stable specs in `docs/specs/`.
 2. Replace old 08-13 registry tables with Protocol Definition meta specs.
-3. Move old 08-13 registry documents into `protocol-source/legacy-docs/02-registry/`.
-4. Consolidate current registry/schema facts into `protocol/axtp.protocol.yaml`.
-5. Generate `generated/protocol.md` from `protocol/axtp.protocol.yaml`.
+3. Keep old 08-13 source/planning documents under `docs/source/` as review material.
+4. Consolidate current registry/schema facts into `registry/**/*.yaml` and `registry/domains/**/*.yaml`.
+5. Generate `protocol/axtp.protocol.yaml` and `docs/generated/protocol.md` from Source YAML.
 6. Extend the generator so schema, SDK enum, bitmap and conformance outputs are derived from the same file.
-7. Move complete Capability Model material into `protocol-source/future/AXTP-Capability-Model-v2.md`.
-8. Move legacy compatibility tables into `protocol-source/legacy/AXTP-Legacy-Compatibility-Reference.md`.
+7. Keep complete Capability Model material in `docs/source/AXTP-Capability-Model-v2.md`.
+8. Keep legacy compatibility tables in `docs/source/AXTP-Legacy-Compatibility-Reference.md`.
 
 ## 8. Change Workflow
 
 For a new method/event/type/error/profile:
 
-1. Update `protocol/axtp.protocol.yaml`.
+1. Update `registry/**/*.yaml` or `registry/domains/<domain>/domain.yaml`.
 2. Run protocol validation.
-3. Regenerate `generated/protocol.md` and code artifacts.
+3. Regenerate `protocol/axtp.protocol.yaml`, `docs/generated/protocol.md` and code artifacts.
 4. Review generated diffs.
 5. Do not manually edit generated files.

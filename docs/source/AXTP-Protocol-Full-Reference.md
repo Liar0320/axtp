@@ -8,13 +8,14 @@
 This file consolidates AXTP v1 business protocol content for human review. The machine-readable source of truth is:
 
 ```text
-protocol/axtp.protocol.yaml
+registry/**/*.yaml
+registry/domains/**/*.yaml
 ```
 
-The legacy hand-written 08-13 registry documents are retained at:
+The source/planning registry documents are retained at:
 
 ```text
-protocol-source/legacy-docs/02-registry/
+docs/source/
 ```
 
 ## 2. Current v1 MVP Methods
@@ -104,7 +105,7 @@ The `AXTP-MVP` profile requires:
 - display brightness and firmware update events.
 - method bitmap discovery derived from `methods[].bitOffset`.
 
-Transport bindings are defined in `protocol/axtp.protocol.yaml`.
+Transport bindings are defined in Source YAML and emitted into the generated `protocol/axtp.protocol.yaml`.
 
 ## 7. Legacy Mapping Notes
 
@@ -115,4 +116,4 @@ The current v1 protocol preserves known legacy command mappings as request metad
 | `device.getInfo` | `0x000B0002` | `BetaDeviceInfo` | fixed_struct |
 | `display.setBrightness` | `0x000B0042` | `BetaBrightnessSet` | fixed_struct |
 
-Additional legacy material must be migrated into `protocol-source/legacy-inputs/` or summarized in `protocol-source/legacy/AXTP-Legacy-Compatibility-Reference.md` before it is promoted into `protocol/axtp.protocol.yaml`.
+Additional legacy material must be summarized in `docs/source/AXTP-Legacy-Compatibility-Reference.md` before it is promoted into `registry/**/*.yaml` or `registry/domains/**/*.yaml`.

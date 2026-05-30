@@ -3,7 +3,10 @@ import type { SpecModel } from "../models.js";
 import { hex, sortById, toJsonStable, writeTextFile } from "../util.js";
 
 export async function emitJson(spec: SpecModel, outDir: string): Promise<void> {
-  const jsonDir = path.join(outDir, "json");
+  await emitJsonFiles(spec, path.join(outDir, "json"));
+}
+
+export async function emitJsonFiles(spec: SpecModel, jsonDir: string): Promise<void> {
   await Promise.all([
     writeTextFile(path.join(jsonDir, "method_registry.generated.json"), toJsonStable({ methods: sortById(spec.methods).map(withIdHex) })),
     writeTextFile(path.join(jsonDir, "event_registry.generated.json"), toJsonStable({ events: sortById(spec.events).map(withIdHex) })),

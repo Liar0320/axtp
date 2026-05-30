@@ -218,6 +218,47 @@ function assertControlOpcodes(model: ProtocolModel): void {
   }
 }
 
+function assertCurrentTransportPolicy(model: ProtocolModel): void {
+  for (const frameProfile of model.frameProfiles) {
+    if (frameProfile.name.startsWith("COMPACT_")) {
+      fail(frameProfile.name, "frameProfiles", "COMPACT_FRAME is documented only in the low-bandwidth degradation spec, not current Protocol IR");
+    }
+  }
+
+  for (const transport of model.transports) {
+    if (transport.name.includes("HID-64")) {
+      fail(transport.name, "transports", "AXTP-HID-64 must not be exposed as a current v1 Core transport");
+    }
+
+    const rpcEncodings = transport.rpcEncodings ?? [];
+    if (transport.frameProfile === "none") {
+      if (transport.supportsControl !== false || transport.supportsStream !== false) {
+        fail(transport.name, "transports", "WebSocket Unframed JSON transports must not support CONTROL or STREAM");
+      }
+      if (rpcEncodings.length !== 1 || rpcEncodings[0] !== "JSON") {
+        fail(transport.name, "rpcEncodings", "WebSocket Unframed JSON transports must use rpcEncodings=[JSON]");
+      }
+      continue;
+    }
+
+    if (transport.frameProfile !== "STANDARD_FRAME") {
+      fail(transport.name, "frameProfile", "current Standard Framed transports must use STANDARD_FRAME");
+    }
+    if (transport.supportsControl !== true || transport.supportsStream !== true) {
+      fail(transport.name, "transports", "Standard Framed transports must support CONTROL and STREAM");
+    }
+  }
+
+  for (const profile of model.profiles) {
+    if (profile.transportProfiles.includes("AXTP-HID-64")) {
+      fail(profile.name, "transportProfiles", "profiles must use AXTP-USB-HID instead of AXTP-HID-64");
+    }
+    if (profile.frameProfile?.startsWith("COMPACT_") || profile.frameProfiles.some((frameProfile) => frameProfile.startsWith("COMPACT_"))) {
+      fail(profile.name, "frameProfile", "profiles must not reference COMPACT_FRAME in the current Protocol IR");
+    }
+  }
+}
+
 export function validateProtocolDefinition(model: ProtocolModel): string[] {
   assertNoForbiddenKeys(model.raw);
   assertNoUnsupportedProfileKeys(model.raw);
@@ -240,6 +281,7 @@ export function validateProtocolDefinition(model: ProtocolModel): string[] {
   assertSchemaDefinitions(model.schemas);
   assertEmptySchemaUsage(model);
   assertErrorRanges(model.errors);
+  assertCurrentTransportPolicy(model);
 
   const typeNames = new Set(model.schemas.map((item) => item.name));
   const methodNames = new Set(model.methods.map((item) => item.name));

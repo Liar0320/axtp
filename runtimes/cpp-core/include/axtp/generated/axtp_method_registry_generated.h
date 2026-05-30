@@ -18,12 +18,13 @@ inline constexpr MethodDescriptor kMethodRegistry[] = {
     { 0x0301, "capability.supportedMethods", "capability", "CapabilitySupportedMethodsRequest", "CapabilitySupportedMethodsResponse" },
     { 0x0501, "display.getBrightness", "display", "DisplayGetBrightnessRequest", "DisplayGetBrightnessResponse" },
     { 0x0502, "display.setBrightness", "display", "DisplaySetBrightnessRequest", "CommonEmptyResponse" },
+    { 0x0901, "stream.open", "stream", "StreamOpenRequest", "StreamOpenResponse" },
     { 0x0B02, "firmware.begin", "firmware", "FirmwareBeginRequest", "FirmwareBeginResponse" },
-    { 0x0B03, "firmware.end", "firmware", "FirmwareEndRequest", "CommonEmptyResponse" },
-    { 0x0B04, "firmware.verify", "firmware", "FirmwareVerifyRequest", "CommonEmptyResponse" },
-    { 0x0B05, "firmware.apply", "firmware", "FirmwareApplyRequest", "CommonEmptyResponse" },
+    { 0x0B03, "firmware.end", "firmware", "FirmwareEndRequest", "FirmwareEndResponse" },
+    { 0x0B04, "firmware.verify", "firmware", "FirmwareVerifyRequest", "FirmwareVerifyResponse" },
+    { 0x0B05, "firmware.apply", "firmware", "FirmwareApplyRequest", "FirmwareApplyResponse" },
 };
 
-inline constexpr std::size_t kMethodRegistryCount = 8;
+inline constexpr std::size_t kMethodRegistryCount = 9;
 
 } // namespace axtp

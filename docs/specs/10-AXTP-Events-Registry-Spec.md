@@ -6,13 +6,15 @@
 
 版本：v1.0.0-rc1
 状态：Protocol Definition 元规范
-适用范围：`registry/event/` 与 `domains/*/domain.yaml` 中 event 源条目的字段、约束和生成规则
+适用范围：`registry/event/` 与 `registry/domains/<domain>/domain.yaml` 中 event 源条目的字段、约束和生成规则
 
 ---
 
 ## 1. 文档定位
 
-本文档只定义 event registry 的元模型，不手写完整 EventId 表。具体 event 内容必须写入 `registry/event/` 或 `domains/*/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `events:` 由 Generator 聚合生成。
+本文档只定义 event registry 的元模型，不手写完整 EventId 表。具体 event 内容必须写入 `registry/event/` 或 `registry/domains/<domain>/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `events:` 由 Generator 聚合生成。
+
+新增业务 event 默认写入 `registry/domains/<domain>/domain.yaml`。`registry/event/event_registry.yaml` 只承载 Core/MVP 已采纳 event；业务 event 晋升为 Core/MVP 时必须迁移并删除 domain 中的原条目，不得两边重复定义。
 
 ---
 

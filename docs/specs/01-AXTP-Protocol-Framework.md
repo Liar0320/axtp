@@ -8,7 +8,7 @@
 版本：v1.0.0-rc1
 状态：AXTP v1 Core Freeze Candidate
 适用范围：AXTP v1 Core 分层、职责边界、生产路径与文档索引
-后续文档：02《AXTP Frame and Payload Spec》、03《AXTP Transport Profiles》、04《AXTP Control Session Spec》、05《AXTP RPC Session Spec》、06《AXTP Stream Spec》、07《AXTP Compatibility and Versioning》
+后续文档：02《AXTP Frame and Payload Spec》、03《AXTP Transport Profiles》、04《AXTP Control Session Spec》、05《AXTP RPC Session Spec》、06《AXTP Stream Spec》、07《AXTP Compatibility and Versioning》、17《AXTP Low-Bandwidth Degradation》
 
 ---
 
@@ -35,7 +35,7 @@
 | Frame Profile / PayloadType / Fragment / CRC     |
 +--------------------------------------------------+
 | Transport Layer                                  |
-| WebSocket / TCP / HID / BLE / UART / USB Bulk    |
+| USB HID / TCP / WebSocket JSON                   |
 +--------------------------------------------------+
 ```
 
@@ -51,32 +51,39 @@
 
 ## 3. v1 Core 生产路径
 
-AXTP v1 Core 的正式生产路径是 Framed Mode：
+AXTP v1 Core 的正式路径分为两类：
 
 ```text
-Transport Profile
-  -> fixed Frame Profile
+Standard Framed
+  -> AXTP-USB-HID / AXTP-TCP
+  -> STANDARD_FRAME
   -> PayloadType = CONTROL / RPC / STREAM
-  -> Binary RPC / Binary STREAM
+  -> rpcEncoding = BINARY / JSON
+
+WebSocket Unframed JSON
+  -> AXTP-WS-JSON / AXTP-WS-CLOUD-REVERSE
+  -> no Frame Header
+  -> RPC JSON sid/op/d envelope only
 ```
 
-WebSocket Text JSON-RPC 和 HTTP JSON 只作为 Debug 或 Legacy Adapter，不作为生产客户端必须实现路径，不承载正式 STREAM，不参与 CONTROL ACK/NACK / RESUME。
+WebSocket Unframed JSON 是正式 RPC-only 通道，但不承载正式 STREAM，不参与 CONTROL ACK/NACK / RESUME。
 
 ---
 
 ## 4. Frame Profile 冻结原则
 
-Transport Profile 决定 Frame Profile。同一个 AXTP Session 内 Frame Profile 不切换。OPEN / ACCEPT 只协商运行参数，不协商 Header Profile。
+Transport Profile 决定是否使用 Frame Header。同一个 AXTP Session 内 Frame 形态不切换。OPEN / ACCEPT 只协商运行参数，不协商 Header Profile。
 
 默认映射：
 
 | Transport Profile | Frame Profile |
 |---|---|
-| AXTP-WS | STANDARD_FRAME |
+| AXTP-USB-HID | STANDARD_FRAME |
 | AXTP-TCP | STANDARD_FRAME |
-| AXTP-HID-64 | COMPACT_FRAME |
-| AXTP-BLE-RPC | COMPACT_FRAME |
-| AXTP-UART | COMPACT_FRAME with sync / length / crc-capable framing |
+| AXTP-WS-JSON | none |
+| AXTP-WS-CLOUD-REVERSE | none |
+
+Compact / HID-64 / BLE / UART 迁移到 17《AXTP Low-Bandwidth Degradation》，不作为当前 v1 Core 主线。
 
 ---
 
@@ -121,9 +128,10 @@ v1 Core 保留 `capability` 域，但不实现完整 Capability Model。v1 Core 
 
 | 文档 | 内容 |
 |---|---|
-| 02《AXTP Frame and Payload Spec》 | Frame Profile、L1 Header、L2 Payload Header、PayloadType、CRC、分片 |
-| 03《AXTP Transport Profiles》 | WS / TCP / HID / BLE / UART 传输到 Frame Profile 的固定映射 |
+| 02《AXTP Frame and Payload Spec》 | Standard Header、PayloadType、CRC、分片 |
+| 03《AXTP Transport Profiles》 | USB HID / TCP / WebSocket JSON / Cloud Reverse 连接形态 |
 | 04《AXTP Control Session Spec》 | OPEN / ACCEPT / READY / ACK / NACK / HEARTBEAT / CLOSE |
 | 05《AXTP RPC Session Spec》 | Hello / Identify / Identified / Binary RPC / methodId / eventId |
 | 06《AXTP Stream Spec》 | 16B STREAM Header、streamId / seq / cursor、resume / retransmit / flow control |
 | 07《AXTP Compatibility and Versioning》 | v1 freeze rules、reserved 规则、ID 不复用、Legacy migration |
+| 17《AXTP Low-Bandwidth Degradation》 | Compact / HID-64 / BLE / UART 降级路径 |

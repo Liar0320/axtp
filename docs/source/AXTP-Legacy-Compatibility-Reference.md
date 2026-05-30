@@ -10,13 +10,13 @@ This file collects legacy compatibility material that should not live in v1 Core
 Normative migration rules live in:
 
 ```text
-standard/docs/00-spec/07-AXTP-Compatibility-and-Versioning.md
+docs/specs/07-AXTP-Compatibility-and-Versioning.md
 ```
 
 Original legacy registry documents are retained at:
 
 ```text
-protocol-source/legacy-docs/02-registry/
+docs/source/
 ```
 
 ## 2. Mapping Categories
@@ -59,10 +59,9 @@ Unmapped legacy status values should use a future legacy adapter error, not a fr
 
 ## 5. Promotion Rule
 
-Legacy material is only promoted to `protocol/axtp.protocol.yaml` after it has:
+Legacy material is only promoted to `registry/**/*.yaml` or `registry/domains/**/*.yaml` after it has:
 
 1. A stable AXTP method/event/error/type/profile mapping.
 2. A clear owner domain.
 3. A schema or explicit `RAW_BYTES` compatibility body.
 4. Conformance tests or adapter test vectors.
-

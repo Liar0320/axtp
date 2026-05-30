@@ -2,9 +2,11 @@
   "events": [
     {
       "id": 34055,
+      "bitOffset": 0,
       "name": "display.brightnessChanged",
       "domain": "display",
       "status": "mvp",
+      "description": "Emitted when display brightness changes.",
       "deprecated": false,
       "eventSchema": "DisplayBrightnessChangedEvent",
       "severity": "info",
@@ -18,10 +20,51 @@
       "idHex": "0x8507"
     },
     {
+      "id": 35073,
+      "bitOffset": 0,
+      "name": "stream.opened",
+      "domain": "stream",
+      "status": "draft",
+      "description": "Emitted after a STREAM media channel is opened and bound to a streamId.",
+      "since": "1.0.0",
+      "deprecated": false,
+      "eventSchema": "StreamOpenedEvent",
+      "severity": "info",
+      "trigger": [
+        "stream.open"
+      ],
+      "capabilities": [
+        "stream.hidMedia"
+      ],
+      "idHex": "0x8901"
+    },
+    {
+      "id": 35075,
+      "bitOffset": 1,
+      "name": "stream.error",
+      "domain": "stream",
+      "status": "draft",
+      "description": "Emitted when a STREAM media channel fails or cannot continue.",
+      "since": "1.0.0",
+      "deprecated": false,
+      "eventSchema": "StreamErrorEvent",
+      "severity": "error",
+      "trigger": [
+        "stream.open",
+        "stream runtime"
+      ],
+      "capabilities": [
+        "stream.hidMedia"
+      ],
+      "idHex": "0x8903"
+    },
+    {
       "id": 35586,
+      "bitOffset": 0,
       "name": "firmware.updateProgress",
       "domain": "firmware",
       "status": "mvp",
+      "description": "Emitted while firmware OTA transfer or processing advances.",
       "deprecated": false,
       "eventSchema": "FirmwareUpdateProgressEvent",
       "severity": "info",
@@ -36,9 +79,11 @@
     },
     {
       "id": 35587,
+      "bitOffset": 1,
       "name": "firmware.updateCompleted",
       "domain": "firmware",
       "status": "mvp",
+      "description": "Emitted when firmware update processing completes successfully.",
       "deprecated": false,
       "eventSchema": "FirmwareUpdateCompletedEvent",
       "severity": "info",
@@ -53,9 +98,11 @@
     },
     {
       "id": 35588,
+      "bitOffset": 2,
       "name": "firmware.updateFailed",
       "domain": "firmware",
       "status": "mvp",
+      "description": "Emitted when firmware update processing fails.",
       "deprecated": false,
       "eventSchema": "FirmwareUpdateFailedEvent",
       "severity": "error",

@@ -27,12 +27,12 @@
 
 本文定义 AXTP Generator v1 的当前实现规则和后续演进方向。
 
-Generator v1 的核心定位已经从早期的“Registry 表格生成器”升级为“Protocol Definition 文档编译器”。它以 `registry/**/*.yaml` 和 `domains/**/*.yaml` 为机器事实源，生成 `protocol/axtp.protocol.yaml` 作为聚合后的 Protocol IR，再由 Protocol IR 生成面向用户阅读的协议文档和面向工具消费的 JSON。
+Generator v1 的核心定位已经从早期的“Registry 表格生成器”升级为“Protocol Definition 文档编译器”。它以 `registry/**/*.yaml` 和 `registry/domains/**/*.yaml` 为机器事实源，生成 `protocol/axtp.protocol.yaml` 作为聚合后的 Protocol IR，再由 Protocol IR 生成面向用户阅读的协议文档和面向工具消费的 JSON。
 
 当前主流程：
 
 ```text
-registry/**/*.yaml + domains/**/*.yaml
+registry/**/*.yaml + registry/domains/**/*.yaml
         ↓ validate-sources
 Source Model
         ↓ build-protocol
@@ -42,12 +42,13 @@ docs/generated/protocol.md           # user-facing protocol reference
 docs/generated/protocol.json         # normalized machine model
 ```
 
-旧的 Registry/C++ 生成器仍保留，但不再作为协议文档主入口：
+Registry/C++/test-vector 生成器仍保留，但必须使用同一份 Source Model：
 
 ```text
-registry/**/*.yaml
+registry/**/*.yaml + registry/domains/**/*.yaml
         ↓ generate-registry
 docs/generated/*_registry.generated.md
+tooling/mcp/*.generated.json
 runtimes/cpp-core/include/axtp/generated/*
 tooling/test-vectors/*
 ```
@@ -62,7 +63,7 @@ tooling/test-vectors/*
 
 ```text
 registry/**/*.yaml
-domains/**/*.yaml
+registry/domains/**/*.yaml
 ```
 
 以下文件和目录是生成产物，不得手写：
@@ -75,7 +76,9 @@ tooling/* generated artifacts
 generators/src/__snapshots__/*
 ```
 
-`protocol/axtp.protocol.yaml` 只是聚合 IR，不是人工编辑入口。新增业务必须写入 `domains/<domain>/domain.yaml` 或对应 `registry/` 源文件。
+`protocol/axtp.protocol.yaml` 只是聚合 IR，不是人工编辑入口。新增业务默认写入 `registry/domains/<domain>/domain.yaml`；只有核心常量、公共 schema、MVP/Core 已采纳条目和 legacy 映射才写入对应 `registry/` 源文件。
+
+同一个 method/event/type/error/capability/profile 不得同时在 core registry 与 domain YAML 中重复定义。Generator 必须把两类 source 逻辑合并为一个 Source Model，并在重复 name、ID 或 bit_offset 时失败。
 
 ### 2.2 三段式编译
 
@@ -83,7 +86,7 @@ Generator v1 必须维持三段式边界：
 
 | 阶段 | 输入 | 输出 | 责任 |
 | ---- | ---- | ---- | ---- |
-| 业务录入段 | 规范、规划材料、用户业务需求 | `registry/**/*.yaml` / `domains/**/*.yaml` | 固化 ID、schema、error、event、capability、profile |
+| 业务录入段 | 规范、规划材料、用户业务需求 | `registry/**/*.yaml` / `registry/domains/**/*.yaml` | 固化 ID、schema、error、event、capability、profile |
 | Protocol IR 段 | Source YAML | `protocol/axtp.protocol.yaml` | 聚合、标准化、关键事实校验 |
 | 成果物段 | Protocol IR | `docs/generated/protocol.md` / `protocol.json` 等 | 面向用户和工具输出稳定产物 |
 
@@ -137,9 +140,10 @@ axtp/
 │   │   ├── capability_registry.yaml
 │   │   └── mvp_profile.yaml
 │   ├── schema/*.yaml
-│   └── legacy/legacy_mapping.yaml
-├── domains/
-│   └── <domain>/domain.yaml
+│   ├── legacy/legacy_mapping.yaml
+│   ├── domains/
+│   │   └── <domain>/domain.yaml
+│   └── vendor/                 # reserved, not enabled in v1 P0
 ├── protocol/
 │   └── axtp.protocol.yaml
 ├── docs/
@@ -153,6 +157,22 @@ axtp/
 ├── runtimes/
 └── tooling/
 ```
+
+目录职责审查：
+
+| 路径 | 当前作用 | 是否可手写 |
+| ---- | ---- | ---- |
+| `registry/core/` | 协议元信息、核心枚举、传输/帧/profile 事实源 | 是 |
+| `registry/method|event|error|capability|schema|legacy/` | 已采纳核心/MVP/共享事实源 | 是 |
+| `registry/domains/<domain>/domain.yaml` | 新增业务域事实源，包含 method/event/type/error/capability/profile | 是 |
+| `registry/vendor/` | P1 vendor extension 预留目录，当前不参与生成 | 否 |
+| `protocol/axtp.protocol.yaml` | Generator 生成的聚合 Protocol IR | 否 |
+| `docs/generated/` | Generator 生成的文档产物 | 否 |
+| `tooling/mcp/` | Generator 生成的 MCP JSON 产物 | 否 |
+| `runtimes/*/generated/` | Generator 生成的 runtime/codegen 产物 | 否 |
+| `tooling/test-vectors/` | Generator 生成的测试向量 | 否 |
+
+顶层 `domains/` 与 `registry/domain/` 已废弃；若顶层 `domains/**/*.yaml` 存在，`validate-sources` 必须失败并提示迁移到 `registry/domains/`。
 
 ---
 
@@ -210,13 +230,19 @@ firmware.begin/end/verify/apply
 CONTROL / RPC / STREAM shared schemas
 ```
 
+这些文件表示“核心公共事实”，不是所有新增业务的默认落点。只有当一个 domain 业务被治理为 Core/MVP 稳定能力时，才从 `registry/domains/<domain>/domain.yaml` 晋升到这里。晋升必须保持原有 methodId/eventId/errorCode/fieldId/bit_offset 不变，并从 domain YAML 删除对应条目，避免双事实源。
+
 ### 4.3 Domain YAML
 
 新增业务优先写入：
 
 ```text
-domains/<domain>/domain.yaml
+registry/domains/<domain>/domain.yaml
 ```
+
+Domain YAML 表示“业务域事实”。它同样会进入最终 `protocol/axtp.protocol.yaml`、`docs/generated/protocol.md`、MCP JSON、C++ headers 和 test vectors；区别只在治理层级，不在协议有效性。放在 domain YAML 中的 draft 或可选 profile 能力仍然是正式机器事实源，只是不自动成为 v1 Core/MVP 必选项。
+
+例如 `stream.open` 当前属于 `stream` domain 的 HID media profile 业务事实，应放在 `registry/domains/stream/domain.yaml`。如果未来它被定义为所有 AXTP v1 Core 实现必须支持的建流方法，再按晋升流程迁入 `registry/method/`、`registry/schema/`、`registry/capability/` 等核心文件。
 
 推荐结构：
 
@@ -273,7 +299,7 @@ errors:
     retryable: false
 
 capabilities:
-  - id: 0x0908
+  - id: 0x040A
     name: stream.hidMedia
     domain: stream
     status: draft
@@ -290,8 +316,8 @@ profiles:
     requiredEvents: [stream.opened]
     requiredErrors: [SUCCESS, RPC_PARAM_INVALID]
     requiredTypes: [StreamOpenRequest, StreamOpenResponse]
-    transportProfiles: [AXTP-HID-64]
-    frameProfile: COMPACT_FRAME
+    transportProfiles: [AXTP-USB-HID]
+    frameProfile: STANDARD_FRAME
 ```
 
 ### 4.4 Field 规则
@@ -353,17 +379,24 @@ IR 规则：
 ```text
 # AXTP Protocol
 ## Main Table of Contents
+## Implemented Domains
 ## Overview
 ## Design Goals / Non-Goals
 ## Connection Lifecycle
 ## Capability Discovery
+## Protocol Framework
+## Supported Connection Profiles
 # Methods
 ## <domain> Methods
+### Methods in this domain
+---
 ### <domain.method>
 #### Request Fields
 #### Response Fields
 # Events
 ## <domain> Events
+### Events in this domain
+---
 ### <domain.event>
 #### Payload Fields
 # Additional Types
@@ -371,11 +404,14 @@ IR 规则：
 # Profiles Reference
 ```
 
+顶部 `Main Table of Contents` 只列到 domain 入口，不展开所有 method/event 条目。每个 domain 内部必须先输出本 domain 的局部目录，例如 `Methods in this domain` 或 `Events in this domain`。
+
+`Implemented Domains` 必须展示当前已有 method 定义的全部 domain，并列出 method/event 数量。
+
 不再输出独立低层章节：
 
 ```text
 Frame Profiles
-Transport Profiles
 Payload Types
 Control Rules
 Stream Transfer Model
@@ -389,6 +425,8 @@ Types Reference
 每个 method 使用以下结构：
 
 ```markdown
+---
+
 ### firmware.begin
 
 Begin a firmware OTA transfer and allocate the STREAM context.
@@ -411,18 +449,21 @@ Type: `FirmwareBeginRequest`
 | ---- | :---: | :---: | ---- | :---: | ---- |
 ```
 
-具体方法名必须比字段块更醒目：
+文档标题层级必须保证字号从大到小依次为：domain、method、fields：
 
 ```text
 # Methods
 ## domain Methods
+---
 ### concrete.method
 #### Request/Response Fields
 ```
 
+每个 method/event block 必须以横线分隔。横线既是前一 block 的结束，也是后一 block 的开始，读者应能一眼看出某个方法的标题、metadata、request fields 和 response fields 属于同一个整体。
+
 ### 6.3 字段表样式
 
-字段表采用 obs-websocket 风格：
+字段表采用 obs-websocket 风格的 Markdown table：
 
 | 列 | 说明 |
 | ---- | ---- |
@@ -433,13 +474,14 @@ Type: `FirmwareBeginRequest`
 | `Value Restrictions` | `min/max/maxLength/derivedFrom/deprecated` |
 | `?Default Behavior` | 必填为 `N/A`，可选为 `Omit if not used.` |
 
-Markdown 表格 alignment 必须使用：
+字段表必须输出为 Markdown table，并使用居中 alignment 标记增强可读性：
 
 ```markdown
+| Name | Type | Field ID | Description | Value Restrictions | ?Default Behavior |
 | ---- | :---: | :---: | ---- | :---: | ---- |
 ```
 
-GitHub 或文档站的表头底色由渲染主题提供，Generator 不通过 HTML/CSS 强行注入样式。
+Generator 不使用 HTML 和 inline style。表格边框由 Markdown 渲染器主题负责；生成器只保证语义结构和标题层级稳定。
 
 ### 6.4 Additional Types
 
@@ -552,23 +594,23 @@ node dist/cli.js build-protocol --spec .. --out ../protocol/axtp.protocol.yaml
 node dist/cli.js validate-protocol --spec ..
 node dist/cli.js emit-protocol --spec .. --out ../docs/generated
 node dist/cli.js generate --spec ..
-node dist/cli.js generate-registry --spec .. --out ../runtimes/cpp-core/include/axtp/generated
+node dist/cli.js generate-registry --spec ..
 ```
 
 命令职责：
 
 | 命令 | 责任 |
 | ---- | ---- |
-| `validate` | 校验旧 registry/schema 输入，不读取 domains |
-| `generate-registry` | 运行旧 registry emitter，输出 registry Markdown/JSON/C++/test vectors |
-| `validate-sources` | 校验 registry + domains，并验证可构造合法 Protocol IR |
+| `validate` | 校验 `registry/` + `registry/domains/` Source Model |
+| `generate-registry` | 从 Source Model 输出 registry Markdown/JSON/C++/test vectors |
+| `validate-sources` | 校验 Source Model，并验证可构造合法 Protocol IR |
 | `build-protocol` | 从 Source YAML 写出 `protocol/axtp.protocol.yaml` |
 | `validate-protocol` | 校验现有 Protocol IR 和 00-spec 关键事实一致性 |
 | `emit-protocol` | 从 Protocol IR 输出 `docs/generated/protocol.md/json` |
-| `generate` | 三段式组合命令：validate sources -> build Protocol IR -> validate Protocol IR -> emit protocol artifacts |
+| `generate` | 三段式组合命令：validate sources -> build Protocol IR -> validate Protocol IR -> emit all generated artifacts |
 | `generate-protocol` | 旧兼容命令，直接从 Protocol IR 输出协议文档 |
-| `doc` | 旧兼容命令，只生成 registry Markdown |
-| `test-vector` | 旧兼容命令，只生成 test vectors |
+| `doc` | 兼容命令，从 Source Model 生成 registry Markdown |
+| `test-vector` | 兼容命令，从 Source Model 生成 test vectors |
 | `diff` | P1 placeholder，当前未实现 |
 
 ---
@@ -582,8 +624,8 @@ node dist/cli.js generate-registry --spec .. --out ../runtimes/cpp-core/include/
 ```text
 1. 读取 docs/specs/08-13 和 docs/source/09-13
 2. 确认 domain、ID range、method/event/error/capability 候选
-3. 检查 registry/**/*.yaml 和 domains/**/*.yaml 是否已有等价条目
-4. 决定写入 registry 还是 domains/<domain>/domain.yaml
+3. 检查 registry/**/*.yaml 和 registry/domains/**/*.yaml 是否已有等价条目
+4. 默认写入 registry/domains/<domain>/domain.yaml；只有 Core/MVP 晋升或共享基础事实才写入 registry/
 5. 填写 method/event/type/error/capability/profile 表单
 6. 运行 validate-sources
 7. 运行 build-protocol
@@ -596,6 +638,7 @@ node dist/cli.js generate-registry --spec .. --out ../runtimes/cpp-core/include/
 
 - 不得直接编辑 `protocol/axtp.protocol.yaml`。
 - 不得直接编辑 `docs/generated/protocol.md/json`。
+- 不得在 core registry 与 domain YAML 中重复定义同一协议事实。
 - 不得复用 stable/deprecated wire value 表示新语义。
 - 新增 method/event 必须显式填写 `bit_offset`。
 - Stream/OTA 校验字段优先使用 `verifyType` / `verifyValue`。
@@ -610,8 +653,8 @@ node dist/cli.js generate-registry --spec .. --out ../runtimes/cpp-core/include/
 ```text
 generators/src/
 ├── cli.ts
-├── loader.ts                    # old registry loader
-├── sourceLoader.ts              # registry + domains loader
+├── loader.ts                    # fixed registry file loader used by sourceLoader
+├── sourceLoader.ts              # canonical registry + registry/domains loader
 ├── sourceModel.ts
 ├── protocolBuilder.ts           # Source Model -> Protocol IR
 ├── protocolLoader.ts            # Protocol IR loader
@@ -635,8 +678,8 @@ generators/src/
 
 | 模块 | 边界 |
 | ---- | ---- |
-| `loader.ts` | 读取旧 `registry/` 固定文件 |
-| `sourceLoader.ts` | 读取旧 registry，并合并 `domains/**/*.yaml` |
+| `loader.ts` | 读取 `registry/` 固定核心文件，作为 sourceLoader 的基础层 |
+| `sourceLoader.ts` | 读取 `registry/` 并合并 `registry/domains/**/*.yaml`；拒绝顶层 `domains/**/*.yaml` |
 | `protocolBuilder.ts` | 生成 Protocol IR raw object 和 YAML |
 | `protocolLoader.ts` | 加载现有 Protocol IR |
 | `protocolValidator.ts` | 校验 Protocol IR 自洽性 |
@@ -687,7 +730,7 @@ CONTROL OPEN/ACCEPT/READY fact rejection
 
 ```text
 registry/core/method/event/error/capability/schema/legacy loader
-domains/<domain>/domain.yaml loader
+registry/domains/<domain>/domain.yaml loader
 Source Model validation
 Protocol IR builder
 Protocol IR validator
@@ -695,7 +738,7 @@ Protocol IR validator
 generated protocol.json
 obs-websocket-style generated protocol.md
 snapshot tests
-legacy registry generator compatibility path
+registry generator Source Model compatibility path
 generate command as three-stage pipeline
 ```
 

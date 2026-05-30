@@ -3,8 +3,7 @@ import { Command } from "commander";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { formatGeneratorError } from "./errors.js";
-import { emitAll, emitMarkdown, emitProtocolDocs, emitTestVectors } from "./emitters/index.js";
-import { loadSpec } from "./loader.js";
+import { emitAll, emitMarkdownFiles, emitProtocolDocs, emitRepositoryArtifacts, emitRepositoryRegistryArtifacts, emitTestVectorFiles } from "./emitters/index.js";
 import { loadProtocolDocs, validateProtocolDocsConsistency } from "./protocolDocsValidator.js";
 import { loadProtocolDefinition } from "./protocolLoader.js";
 import { buildProtocolDefinition, buildProtocolDefinitionRaw, writeProtocolDefinition } from "./protocolBuilder.js";
@@ -24,7 +23,7 @@ function resolveOutputPath(input: string): string {
 }
 
 async function loadAndValidate(specPath: string) {
-  const spec = await loadSpec(resolveInputPath(specPath));
+  const spec = await loadProtocolSources(resolveInputPath(specPath));
   const messages = validateSpec(spec);
   return { spec, messages };
 }
@@ -83,14 +82,18 @@ program.command("validate")
   });
 
 program.command("generate-registry")
-  .description("generate C++, Markdown, JSON and test vectors")
+  .description("generate registry C++, Markdown, JSON and test vectors from registry/domain sources")
   .requiredOption("--spec <path>", "AXTP spec root")
   .option("--out <path>", "output directory")
   .action(async (options) => {
     try {
       const { spec, messages } = await loadAndValidate(options.spec);
-      const out = options.out ? resolveOutputPath(options.out) : defaultOut(options.spec);
-      await emitAll(spec, out);
+      const out = options.out ? resolveOutputPath(options.out) : resolveInputPath(options.spec);
+      if (options.out) {
+        await emitAll(spec, out);
+      } else {
+        await emitRepositoryRegistryArtifacts(spec, out);
+      }
       for (const message of messages) console.log(message);
       console.log(`[OK] generated outputs: ${out}`);
     } catch (error) {
@@ -151,23 +154,29 @@ program.command("emit-protocol")
   });
 
 program.command("generate")
-  .description("run three-stage protocol generation: validate sources, build Protocol IR, emit protocol artifacts")
+  .description("run three-stage protocol generation: validate sources, build Protocol IR, emit all repository artifacts")
   .requiredOption("--spec <path>", "AXTP repository root")
   .option("--protocol-out <path>", "output protocol YAML file")
-  .option("--out <path>", "protocol artifact output directory")
+  .option("--out <path>", "legacy staging directory for all generated artifacts")
   .action(async (options) => {
     try {
       const specRoot = resolveInputPath(options.spec);
       const protocolOut = options.protocolOut ? resolveOutputPath(options.protocolOut) : path.join(specRoot, "protocol", "axtp.protocol.yaml");
-      const out = options.out ? resolveOutputPath(options.out) : path.join(specRoot, "docs", "generated");
-      const { sources, messages } = await loadAndValidateSources(options.spec);
+      const out = options.out ? resolveOutputPath(options.out) : specRoot;
+      const { sources, model, messages } = await loadAndValidateSources(options.spec);
       const raw = buildProtocolDefinitionRaw(sources);
       await writeProtocolDefinition(raw, protocolOut);
-      const { model, messages: protocolMessages } = await loadAndValidateProtocol(options.spec);
-      await emitProtocolDocs(model, out);
-      for (const message of [...messages, ...protocolMessages]) console.log(message);
+      if (options.out) {
+        await Promise.all([
+          emitProtocolDocs(model, out),
+          emitAll(sources, out)
+        ]);
+      } else {
+        await emitRepositoryArtifacts(sources, model, out);
+      }
+      for (const message of messages) console.log(message);
       console.log(`[OK] generated protocol definition: ${protocolOut}`);
-      console.log(`[OK] emitted protocol artifacts: ${out}`);
+      console.log(`[OK] emitted generated artifacts: ${out}`);
     } catch (error) {
       console.error(formatGeneratorError(error));
       process.exitCode = 1;
@@ -211,8 +220,8 @@ program.command("doc")
   .action(async (options) => {
     try {
       const { spec } = await loadAndValidate(options.spec);
-      const out = options.out ? resolveOutputPath(options.out) : path.join(defaultOut(options.spec), "docs");
-      await emitMarkdown(spec, path.dirname(out));
+      const out = options.out ? resolveOutputPath(options.out) : path.join(resolveInputPath(options.spec), "docs", "generated");
+      await emitMarkdownFiles(spec, out);
       console.log(`[OK] generated docs: ${out}`);
     } catch (error) {
       console.error(formatGeneratorError(error));
@@ -227,8 +236,8 @@ program.command("test-vector")
   .action(async (options) => {
     try {
       const { spec } = await loadAndValidate(options.spec);
-      const out = options.out ? resolveOutputPath(options.out) : path.join(defaultOut(options.spec), "test_vectors");
-      await emitTestVectors(spec, path.dirname(out));
+      const out = options.out ? resolveOutputPath(options.out) : path.join(resolveInputPath(options.spec), "tooling", "test-vectors");
+      await emitTestVectorFiles(spec, out);
       console.log(`[OK] generated test vectors: ${out}`);
     } catch (error) {
       console.error(formatGeneratorError(error));

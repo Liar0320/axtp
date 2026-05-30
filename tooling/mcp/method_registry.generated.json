@@ -2,9 +2,11 @@
   "methods": [
     {
       "id": 257,
+      "bitOffset": 0,
       "name": "device.getInfo",
       "domain": "device",
       "status": "mvp",
+      "description": "Return static device identity and firmware metadata.",
       "deprecated": false,
       "rpcOp": "request_response",
       "requestSchema": "DeviceGetInfoRequest",
@@ -23,17 +25,19 @@
         "RPC_PARAM_INVALID"
       ],
       "legacy": {
-        "cmd_value": 720898,
+        "cmdValue": 720898,
         "name": "BetaDeviceInfo",
-        "payload_format": "fixed_struct"
+        "payloadFormat": "fixed_struct"
       },
       "idHex": "0x0101"
     },
     {
       "id": 769,
+      "bitOffset": 0,
       "name": "capability.supportedMethods",
       "domain": "capability",
       "status": "mvp",
+      "description": "Return the per-domain method bitmap supported by the current session.",
       "deprecated": false,
       "rpcOp": "request_response",
       "requestSchema": "CapabilitySupportedMethodsRequest",
@@ -54,9 +58,11 @@
     },
     {
       "id": 1281,
+      "bitOffset": 0,
       "name": "display.getBrightness",
       "domain": "display",
       "status": "mvp",
+      "description": "Read the current display brightness percentage.",
       "deprecated": false,
       "rpcOp": "request_response",
       "requestSchema": "DisplayGetBrightnessRequest",
@@ -77,9 +83,11 @@
     },
     {
       "id": 1282,
+      "bitOffset": 1,
       "name": "display.setBrightness",
       "domain": "display",
       "status": "mvp",
+      "description": "Set the display brightness and optionally request a transition duration.",
       "deprecated": false,
       "rpcOp": "request_response",
       "requestSchema": "DisplaySetBrightnessRequest",
@@ -100,17 +108,55 @@
         "BUSY"
       ],
       "legacy": {
-        "cmd_value": 720962,
+        "cmdValue": 720962,
         "name": "BetaBrightnessSet",
-        "payload_format": "fixed_struct"
+        "payloadFormat": "fixed_struct"
       },
       "idHex": "0x0502"
     },
     {
+      "id": 2305,
+      "bitOffset": 0,
+      "name": "stream.open",
+      "domain": "stream",
+      "status": "draft",
+      "description": "Open an AXTP STREAM media channel over USB HID High Speed using media.video or media.audio, without UVC or UAC.",
+      "since": "1.0.0",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "StreamOpenRequest",
+      "responseSchema": "StreamOpenResponse",
+      "recommendedEncoding": [
+        "json",
+        "binary_tlv"
+      ],
+      "capabilities": [
+        "stream.hidMedia"
+      ],
+      "events": [
+        "stream.opened",
+        "stream.error"
+      ],
+      "errors": [
+        "SUCCESS",
+        "BUSY",
+        "RPC_PARAM_INVALID",
+        "MEDIA_SOURCE_NOT_FOUND",
+        "MEDIA_SOURCE_UNAVAILABLE",
+        "MEDIA_CODEC_UNSUPPORTED",
+        "MEDIA_RESOLUTION_UNSUPPORTED",
+        "MEDIA_FRAMERATE_UNSUPPORTED",
+        "MEDIA_STREAM_START_FAILED"
+      ],
+      "idHex": "0x0901"
+    },
+    {
       "id": 2818,
+      "bitOffset": 0,
       "name": "firmware.begin",
       "domain": "firmware",
       "status": "mvp",
+      "description": "Begin a firmware OTA transfer and allocate the STREAM context.",
       "deprecated": false,
       "rpcOp": "request_response",
       "requestSchema": "FirmwareBeginRequest",
@@ -134,13 +180,15 @@
     },
     {
       "id": 2819,
+      "bitOffset": 1,
       "name": "firmware.end",
       "domain": "firmware",
       "status": "mvp",
+      "description": "Finish sending firmware data for the active OTA stream.",
       "deprecated": false,
       "rpcOp": "request_response",
       "requestSchema": "FirmwareEndRequest",
-      "responseSchema": "CommonEmptyResponse",
+      "responseSchema": "FirmwareEndResponse",
       "recommendedEncoding": [
         "json",
         "binary_tlv"
@@ -158,13 +206,15 @@
     },
     {
       "id": 2820,
+      "bitOffset": 2,
       "name": "firmware.verify",
       "domain": "firmware",
       "status": "mvp",
+      "description": "Verify the transferred firmware object before applying it.",
       "deprecated": false,
       "rpcOp": "request_response",
       "requestSchema": "FirmwareVerifyRequest",
-      "responseSchema": "CommonEmptyResponse",
+      "responseSchema": "FirmwareVerifyResponse",
       "recommendedEncoding": [
         "json",
         "binary_tlv"
@@ -185,13 +235,15 @@
     },
     {
       "id": 2821,
+      "bitOffset": 3,
       "name": "firmware.apply",
       "domain": "firmware",
       "status": "mvp",
+      "description": "Apply a verified firmware image.",
       "deprecated": false,
       "rpcOp": "request_response",
       "requestSchema": "FirmwareApplyRequest",
-      "responseSchema": "CommonEmptyResponse",
+      "responseSchema": "FirmwareApplyResponse",
       "recommendedEncoding": [
         "json",
         "binary_tlv"

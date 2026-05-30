@@ -38,6 +38,10 @@ struct SchemaDescriptor {
     std::size_t field_count;
 };
 
+inline constexpr FieldDescriptor kEmptyFields[] = {
+
+};
+
 inline constexpr FieldDescriptor kCommonEmptyRequestFields[] = {
 
 };
@@ -85,8 +89,8 @@ inline constexpr FieldDescriptor kCapabilitySupportedMethodsRequestFields[] = {
 };
 
 inline constexpr FieldDescriptor kCapabilitySupportedMethodsResponseFields[] = {
-    { 0x01, "methodCount", FieldType::Uint16, true, 0, 0 },
-    { 0x02, "methodIds", FieldType::Array, false, 0, 0 },
+    { 0x01, "methodMaskCount", FieldType::Uint16, true, 0, 0 },
+    { 0x02, "methodMasks", FieldType::Bytes, true, 0, 0 },
 };
 
 inline constexpr FieldDescriptor kFirmwareOtaCapabilityFields[] = {
@@ -113,36 +117,63 @@ inline constexpr FieldDescriptor kDisplayBrightnessChangedEventFields[] = {
 };
 
 inline constexpr FieldDescriptor kFirmwareBeginRequestFields[] = {
-    { 0x01, "totalSize", FieldType::Uint32, true, 0, 0 },
-    { 0x02, "hashAlgo", FieldType::String, true, 0, 0 },
-    { 0x03, "hash", FieldType::Bytes, true, 0, 0 },
-    { 0x04, "chunkSize", FieldType::Uint16, true, 0, 0 },
+    { 0x01, "imageType", FieldType::Enum, true, 0, 0 },
+    { 0x02, "imageSize", FieldType::Uint64, true, 0, 0 },
+    { 0x03, "imageVersion", FieldType::String, true, 0, 0 },
+    { 0x04, "verifyType", FieldType::String, true, 0, 0 },
+    { 0x05, "verifyValue", FieldType::String, true, 0, 0 },
+    { 0x06, "chunkSizeHint", FieldType::Uint16, false, 0, 0 },
+    { 0x07, "windowSizeHint", FieldType::Uint16, false, 0, 0 },
+    { 0x08, "flags", FieldType::Uint16, false, 0, 0 },
 };
 
 inline constexpr FieldDescriptor kFirmwareBeginResponseFields[] = {
-    { 0x01, "streamId", FieldType::Uint32, true, 0, 0 },
-    { 0x02, "profile", FieldType::String, true, 0, 0 },
-    { 0x03, "chunkSize", FieldType::Uint16, true, 0, 0 },
-    { 0x04, "ackMode", FieldType::Enum, true, 0, 0 },
-    { 0x05, "cursorUnit", FieldType::Enum, true, 0, 0 },
-    { 0x06, "reservedStreamHeaderProfile", FieldType::Enum, false, 0, 0 },
-    { 0x07, "maxDataSize", FieldType::Uint16, false, 0, 0 },
+    { 0x01, "transferId", FieldType::Uint32, true, 0, 0 },
+    { 0x02, "streamId", FieldType::Uint32, true, 0, 0 },
+    { 0x03, "acceptedOffset", FieldType::Uint64, true, 0, 0 },
+    { 0x04, "chunkSize", FieldType::Uint16, true, 0, 0 },
+    { 0x05, "windowSize", FieldType::Uint16, true, 0, 0 },
+    { 0x06, "resumeToken", FieldType::Bytes, false, 0, 0 },
+    { 0x07, "otaState", FieldType::Enum, true, 0, 0 },
+    { 0x08, "profile", FieldType::String, true, 0, 0 },
+    { 0x09, "ackMode", FieldType::Enum, true, 0, 0 },
+    { 0x0A, "cursorUnit", FieldType::Enum, true, 0, 0 },
+    { 0x0B, "maxDataSize", FieldType::Uint16, false, 0, 0 },
 };
 
 inline constexpr FieldDescriptor kFirmwareEndRequestFields[] = {
-    { 0x01, "streamId", FieldType::Uint32, true, 0, 0 },
+    { 0x01, "transferId", FieldType::Uint32, true, 0, 0 },
+    { 0x02, "totalBytesSent", FieldType::Uint64, false, 0, 0 },
+    { 0x03, "totalChunks", FieldType::Uint32, false, 0, 0 },
+};
+
+inline constexpr FieldDescriptor kFirmwareEndResponseFields[] = {
+    { 0x01, "receivedBytes", FieldType::Uint64, true, 0, 0 },
+    { 0x02, "receivedChunks", FieldType::Uint32, false, 0, 0 },
+    { 0x03, "otaState", FieldType::Enum, true, 0, 0 },
 };
 
 inline constexpr FieldDescriptor kFirmwareVerifyRequestFields[] = {
-    { 0x01, "streamId", FieldType::Uint32, true, 0, 0 },
+    { 0x01, "transferId", FieldType::Uint32, true, 0, 0 },
+};
+
+inline constexpr FieldDescriptor kFirmwareVerifyResponseFields[] = {
+    { 0x01, "verifyResult", FieldType::Enum, true, 0, 0 },
+    { 0x02, "otaState", FieldType::Enum, true, 0, 0 },
 };
 
 inline constexpr FieldDescriptor kFirmwareApplyRequestFields[] = {
-    { 0x01, "streamId", FieldType::Uint32, true, 0, 0 },
+    { 0x01, "transferId", FieldType::Uint32, true, 0, 0 },
+    { 0x02, "applyMode", FieldType::Enum, true, 0, 0 },
+};
+
+inline constexpr FieldDescriptor kFirmwareApplyResponseFields[] = {
+    { 0x01, "otaState", FieldType::Enum, true, 0, 0 },
+    { 0x02, "rebootRequired", FieldType::Bool, true, 0, 0 },
 };
 
 inline constexpr FieldDescriptor kFirmwareUpdateProgressEventFields[] = {
-    { 0x01, "streamId", FieldType::Uint32, true, 0, 0 },
+    { 0x01, "transferId", FieldType::Uint32, true, 0, 0 },
     { 0x02, "percent", FieldType::Uint8, true, 0, 100 },
 };
 
@@ -155,6 +186,54 @@ inline constexpr FieldDescriptor kFirmwareUpdateFailedEventFields[] = {
     { 0x02, "message", FieldType::String, false, 0, 0 },
 };
 
+inline constexpr FieldDescriptor kStreamHidMediaCapabilityFields[] = {
+    { 0x01, "transportProfile", FieldType::String, true, 0, 0 },
+    { 0x02, "maxStreamCount", FieldType::Uint8, true, 0, 0 },
+    { 0x03, "maxChunkSize", FieldType::Uint16, true, 0, 0 },
+    { 0x04, "supportsVideo", FieldType::Bool, true, 0, 0 },
+    { 0x05, "supportsAudio", FieldType::Bool, true, 0, 0 },
+};
+
+inline constexpr FieldDescriptor kStreamOpenRequestFields[] = {
+    { 0x01, "profile", FieldType::String, true, 0, 0 },
+    { 0x02, "transportProfile", FieldType::String, true, 0, 0 },
+    { 0x03, "direction", FieldType::Enum, true, 0, 0 },
+    { 0x04, "mediaKind", FieldType::Enum, true, 0, 0 },
+    { 0x05, "sourceId", FieldType::Uint16, false, 0, 0 },
+    { 0x06, "codec", FieldType::String, true, 0, 0 },
+    { 0x07, "width", FieldType::Uint16, false, 0, 0 },
+    { 0x08, "height", FieldType::Uint16, false, 0, 0 },
+    { 0x09, "frameRate", FieldType::Uint16, false, 0, 0 },
+    { 0x0A, "sampleRate", FieldType::Uint32, false, 0, 0 },
+    { 0x0B, "channelCount", FieldType::Uint8, false, 0, 0 },
+    { 0x0C, "chunkSizeHint", FieldType::Uint16, false, 0, 0 },
+    { 0x0D, "windowSizeHint", FieldType::Uint16, false, 0, 0 },
+};
+
+inline constexpr FieldDescriptor kStreamOpenResponseFields[] = {
+    { 0x01, "streamId", FieldType::Uint32, true, 0, 0 },
+    { 0x02, "profile", FieldType::String, true, 0, 0 },
+    { 0x03, "transportProfile", FieldType::String, true, 0, 0 },
+    { 0x04, "chunkSize", FieldType::Uint16, true, 0, 0 },
+    { 0x05, "windowSize", FieldType::Uint16, true, 0, 0 },
+    { 0x06, "ackMode", FieldType::Enum, true, 0, 0 },
+    { 0x07, "cursorUnit", FieldType::Enum, true, 0, 0 },
+};
+
+inline constexpr FieldDescriptor kStreamOpenedEventFields[] = {
+    { 0x01, "streamId", FieldType::Uint32, true, 0, 0 },
+    { 0x02, "profile", FieldType::String, true, 0, 0 },
+    { 0x03, "transportProfile", FieldType::String, true, 0, 0 },
+    { 0x04, "mediaKind", FieldType::Enum, true, 0, 0 },
+};
+
+inline constexpr FieldDescriptor kStreamErrorEventFields[] = {
+    { 0x01, "streamId", FieldType::Uint32, false, 0, 0 },
+    { 0x02, "errorCode", FieldType::Uint16, true, 0, 0 },
+    { 0x03, "message", FieldType::String, false, 0, 0 },
+};
+
+inline constexpr SchemaDescriptor kEmptySchema = { "Empty", kEmptyFields, 0 };
 inline constexpr SchemaDescriptor kCommonEmptyRequestSchema = { "CommonEmptyRequest", kCommonEmptyRequestFields, 0 };
 inline constexpr SchemaDescriptor kCommonEmptyResponseSchema = { "CommonEmptyResponse", kCommonEmptyResponseFields, 0 };
 inline constexpr SchemaDescriptor kControlOpenBodySchema = { "ControlOpenBody", kControlOpenBodyFields, 8 };
@@ -168,13 +247,21 @@ inline constexpr SchemaDescriptor kDisplayGetBrightnessRequestSchema = { "Displa
 inline constexpr SchemaDescriptor kDisplayGetBrightnessResponseSchema = { "DisplayGetBrightnessResponse", kDisplayGetBrightnessResponseFields, 1 };
 inline constexpr SchemaDescriptor kDisplaySetBrightnessRequestSchema = { "DisplaySetBrightnessRequest", kDisplaySetBrightnessRequestFields, 2 };
 inline constexpr SchemaDescriptor kDisplayBrightnessChangedEventSchema = { "DisplayBrightnessChangedEvent", kDisplayBrightnessChangedEventFields, 2 };
-inline constexpr SchemaDescriptor kFirmwareBeginRequestSchema = { "FirmwareBeginRequest", kFirmwareBeginRequestFields, 4 };
-inline constexpr SchemaDescriptor kFirmwareBeginResponseSchema = { "FirmwareBeginResponse", kFirmwareBeginResponseFields, 7 };
-inline constexpr SchemaDescriptor kFirmwareEndRequestSchema = { "FirmwareEndRequest", kFirmwareEndRequestFields, 1 };
+inline constexpr SchemaDescriptor kFirmwareBeginRequestSchema = { "FirmwareBeginRequest", kFirmwareBeginRequestFields, 8 };
+inline constexpr SchemaDescriptor kFirmwareBeginResponseSchema = { "FirmwareBeginResponse", kFirmwareBeginResponseFields, 11 };
+inline constexpr SchemaDescriptor kFirmwareEndRequestSchema = { "FirmwareEndRequest", kFirmwareEndRequestFields, 3 };
+inline constexpr SchemaDescriptor kFirmwareEndResponseSchema = { "FirmwareEndResponse", kFirmwareEndResponseFields, 3 };
 inline constexpr SchemaDescriptor kFirmwareVerifyRequestSchema = { "FirmwareVerifyRequest", kFirmwareVerifyRequestFields, 1 };
-inline constexpr SchemaDescriptor kFirmwareApplyRequestSchema = { "FirmwareApplyRequest", kFirmwareApplyRequestFields, 1 };
+inline constexpr SchemaDescriptor kFirmwareVerifyResponseSchema = { "FirmwareVerifyResponse", kFirmwareVerifyResponseFields, 2 };
+inline constexpr SchemaDescriptor kFirmwareApplyRequestSchema = { "FirmwareApplyRequest", kFirmwareApplyRequestFields, 2 };
+inline constexpr SchemaDescriptor kFirmwareApplyResponseSchema = { "FirmwareApplyResponse", kFirmwareApplyResponseFields, 2 };
 inline constexpr SchemaDescriptor kFirmwareUpdateProgressEventSchema = { "FirmwareUpdateProgressEvent", kFirmwareUpdateProgressEventFields, 2 };
 inline constexpr SchemaDescriptor kFirmwareUpdateCompletedEventSchema = { "FirmwareUpdateCompletedEvent", kFirmwareUpdateCompletedEventFields, 1 };
 inline constexpr SchemaDescriptor kFirmwareUpdateFailedEventSchema = { "FirmwareUpdateFailedEvent", kFirmwareUpdateFailedEventFields, 2 };
+inline constexpr SchemaDescriptor kStreamHidMediaCapabilitySchema = { "StreamHidMediaCapability", kStreamHidMediaCapabilityFields, 5 };
+inline constexpr SchemaDescriptor kStreamOpenRequestSchema = { "StreamOpenRequest", kStreamOpenRequestFields, 13 };
+inline constexpr SchemaDescriptor kStreamOpenResponseSchema = { "StreamOpenResponse", kStreamOpenResponseFields, 7 };
+inline constexpr SchemaDescriptor kStreamOpenedEventSchema = { "StreamOpenedEvent", kStreamOpenedEventFields, 4 };
+inline constexpr SchemaDescriptor kStreamErrorEventSchema = { "StreamErrorEvent", kStreamErrorEventFields, 3 };
 
 } // namespace axtp

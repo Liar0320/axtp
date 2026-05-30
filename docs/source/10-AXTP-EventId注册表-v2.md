@@ -85,7 +85,7 @@ EventId 使用 `uint16`，从 `0x8000` 开始分配，与 MethodId 区分。
 
 ## 4. MVP EventId 注册表
 
-MVP EventId 表以 `standard/registry/event_registry.yaml` 为事实源。当前 AXTP v1 MVP 只包含下列已注册事件；其他事件即使出现在后续规划表中，也不得视为当前实现合同。
+MVP EventId 表以 `registry/event/event_registry.yaml` 与 `registry/domains/<domain>/domain.yaml` 为事实源。当前 AXTP v1 MVP 只包含下列已注册为 `mvp` 的事件；其他事件即使出现在后续规划表中，也不得视为当前 MVP 实现合同。
 
 | eventId | eventName | Domain | bitOffset | 状态 | 说明 |
 | ---: | --- | --- | ---: | --- | --- |
@@ -98,7 +98,7 @@ MVP EventId 表以 `standard/registry/event_registry.yaml` 为事实源。当前
 
 ## 5. 完整 EventId 规划
 
-以下表格是领域规划草案，用于保留编号空间和讨论未来能力；当前实现状态以 `standard/registry/event_registry.yaml` 及生成产物为准。
+以下表格是领域规划草案，用于保留编号空间和讨论未来能力；当前实现状态以 `registry/event/event_registry.yaml`、`registry/domains/<domain>/domain.yaml` 及生成产物为准。
 
 ### 5.1 device 事件
 
@@ -365,7 +365,7 @@ MVP EventId 表以 `standard/registry/event_registry.yaml` 为事实源。当前
 | `display.setBrightness` | `display.brightnessChanged` |
 | `stream.open` | `stream.opened` / `stream.error` |
 | `stream.close` | `stream.closed` |
-| `firmware.begin` | `firmware.updateStarted` |
+| `firmware.begin` | `firmware.updateProgress` |
 | `firmware.verify` | `firmware.updateProgress` / `firmware.updateFailed` |
 | `firmware.apply` | `firmware.updateCompleted` / `firmware.rebootRequired` |
 

@@ -49,7 +49,10 @@ function cppType(type: string): string {
 }
 
 export async function emitCpp(spec: SpecModel, outDir: string): Promise<void> {
-  const cppDir = path.join(outDir, "cpp");
+  await emitCppFiles(spec, path.join(outDir, "cpp"));
+}
+
+export async function emitCppFiles(spec: SpecModel, cppDir: string): Promise<void> {
   await Promise.all([
     writeTextFile(path.join(cppDir, "axtp_ids_generated.h"), emitIds(spec)),
     writeTextFile(path.join(cppDir, "axtp_schema_generated.h"), emitSchema(spec)),

@@ -70,6 +70,14 @@ capabilities:
     schema: FirmwareOtaCapability
     description: Device supports firmware OTA over STREAM.
 
+  - id: 0x040A
+    name: stream.hidMedia
+    domain: stream
+    status: draft
+    type: object
+    schema: StreamHidMediaCapability
+    description: Device supports opening media.video and/or media.audio streams over AXTP-USB-HID.
+
   - id: 0x0309
     name: reserved.requestIdWidth
     domain: reserved

@@ -5,6 +5,8 @@
 ## Main Table of Contents
 
 - [Overview](#overview)
+- [Protocol Framework](#protocol-framework)
+- [Supported Connection Profiles](#supported-connection-profiles)
 - [Design Goals / Non-Goals](#design-goals--non-goals)
 - [Connection Lifecycle](#connection-lifecycle)
 - [Capability Discovery](#capability-discovery)
@@ -34,7 +36,7 @@
 
 ## Overview
 
-AXTP is a transport-independent device communication protocol for CONTROL, RPC and STREAM payloads across TCP, WebSocket, USB HID, BLE and UART transports.
+AXTP is a transport-independent device communication protocol for CONTROL, RPC and STREAM payloads across Standard Framed transports, plus a formal WebSocket Unframed JSON RPC profile.
 
 | Property | Value |
 | ---- | ---- |
@@ -44,20 +46,34 @@ AXTP is a transport-independent device communication protocol for CONTROL, RPC a
 | Registry Version | 1.0.0 |
 | Status | rc1 |
 
+## Protocol Framework
+
+AXTP v1 has two formal integration paths:
+
+- **Standard Framed**: uses the 12-byte Standard Frame header, CONTROL OPEN/ACCEPT, RPC, STREAM, fragmentation, CRC16, and optional ACK/NACK.
+- **WebSocket Unframed JSON**: uses the JSON `sid`/`op`/`d` envelope directly over WebSocket. It is RPC-only and does not carry CONTROL or STREAM payloads.
+
+| Path | Transports | Frame | RPC Encodings | CONTROL | STREAM |
+| ---- | ---- | ---- | ---- | ---- | ---- |
+| Standard Framed | AXTP-USB-HID<br>AXTP-TCP | STANDARD_FRAME | `BINARY`, `JSON` | Yes | Yes |
+| WebSocket Unframed JSON | AXTP-WS-JSON<br>AXTP-WS-CLOUD-REVERSE | None | `JSON` | No | No |
+
+Compact/HID-64/BLE/UART framing is a low-bandwidth degradation path, not an AXTP v1 Core requirement. See `docs/specs/17-AXTP-Low-Bandwidth-Degradation.md` for that path.
+
 ## Design Goals / Non-Goals
 
 ### Goals
 
 - Provide one unified protocol model for control, request/response RPC and stream transfer.
-- Keep production clients small by binding each transport to a fixed frame profile.
-- Support both standard and compact binary frame paths.
+- Make Standard Frame the AXTP v1 Core binary path for USB HID High Speed and TCP.
+- Support WebSocket Unframed JSON as the formal RPC-only integration path.
 - Keep full dynamic capability modeling optional outside AXTP v1 Core.
 
 ### Non-Goals
 
 - Full dynamic UI capability modeling is not required in v1.
-- WebSocket Text and HTTP JSON are debug or legacy adapter paths.
-- STREAM is not carried over WebSocket Text or HTTP JSON in production.
+- Compact/HID-64/BLE/UART low-bandwidth framing is not required by AXTP v1 Core.
+- STREAM is not carried over WebSocket Unframed JSON.
 - Header profile negotiation is not performed dynamically in v1.
 
 ## Connection Lifecycle
@@ -77,314 +93,76 @@ AXTP is a transport-independent device communication protocol for CONTROL, RPC a
 | ---- | ---- | ---- | ---- | ---- |
 | READY | - | - | optional | Reserved for transports that need an explicit client acknowledgement after ACCEPT; not required by AXTP v1 Core. |
 
-## Transport Profiles
+## Supported Connection Profiles
 
-AXTP runs over multiple transports. Each transport binds to a fixed Frame Profile for the lifetime of the session.
+The current protocol definition exposes the connection profiles that are intended for AXTP v1 readers and SDKs.
 
-| Transport | Family | Frame Profile | Production | Notes |
-| ---- | ---- | ---- | ---- | ---- |
-| AXTP-WS | websocket | STANDARD_FRAME | Yes | One AXTP Frame per WebSocket Binary Message. No extra framing needed. |
-| AXTP-TCP | tcp | STANDARD_FRAME | Yes | Byte-stream transport. Receiver must reassemble frames using Magic+Length. |
-| AXTP-HID-HS | usb-hid | STANDARD_FRAME | Yes | USB HID with Report Size > 64B. Specific report size is implementation-defined. |
-| AXTP-HID-64 | usb-hid | COMPACT_FRAME | Yes | USB HID with 64B Report. 58B usable payload after 4B header and 1B CRC8 and 1B ReportID. |
-| AXTP-BLE-RPC | ble | COMPACT_FRAME | Yes | BLE GATT. MTU negotiated at BLE layer; typical range 20B-247B. |
-| AXTP-UART | uart | COMPACT_FRAME_CRC | Yes | UART with COBS or SLIP framing at transport layer. |
-| AXTP-WS-CLOUD-REVERSE | websocket | STANDARD_FRAME | Yes | Device is Physical Client but Logical Server. Device sends Hello after ACCEPT. |
-| AXTP-WS-TEXT | websocket | Unframed | No (debug) | DS-RPC JSON mode. No AXTP Frame Header. No STREAM support. Debug only. |
-| AXTP-HTTP-JSON | http | Unframed | No (debug) | debug-or-legacy-adapter |
+| Profile | Family | Mode | Frame | RPC Encodings | CONTROL | STREAM | Notes |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| AXTP-USB-HID | usb-hid | standard-framed | STANDARD_FRAME | `BINARY`, `JSON` | Yes | Yes | USB HID High Speed or large-report HID transport using Standard Frame. |
+| AXTP-TCP | tcp | standard-framed | STANDARD_FRAME | `BINARY`, `JSON` | Yes | Yes | TCP byte stream transport using Standard Frame magic and length parsing. |
+| AXTP-WS-JSON | websocket | unframed-json | None | `JSON` | No | No | Formal RPC-only WebSocket JSON profile using the sid/op/d envelope. |
+| AXTP-WS-CLOUD-REVERSE | websocket | unframed-json-cloud-reverse | None | `JSON` | No | No | Device initiates the WebSocket connection but remains the Logical Server. |
 
-**Standard Frame** (12B L1 Header + CRC16) is the primary implementation target for TCP, WebSocket Binary, and USB HID High Speed.
+### Role Matrix
 
-**Compact Frame** (4B L1 Header + CRC8) is a fallback for constrained transports with MTU ≤ 64B (HID-64, BLE, UART). See §15 of the Transport Profiles spec for the full degradation guide.
+| Profile | Physical Client | Physical Server | Logical Client | Logical Server | Hello Sender |
+| ---- | ---- | ---- | ---- | ---- | ---- |
+| AXTP-USB-HID | Host / App | USB HID Device | Host / App | Device | Device |
+| AXTP-TCP | App / PC | Device | App / PC | Device | Device |
+| AXTP-WS-JSON | App / Cloud | Device / Gateway | App / Cloud | Device | Device |
+| AXTP-WS-CLOUD-REVERSE | Device | Cloud | Cloud | Device | Device |
+
+**Logical Server sends Hello.** This is true even when the device is the Physical Client in `AXTP-WS-CLOUD-REVERSE`.
 
 ### Cloud Reverse Connection
 
-When a device initiates a connection to a cloud endpoint, the Physical Client/Server roles are reversed from the typical local scenario, but the Logical Server role stays with the device:
+In `AXTP-WS-CLOUD-REVERSE`, the device initiates the WebSocket connection to the cloud endpoint, but the device remains the Logical Server:
 
 ```text
 Physical Client: Device    Physical Server: Cloud
 Logical Client:  Cloud     Logical Server:  Device
 
-  Role mapping: Device = Physical Client + Logical Server. Cloud = Physical Server + Logical Client.
-  Device initiates WebSocket connection to cloud endpoint.
-  Device sends CONTROL OPEN (device is Physical Client but drives session setup).
-  Cloud sends CONTROL ACCEPT.
-  Device sends RPC Hello (op=0) — device is Logical Server, so device always sends Hello.
-  Cloud sends RPC Identify (op=2).
-  Device sends RPC Identified (op=3) with session ID.
-  Cloud sends capability.supportedMethods request to discover device capabilities.
-  Cloud issues RPC requests to device as normal.
+  Device opens the WebSocket connection to the cloud endpoint.
+  No CONTROL OPEN or Standard Frame is used in this profile.
+  Device remains the Logical Server and sends Hello after the WebSocket is established.
+  Cloud identifies as the Logical Client and then issues JSON RPC requests.
 ```
 
-The key invariant: **the Logical Server always sends Hello**, regardless of who initiated the TCP/WebSocket connection.
+The key invariant: **the Logical Server sends Hello** after the WebSocket is established.
 
-### DS-RPC Debug Adapter (WebSocket Text)
+### WebSocket Unframed JSON
 
-For browser debugging and development tooling only. Not for production.
+This profile is a formal RPC-only path. It skips the Frame and CONTROL layers, uses JSON `sid`/`op`/`d`, and does not carry STREAM data.
 
-- Purpose: browser or curl debugging only. Not for production. No STREAM support.
-- Connect via WebSocket Text (ws://device/axtp-debug or similar endpoint).
-- No CONTROL OPEN/ACCEPT handshake — connection enters FRAMING_READY directly.
-- Device sends DS-RPC Hello: {"sid":"","op":0,"d":{"rpcVersion":"..."}}
-- Client sends DS-RPC Identify: {"sid":"","op":2,"d":{"clientName":"..."}}
-- Device sends DS-RPC Identified: {"sid":"<uuid>","op":3,"d":{"negotiatedRpcVersion":"..."}}
-- Issue RPC calls as JSON: {"sid":"<uuid>","op":7,"d":{"id":"00000001","method":"display.setBrightness","params":{"value":80}}}
-- Receive response: {"sid":"<uuid>","op":8,"d":{"id":"00000001","status":{"ok":true,"code":0}}}
+- Open the WebSocket connection.
+- Wait for Hello from the Logical Server.
+- Send Identify using the JSON sid/op/d envelope.
+- Wait for Identified.
+- Query capability.supportedMethods.
+- Start JSON RPC requests and receive JSON events.
 
-| DS-RPC (Unframed) | Framed Mode (AXTP) |
+| WebSocket Unframed JSON | Standard Framed AXTP |
 | --- | --- |
-| WebSocket Upgrade | CONTROL OPEN/ACCEPT |
+| WebSocket Upgrade | Transport connect + CONTROL OPEN/ACCEPT |
 | Hello (op=0) | RPC Hello |
 | Identify (op=2) | RPC Identify |
 | Identified (op=3) | RPC Identified |
 | REQUEST (op=7) | RPC Request |
 | REQUEST_RESPONSE (op=8) | RPC RequestResponse |
 | EVENT (op=6) | RPC Event |
-| WebSocket Close | CONTROL CLOSE |
-| — | STREAM (not supported in DS-RPC) |
+| WebSocket Close | CONTROL CLOSE or transport close |
+| Not supported | STREAM |
 
 ## Payload Types
 
-Every AXTP Frame carries exactly one payload. The `PayloadType` field in the Frame Header selects the parser.
+Every Standard Framed AXTP Frame carries exactly one payload. WebSocket Unframed JSON skips this layer and carries only RPC JSON envelopes.
 
 | Type | ID | Header Size | When to Use |
 | ---- | ---- | ---- | ---- |
-| `CONTROL` | 0x01 | 5B | Use for session lifecycle signals — OPEN, ACCEPT, HEARTBEAT, ACK, NACK, CLOSE, RESUME. Never use for business data. |
-| `RPC` | 0x02 | 11B | Use for all business operations — method calls, responses, events, and batch. Choose JSON or BINARY encoding per capability. |
-| `STREAM` | 0x03 | 16B | Use for high-throughput data — OTA firmware chunks, video/audio frames, file transfer, log streaming. Never carry business metadata in STREAM; use RPC for setup and teardown. |
-
-### CONTROL Payload Header (5B)
-
-Logical session control payload.
-
-| Field | Type | Size | Description |
-| ---- | ---- | ---- | ---- |
-| `opcode` | uint8 | 1B | Control operation code. |
-| `controlId` | uint16 | 2B | Correlates OPEN/ACCEPT, ACK/NACK pairs. Little-Endian. |
-| `statusCode` | uint16 | 2B | Result code. 0x0000 = SUCCESS. Little-Endian. |
-| `body` | bytes | variable | TLV-encoded fields. Length = Frame.payloadLength - 5. |
-
-### RPC Payload Header (11B)
-
-Binary request, response, event and error payload.
-
-| Field | Type | Size | Description |
-| ---- | ---- | ---- | ---- |
-| `rpcEncoding` | uint8 | 1B | Encoding: 0x01=JSON, 0x02=BINARY, 0x03=CBOR, 0x04=MSGPACK. |
-| `rpcOp` | uint8 | 1B | Operation: 0x00=Hello, 0x02=Identify, 0x03=Identified, 0x06=Event, 0x07=Request, 0x08=RequestResponse. |
-| `requestId` | uint32 | 4B | Client-assigned request correlation ID. Little-Endian. 0 for events. |
-| `methodOrEventId` | uint16 | 2B | methodId for Request/Response; eventId for Event. Little-Endian. |
-| `statusCode` | uint16 | 2B | 0x0000 = SUCCESS. Non-zero = error. Little-Endian. |
-| `bodyEncoding` | uint8 | 1B | Body encoding: 0x00=NONE, 0x01=TLV8, 0x02=TLV16. Only meaningful when rpcEncoding=BINARY. |
-
-### STREAM Payload Header (16B)
-
-Chunk-oriented data plane payload.
-
-| Field | Type | Size | Description |
-| ---- | ---- | ---- | ---- |
-| `streamId` | uint32 | 4B | Stream identifier assigned by firmware.begin or stream.open response. Little-Endian. |
-| `seqId` | uint32 | 4B | Monotonically increasing chunk sequence number. Starts at 0. Little-Endian. |
-| `cursor` | uint64 | 8B | Byte offset of this chunk within the stream. Used for resume and integrity checks. Little-Endian. |
-
-## Wire Format Examples
-
-The following examples show the exact byte layout for a complete session establishment over USB HID High Speed (Standard Frame Profile). All integers are Little-Endian.
-
-### USB HID High Speed — Full Session Establishment
-
-Complete session establishment over USB HID with Report Size > 64B. Standard Frame Profile (12B L1 Header + CRC16). All integers Little-Endian.
-
-#### 1. CONTROL OPEN
-
-**Direction:** Client → Device
-
-```text
-Standard L1 Header (12B)
-+--------+--------+--------+--------+--------+--------+
-| Magic  | Magic  | Ver/PT | PayLen | PayLen | MsgId  |
-| 0x41   | 0x58   | 0x11   | 0x0F   | 0x00   | 0x01   |
-+--------+--------+--------+--------+--------+--------+
-| MsgId  | FrInfo | SrcId  | DstId  | (reserved)      |
-| 0x00   | 0x01   | 0x01   | 0x10   | 0x00   | 0x00   |
-+--------+--------+--------+--------+--------+--------+
-Control Payload (15B)
-+--------+--------+--------+--------+--------+
-| opcode | ctrlId | ctrlId | status | status |
-| 0x01   | 0x01   | 0x00   | 0x00   | 0x00   |
-+--------+--------+--------+--------+--------+
-| TLV body: protocolVersion=1, maxFrameSize=512, mtu=512, ...  |
-+--------------------------------------------------------------|
-CRC16 (2B)
-+--------+--------+
-| CRC16L | CRC16H |
-+--------+--------+
-```
-
-**Hex bytes:**
-
-```text
-41 58 11 0F 00 01 00 01 01 10 00 00  01 01 00 00 00  02 01 01 04 02 00 02 06 02 00 02 07 01 07 0A 04 88 13 00 00 0B 01 01  XX XX
-```
-
-**Field annotations:**
-
-- `41 58 = Magic 'AX'`
-- `11 = Version(0x1) | PayloadType(0x1=CONTROL)`
-- `0F 00 = payloadLength=15 (Little-Endian)`
-- `01 00 = messageId=1`
-- `01 = frameInfo (single frame, index=0, count=1)`
-- `01 = sourceId=0x01 (client)`
-- `10 = destinationId=0x10 (device)`
-- `01 = opcode=OPEN`
-- `01 00 = controlId=1`
-- `00 00 = statusCode=SUCCESS`
-- `02 01 01 = TLV: fieldId=0x02 protocolVersion=1`
-- `04 02 00 02 = TLV: fieldId=0x04 maxFrameSize=512`
-- `06 02 00 02 = TLV: fieldId=0x06 mtu=512`
-- `07 01 07 = TLV: fieldId=0x07 supportedPayloadTypes=0x07 (CONTROL|RPC|STREAM)`
-- `0A 04 88 13 00 00 = TLV: fieldId=0x0A heartbeatIntervalMs=5000`
-- `0B 01 01 = TLV: fieldId=0x0B ackMode=1 (MESSAGE_ACK)`
-- `XX XX = CRC16 over Header+Payload`
-
-#### 2. CONTROL ACCEPT
-
-**Direction:** Device → Client
-
-```text
-Standard L1 Header (12B) + Control Payload (17B) + CRC16 (2B)
-opcode=0x02 (ACCEPT), controlId=1, statusCode=0x0000
-TLV body: sessionId=0x00000001, protocolVersion=1, maxFrameSize=512, mtu=512
-```
-
-**Hex bytes:**
-
-```text
-41 58 11 11 00 01 00 01 10 01 00 00  02 01 00 00 00  01 04 01 00 00 00 02 01 01 04 02 00 02 06 02 00 02  XX XX
-```
-
-**Field annotations:**
-
-- `02 = opcode=ACCEPT`
-- `01 04 01 00 00 00 = TLV: fieldId=0x01 sessionId=1`
-- `02 01 01 = TLV: fieldId=0x02 protocolVersion=1`
-- `04 02 00 02 = TLV: fieldId=0x04 maxFrameSize=512`
-- `06 02 00 02 = TLV: fieldId=0x06 mtu=512`
-
-#### 3. RPC Hello (JSON)
-
-**Direction:** Device → Client
-
-```text
-Standard L1 Header (12B) + RPC Binary Header (11B) + JSON body + CRC16 (2B)
-rpcEncoding=0x01 (JSON), rpcOp=0x00 (Hello), requestId=0, methodOrEventId=0
-```
-
-**Hex bytes:**
-
-```text
-41 58 12 <payLen> 02 00 01 10 01 00 00  01 00 00 00 00 00 00 00 00 00 00  7B...7D  XX XX
-```
-
-**Field annotations:**
-
-- `12 = Version(0x1) | PayloadType(0x2=RPC)`
-- `01 = rpcEncoding=JSON`
-- `00 = rpcOp=Hello`
-- `00 00 00 00 = requestId=0 (server-push, no correlation)`
-- `00 00 = methodOrEventId=0 (Hello has no methodId)`
-- `00 00 = statusCode=0`
-- `00 = bodyEncoding=NONE (JSON body follows directly)`
-- `7B...7D = JSON body: {"rpcVersion":"2026.05","authRequired":false}`
-
-#### 4. RPC Identify (JSON)
-
-**Direction:** Client → Device
-
-```text
-Standard L1 Header (12B) + RPC Binary Header (11B) + JSON body + CRC16 (2B)
-rpcEncoding=0x01 (JSON), rpcOp=0x02 (Identify), requestId=1
-```
-
-**Hex bytes:**
-
-```text
-41 58 12 <payLen> 03 00 01 01 10 00 00  01 02 01 00 00 00 00 00 00 00 00  7B...7D  XX XX
-```
-
-**Field annotations:**
-
-- `02 = rpcOp=Identify`
-- `01 00 00 00 = requestId=1`
-- `7B...7D = JSON body: {"clientName":"MyApp","clientVersion":"1.0"}`
-
-#### 5. RPC Identified (JSON)
-
-**Direction:** Device → Client
-
-```text
-Standard L1 Header (12B) + RPC Binary Header (11B) + JSON body + CRC16 (2B)
-rpcEncoding=0x01 (JSON), rpcOp=0x03 (Identified), requestId=1
-```
-
-**Hex bytes:**
-
-```text
-41 58 12 <payLen> 03 00 01 10 01 00 00  01 03 01 00 00 00 00 00 00 00 00  7B...7D  XX XX
-```
-
-**Field annotations:**
-
-- `03 = rpcOp=Identified`
-- `01 00 00 00 = requestId=1 (correlates with Identify)`
-- `7B...7D = JSON body: {"sid":"a1b2c3d4","negotiatedRpcVersion":"2026.05"}`
-
-#### 6. capability.supportedMethods Request (Binary TLV)
-
-**Direction:** Client → Device
-
-```text
-Standard L1 Header (12B) + RPC Binary Header (11B) + TLV body (empty) + CRC16 (2B)
-rpcEncoding=0x02 (BINARY), rpcOp=0x07 (Request), methodId=0x0301
-```
-
-**Hex bytes:**
-
-```text
-41 58 12 0B 00 04 00 01 10 00 00  02 07 02 00 00 01 03 00 00 01 00  XX XX
-```
-
-**Field annotations:**
-
-- `02 = rpcEncoding=BINARY`
-- `07 = rpcOp=Request`
-- `02 00 00 00 = requestId=2`
-- `01 03 = methodOrEventId=0x0301 (capability.supportedMethods)`
-- `00 00 = statusCode=0`
-- `01 = bodyEncoding=TLV8`
-- `(no TLV fields — empty request body)`
-
-#### 7. capability.supportedMethods Response (Binary TLV)
-
-**Direction:** Device → Client
-
-```text
-Standard L1 Header (12B) + RPC Binary Header (11B) + TLV body + CRC16 (2B)
-rpcOp=0x08 (RequestResponse), methodId=0x0301
-TLV body: methodMasks field containing per-domain bitmasks
-```
-
-**Hex bytes:**
-
-```text
-41 58 12 <payLen> 04 00 01 10 01 00 00  02 08 02 00 00 01 03 00 00 01 00  <TLV methodMasks>  XX XX
-```
-
-**Field annotations:**
-
-- `08 = rpcOp=RequestResponse`
-- `02 00 00 00 = requestId=2 (correlates with Request)`
-- `TLV methodMasks example: 01 04 05 01 00 00 = fieldId=0x01 len=4 value=[DomainId=0x05 MaskLen=0x01 Bitmask=0x03] meaning display domain supports getBrightness(bit0) and setBrightness(bit1)`
+| `CONTROL` | 0x01 | 5B | Logical session control payload. |
+| `RPC` | 0x02 | 11B | Binary request, response, event and error payload. |
+| `STREAM` | 0x03 | 16B | Chunk-oriented data plane payload. |
 
 ## Capability Discovery
 
@@ -723,7 +501,7 @@ Type: `FirmwareApplyResponse`
 
 ### stream.open
 
-Open an AXTP STREAM media channel over HID using media.video or media.audio, without UVC or UAC.
+Open an AXTP STREAM media channel over USB HID High Speed using media.video or media.audio, without UVC or UAC.
 
 - Method ID: `0x0901`
 - Domain: `stream`
@@ -742,7 +520,7 @@ Type: `StreamOpenRequest`
 | Name | Type | Field ID | Description | Value Restrictions | ?Default Behavior |
 | ---- | :---: | :---: | ---- | :---: | ---- |
 | profile | String | 0x01 | Stream Profile name. For this method use media.video or media.audio. | maxLength=32 | N/A |
-| transportProfile | String | 0x02 | Transport Profile name. HID media streams use AXTP-HID-64. | maxLength=32 | N/A |
+| transportProfile | String | 0x02 | Transport Profile name. HID media streams use AXTP-USB-HID. | maxLength=32 | N/A |
 | direction | Enum | 0x03 | Stream direction; values are device_to_host, host_to_device, or bidirectional. | None | N/A |
 | mediaKind | Enum | 0x04 | Media kind carried by this stream; values are video or audio. | None | N/A |
 | ?sourceId | UInt16 | 0x05 | Device-local media source identifier. | None | Omit if not used. |
@@ -752,7 +530,7 @@ Type: `StreamOpenRequest`
 | ?frameRate | UInt16 | 0x09 | Video frame rate in frames per second. | None | Omit if not used. |
 | ?sampleRate | UInt32 | 0x0A | Audio sample rate in Hz. | None | Omit if not used. |
 | ?channelCount | UInt8 | 0x0B | Number of audio channels. | None | Omit if not used. |
-| ?chunkSizeHint | UInt16 | 0x0C | Preferred STREAM data bytes per HID-64 report after the 16B STREAM header. | max=42 | Omit if not used. |
+| ?chunkSizeHint | UInt16 | 0x0C | Preferred STREAM data bytes per Standard Frame after the 16B STREAM header. | None | Omit if not used. |
 | ?windowSizeHint | UInt16 | 0x0D | Preferred stream flow-control window in chunks. | None | Omit if not used. |
 
 #### Response Fields
@@ -764,7 +542,7 @@ Type: `StreamOpenResponse`
 | streamId | UInt32 | 0x01 | STREAM channel identifier bound to the selected Stream Profile. | None | N/A |
 | profile | String | 0x02 | Accepted Stream Profile name. | maxLength=32 | N/A |
 | transportProfile | String | 0x03 | Accepted Transport Profile name. | maxLength=32 | N/A |
-| chunkSize | UInt16 | 0x04 | STREAM data bytes to place in each HID-64 report after the 16B STREAM header. | max=42 | N/A |
+| chunkSize | UInt16 | 0x04 | STREAM data bytes to place in each Standard Frame after the 16B STREAM header. | None | N/A |
 | windowSize | UInt16 | 0x05 | Negotiated stream flow-control window in chunks. | None | N/A |
 | ackMode | Enum | 0x06 | Stream acknowledgement mode, such as best_effort or stop_and_wait. | None | N/A |
 | cursorUnit | Enum | 0x07 | Cursor unit used in the 64-bit STREAM cursor, usually timestampUs for media streams. | None | N/A |
@@ -1000,9 +778,9 @@ Describes HID-backed media STREAM support.
 
 | Name | Type | Field ID | Description | Value Restrictions | ?Default Behavior |
 | ---- | :---: | :---: | ---- | :---: | ---- |
-| transportProfile | String | 0x01 | Supported HID Transport Profile, usually AXTP-HID-64. | maxLength=32 | N/A |
+| transportProfile | String | 0x01 | Supported HID Transport Profile, usually AXTP-USB-HID. | maxLength=32 | N/A |
 | maxStreamCount | UInt8 | 0x02 | Maximum simultaneously opened media streams. | None | N/A |
-| maxChunkSize | UInt16 | 0x03 | Maximum STREAM data bytes per HID-64 report after the 16B STREAM header. | max=42 | N/A |
+| maxChunkSize | UInt16 | 0x03 | Maximum STREAM data bytes per Standard Frame after the 16B STREAM header. | None | N/A |
 | supportsVideo | Boolean | 0x04 | Device can open media.video streams over HID. | None | N/A |
 | supportsAudio | Boolean | 0x05 | Device can open media.audio streams over HID. | None | N/A |
 
@@ -1014,32 +792,158 @@ Describes HID-backed media STREAM support.
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
 | 0x0000 | SUCCESS | common | info | No | stable | Operation completed successfully. |
 | 0x0001 | UNKNOWN_ERROR | common | error | No | stable | Unknown error. |
+| 0x0002 | NOT_IMPLEMENTED | common | error | No | stable | Feature is not implemented. |
+| 0x0003 | NOT_SUPPORTED | common | error | No | stable | Feature is not supported by the current device or mode. |
+| 0x0004 | INVALID_STATE | common | error | No | stable | Operation is not allowed in the current state. |
 | 0x0005 | BUSY | common | warning | Yes | stable | Device or resource is busy. |
+| 0x0006 | TIMEOUT | common | warning | Yes | stable | Operation timed out. |
+| 0x0007 | CANCELED | common | error | No | stable | Operation was canceled. |
+| 0x0008 | RESOURCE_EXHAUSTED | common | warning | Yes | stable | Resource is exhausted. |
+| 0x0009 | PERMISSION_DENIED | common | error | No | stable | Permission denied. |
+| 0x000A | INVALID_ARGUMENT | common | error | No | stable | Argument is invalid. |
+| 0x000B | OUT_OF_RANGE | common | error | No | stable | Argument is out of range. |
+| 0x000C | NOT_FOUND | common | error | No | stable | Resource was not found. |
+| 0x000D | ALREADY_EXISTS | common | error | No | draft | Resource already exists. |
+| 0x000E | INTERNAL_ERROR | common | error | No | stable | Internal error. |
+| 0x000F | UNAVAILABLE | common | warning | Yes | draft | Service is temporarily unavailable. |
+| 0x0101 | FRAME_MAGIC_INVALID | frame | error | No | stable | Frame magic is invalid. |
 | 0x0102 | FRAME_VERSION_UNSUPPORTED | frame | error | No | stable | Frame version is not supported. |
+| 0x0103 | FRAME_HEADER_INVALID | frame | error | No | stable | Frame header is invalid. |
+| 0x0104 | FRAME_LENGTH_INVALID | frame | error | No | stable | Frame payload length or total length is invalid. |
+| 0x0105 | FRAME_PAYLOAD_TYPE_INVALID | frame | error | No | stable | Frame payload type is invalid. |
 | 0x0106 | FRAME_CRC_ERROR | frame | warning | Yes | stable | Frame CRC check failed. |
+| 0x0107 | FRAME_FRAGMENT_INVALID | frame | error | No | stable | Frame fragment metadata is invalid. |
 | 0x0108 | FRAME_FRAGMENT_MISSING | frame | warning | Yes | stable | One or more frame fragments are missing. |
+| 0x0109 | FRAME_REASSEMBLY_TIMEOUT | frame | warning | Yes | stable | Frame reassembly timed out. |
+| 0x010A | FRAME_TOO_LARGE | frame | error | No | stable | Frame exceeds the negotiated maximum size. |
+| 0x010B | TRANSPORT_MTU_EXCEEDED | frame | error | No | stable | Transport MTU was exceeded. |
+| 0x010C | TRANSPORT_WRITE_FAILED | frame | warning | Yes | draft | Transport write failed. |
+| 0x010D | TRANSPORT_READ_FAILED | frame | warning | Yes | draft | Transport read failed. |
+| 0x010E | TRANSPORT_DISCONNECTED | frame | warning | Yes | stable | Transport disconnected. |
 | 0x0201 | CONTROL_OPCODE_INVALID | control | error | No | stable | Control opcode is invalid. |
 | 0x0202 | CONTROL_PAYLOAD_INVALID | control | error | No | stable | Control payload is invalid. |
+| 0x0203 | RESERVED_CONTROL_BODY_ENCODING_UNSUPPORTED | control | error | No | reserved | Historical control body encoding negotiation error. AXTP v1 implementations must not emit it. |
 | 0x0204 | CONTROL_OPEN_REQUIRED | control | error | No | stable | Session has not completed CONTROL OPEN. |
 | 0x0205 | CONTROL_OPEN_REJECTED | control | error | No | stable | Control OPEN was rejected. |
 | 0x0206 | RESERVED_CONTROL_PROFILE_UNSUPPORTED | control | error | No | reserved | Historical header profile negotiation error. AXTP v1 implementations must not emit it. |
 | 0x0207 | CONTROL_NEGOTIATION_FAILED | control | error | No | stable | Control negotiation failed. |
 | 0x0208 | CONTROL_SESSION_INVALID | control | error | No | stable | SessionId is invalid. |
+| 0x0209 | CONTROL_SESSION_EXPIRED | control | error | No | stable | Session has expired. |
 | 0x020A | CONTROL_RESUME_FAILED | control | error | No | stable | Session resume failed. |
+| 0x020B | CONTROL_ACK_TARGET_INVALID | control | error | No | stable | ACK/NACK target type is invalid. |
 | 0x020C | CONTROL_WINDOW_EXCEEDED | control | warning | Yes | stable | Flow-control window was exceeded. |
+| 0x020D | CONTROL_HEARTBEAT_TIMEOUT | control | warning | Yes | stable | Control heartbeat timed out. |
 | 0x0301 | RPC_ENCODING_UNSUPPORTED | rpc | error | No | stable | RPC encoding is not supported. |
-| 0x0306 | RPC_METHOD_NOT_FOUND | rpc | error | No | stable | MethodId or method name is not supported. |
+| 0x0302 | RPC_OP_INVALID | rpc | error | No | stable | RPC operation is invalid. |
+| 0x0303 | RPC_PAYLOAD_INVALID | rpc | error | No | stable | RPC payload is invalid. |
+| 0x0304 | RPC_BODY_ENCODING_UNSUPPORTED | rpc | error | No | stable | RPC body encoding is not supported. |
+| 0x0305 | RPC_BODY_DECODE_FAILED | rpc | error | No | stable | RPC body decoding failed. |
+| 0x0306 | RPC_METHOD_NOT_FOUND | rpc | error | No | stable | MethodId or method name is not registered. |
+| 0x0307 | RPC_METHOD_NOT_SUPPORTED | rpc | error | No | stable | Method exists but is not supported by the current device. |
+| 0x0308 | RPC_METHOD_DISABLED | rpc | error | No | draft | Method is disabled. |
+| 0x0309 | RPC_REQUEST_ID_INVALID | rpc | error | No | stable | RPC requestId is invalid. |
+| 0x030A | RPC_PARAM_MISSING | rpc | error | No | stable | Required RPC parameter is missing. |
 | 0x030B | RPC_PARAM_INVALID | rpc | error | No | stable | RPC parameters are invalid. |
+| 0x030C | RPC_PARAM_OUT_OF_RANGE | rpc | error | No | stable | RPC parameter is out of range. |
+| 0x030D | RPC_EXECUTION_FAILED | rpc | error | No | stable | RPC method execution failed. |
+| 0x030E | RPC_RESPONSE_TIMEOUT | rpc | warning | Yes | stable | RPC response timed out. |
+| 0x030F | RPC_BATCH_UNSUPPORTED | rpc | error | No | draft | RPC batch is not supported. |
+| 0x0310 | RPC_BATCH_PARTIAL_FAILED | rpc | error | No | draft | One or more RPC batch items failed. |
 | 0x0401 | STREAM_NOT_FOUND | stream | error | No | stable | Stream context does not exist. |
 | 0x0402 | STREAM_TIMEOUT | stream | warning | Yes | stable | Stream timed out. |
 | 0x0403 | STREAM_CRC_ERROR | stream | warning | Yes | stable | Stream chunk CRC check failed. |
+| 0x0404 | STREAM_PAYLOAD_INVALID | stream | error | No | stable | Stream payload is invalid. |
+| 0x0405 | STREAM_ID_INVALID | stream | error | No | stable | StreamId is invalid. |
+| 0x0406 | STREAM_NOT_OPEN | stream | error | No | stable | Stream is not open. |
+| 0x0407 | STREAM_ALREADY_OPEN | stream | error | No | draft | Stream is already open. |
+| 0x0408 | STREAM_SEQ_INVALID | stream | error | No | stable | Stream seqId is invalid. |
+| 0x0409 | STREAM_SEQ_DUPLICATED | stream | error | No | draft | Stream seqId is duplicated. |
+| 0x040A | STREAM_CHUNK_MISSING | stream | warning | Yes | stable | Stream chunk is missing. |
+| 0x040B | STREAM_OFFSET_INVALID | stream | error | No | stable | Stream cursor or offset is invalid. |
+| 0x040C | STREAM_WINDOW_FULL | stream | warning | Yes | stable | Stream receive window is full. |
+| 0x040D | STREAM_BACKPRESSURE | stream | warning | Yes | draft | Stream receiver reported backpressure. |
+| 0x040E | STREAM_RESUME_UNSUPPORTED | stream | error | No | stable | Stream resume is not supported. |
+| 0x040F | STREAM_RESUME_FAILED | stream | error | No | stable | Stream resume failed. |
+| 0x0410 | STREAM_CLOSED | stream | error | No | stable | Stream is closed. |
+| 0x0411 | STREAM_TRANSFER_ABORTED | stream | error | No | stable | Stream transfer was aborted. |
+| 0x0501 | CAPABILITY_NOT_FOUND | business | error | No | stable | Capability does not exist. |
+| 0x0502 | CAPABILITY_DOMAIN_NOT_FOUND | business | error | No | stable | Capability domain does not exist. |
+| 0x0503 | CAPABILITY_METHOD_UNSUPPORTED | business | error | No | stable | Method capability is not supported. |
+| 0x0504 | CAPABILITY_EVENT_UNSUPPORTED | business | error | No | stable | Event capability is not supported. |
+| 0x0505 | CAPABILITY_STREAM_UNSUPPORTED | business | error | No | stable | Stream capability is not supported. |
+| 0x0506 | CAPABILITY_ENCODING_UNSUPPORTED | business | error | No | stable | Encoding capability is not supported. |
+| 0x0507 | CAPABILITY_NEGOTIATION_FAILED | business | error | No | stable | Business capability negotiation failed. |
+| 0x0508 | CAPABILITY_LIMIT_EXCEEDED | business | error | No | stable | Capability limit was exceeded. |
+| 0x0601 | FW_IMAGE_INVALID | business | error | No | stable | Firmware image is invalid. |
+| 0x0602 | FW_IMAGE_TYPE_UNSUPPORTED | business | error | No | stable | Firmware image type is not supported. |
+| 0x0603 | FW_VERSION_UNSUPPORTED | business | error | No | stable | Firmware version is not supported. |
+| 0x0604 | FW_VERSION_TOO_OLD | business | error | No | draft | Firmware version is too old. |
+| 0x0605 | FW_TRANSFER_NOT_STARTED | business | error | No | stable | Firmware transfer has not started. |
+| 0x0606 | FW_TRANSFER_ALREADY_STARTED | business | error | No | draft | Firmware transfer has already started. |
+| 0x0607 | FW_CHUNK_INVALID | business | error | No | stable | Firmware chunk is invalid. |
+| 0x0608 | FW_CHUNK_CRC_ERROR | business | warning | Yes | stable | Firmware chunk CRC failed. |
+| 0x0609 | FW_SIZE_MISMATCH | business | error | No | stable | Firmware size does not match the declared size. |
+| 0x060A | FW_HASH_MISMATCH | business | error | No | stable | Firmware hash does not match the declared verification value. |
 | 0x060B | FW_VERIFY_FAILED | business | error | No | stable | Firmware verification failed. |
-| 0x0801 | MEDIA_SOURCE_NOT_FOUND | business | error | No | draft | Requested media source does not exist. |
-| 0x0802 | MEDIA_SOURCE_UNAVAILABLE | business | warning | Yes | draft | Requested media source is currently unavailable. |
-| 0x0803 | MEDIA_CODEC_UNSUPPORTED | business | error | No | draft | Requested media codec or sample format is unsupported. |
-| 0x0804 | MEDIA_RESOLUTION_UNSUPPORTED | business | error | No | draft | Requested video resolution is unsupported. |
-| 0x0805 | MEDIA_FRAMERATE_UNSUPPORTED | business | error | No | draft | Requested video frame rate is unsupported. |
-| 0x0807 | MEDIA_STREAM_START_FAILED | business | warning | Yes | draft | Device failed to start the requested media stream. |
+| 0x060C | FW_APPLY_FAILED | business | error | No | stable | Firmware apply failed. |
+| 0x060D | FW_ROLLBACK_FAILED | business | error | No | draft | Firmware rollback failed. |
+| 0x060E | FW_STORAGE_NOT_ENOUGH | business | error | No | stable | Not enough storage for firmware update. |
+| 0x060F | FW_DEVICE_NOT_READY | business | warning | Yes | stable | Device is not ready for firmware update. |
+| 0x0610 | FW_REBOOT_REQUIRED | business | error | No | draft | Reboot is required before continuing. |
+| 0x0701 | FILE_NOT_FOUND | business | error | No | stable | File does not exist. |
+| 0x0702 | FILE_ALREADY_EXISTS | business | error | No | draft | File already exists. |
+| 0x0703 | FILE_PERMISSION_DENIED | business | error | No | stable | File permission denied. |
+| 0x0704 | FILE_PATH_INVALID | business | error | No | stable | File path is invalid. |
+| 0x0705 | FILE_TYPE_UNSUPPORTED | business | error | No | stable | File type is not supported. |
+| 0x0706 | FILE_TOO_LARGE | business | error | No | stable | File is too large. |
+| 0x0707 | FILE_READ_FAILED | business | warning | Yes | stable | File read failed. |
+| 0x0708 | FILE_WRITE_FAILED | business | warning | Yes | stable | File write failed. |
+| 0x0709 | FILE_DELETE_FAILED | business | error | No | draft | File delete failed. |
+| 0x070A | FILE_TRANSFER_FAILED | business | warning | Yes | stable | File transfer failed. |
+| 0x070B | FILE_VERIFY_FAILED | business | error | No | stable | File verification failed. |
+| 0x070C | FILE_STORAGE_FULL | business | error | No | stable | File storage is full. |
+| 0x0801 | MEDIA_SOURCE_NOT_FOUND | business | error | No | stable | Requested media source does not exist. |
+| 0x0802 | MEDIA_SOURCE_UNAVAILABLE | business | warning | Yes | stable | Requested media source is currently unavailable. |
+| 0x0803 | MEDIA_CODEC_UNSUPPORTED | business | error | No | stable | Requested media codec or sample format is unsupported. |
+| 0x0804 | MEDIA_RESOLUTION_UNSUPPORTED | business | error | No | stable | Requested video resolution is unsupported. |
+| 0x0805 | MEDIA_FRAMERATE_UNSUPPORTED | business | error | No | stable | Requested video frame rate is unsupported. |
+| 0x0806 | MEDIA_BITRATE_UNSUPPORTED | business | error | No | draft | Requested media bitrate is unsupported. |
+| 0x0807 | MEDIA_STREAM_START_FAILED | business | warning | Yes | stable | Device failed to start the requested media stream. |
+| 0x0808 | MEDIA_STREAM_STOP_FAILED | business | warning | Yes | draft | Device failed to stop the media stream. |
+| 0x0809 | MEDIA_FRAME_DROPPED | business | warning | Yes | draft | Media frame was dropped. |
+| 0x080A | MEDIA_AUDIO_DEVICE_NOT_FOUND | business | error | No | draft | Audio device was not found. |
+| 0x080B | MEDIA_VIDEO_SIGNAL_LOST | business | warning | Yes | draft | Video signal was lost. |
+| 0x0901 | DEVICE_INFO_UNAVAILABLE | business | warning | Yes | stable | Device information is unavailable. |
+| 0x0902 | DEVICE_REBOOT_FAILED | business | error | No | draft | Device reboot failed. |
+| 0x0903 | DEVICE_FACTORY_RESET_FAILED | business | error | No | draft | Device factory reset failed. |
+| 0x0904 | DEVICE_LOW_POWER | business | warning | Yes | draft | Device power is low. |
+| 0x0905 | DEVICE_OVER_TEMPERATURE | business | warning | Yes | draft | Device temperature is too high. |
+| 0x0906 | DEVICE_STORAGE_FULL | business | error | No | stable | Device storage is full. |
+| 0x0907 | DEVICE_MODE_CONFLICT | business | error | No | stable | Device mode conflicts with the requested operation. |
+| 0x0908 | DEVICE_RESOURCE_BUSY | business | warning | Yes | stable | Device resource is busy. |
+| 0x0909 | DEVICE_HARDWARE_FAILURE | business | error | No | draft | Device hardware failure. |
+| 0x0A01 | SEC_AUTH_REQUIRED | business | error | No | draft | Authentication is required. |
+| 0x0A02 | SEC_AUTH_FAILED | business | error | No | draft | Authentication failed. |
+| 0x0A03 | SEC_PERMISSION_DENIED | business | error | No | draft | Security permission denied. |
+| 0x0A04 | SEC_ENCRYPTION_REQUIRED | business | error | No | draft | Encryption is required. |
+| 0x0A05 | SEC_DECRYPT_FAILED | business | error | No | draft | Decryption failed. |
+| 0x0A06 | SEC_SIGNATURE_INVALID | business | error | No | draft | Signature is invalid. |
+| 0x0A07 | SEC_CERT_INVALID | business | error | No | draft | Certificate is invalid. |
+| 0x0A08 | SEC_TOKEN_EXPIRED | business | error | No | draft | Security token expired. |
+| 0x0B01 | DIAG_TEST_NOT_FOUND | business | error | No | draft | Diagnostic test was not found. |
+| 0x0B02 | DIAG_TEST_UNSUPPORTED | business | error | No | draft | Diagnostic test is not supported. |
+| 0x0B03 | DIAG_TEST_RUNNING | business | error | No | draft | Diagnostic test is already running. |
+| 0x0B04 | DIAG_TEST_FAILED | business | error | No | draft | Diagnostic test failed. |
+| 0x0B05 | DIAG_METRIC_UNAVAILABLE | business | warning | Yes | draft | Diagnostic metric is unavailable. |
+| 0x0B06 | DIAG_LOOPBACK_FAILED | business | error | No | draft | Diagnostic loopback failed. |
+| 0x7F01 | LEGACY_CMD_UNMAPPED | legacy | error | No | stable | Legacy CmdValue is not mapped to an AXTP method. |
+| 0x7F02 | LEGACY_STATUS_UNMAPPED | legacy | error | No | stable | Legacy status is not mapped to an AXTP ErrorCode. |
+| 0x7F03 | LEGACY_PAYLOAD_INVALID | legacy | error | No | stable | Legacy payload is invalid. |
+| 0x7F04 | LEGACY_PAYLOAD_TOO_SHORT | legacy | error | No | stable | Legacy payload is too short. |
+| 0x7F05 | LEGACY_PAYLOAD_TOO_LONG | legacy | error | No | stable | Legacy payload is too long. |
+| 0x7F06 | LEGACY_FIELD_UNSUPPORTED | legacy | error | No | stable | Legacy field cannot be adapted. |
+| 0x7F07 | LEGACY_CAPABILITY_CONFLICT | legacy | error | No | stable | Legacy capability conflicts with AXTP capability. |
+| 0x7F08 | LEGACY_RESPONSE_TIMEOUT | legacy | warning | Yes | stable | Legacy response timed out. |
 
 # Profiles Reference
 

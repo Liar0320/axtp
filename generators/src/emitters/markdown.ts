@@ -3,7 +3,10 @@ import type { SpecModel } from "../models.js";
 import { hex, sortById, writeTextFile } from "../util.js";
 
 export async function emitMarkdown(spec: SpecModel, outDir: string): Promise<void> {
-  const docsDir = path.join(outDir, "docs");
+  await emitMarkdownFiles(spec, path.join(outDir, "docs"));
+}
+
+export async function emitMarkdownFiles(spec: SpecModel, docsDir: string): Promise<void> {
   await Promise.all([
     writeTextFile(path.join(docsDir, "method_registry.generated.md"), methodTable(spec)),
     writeTextFile(path.join(docsDir, "event_registry.generated.md"), eventTable(spec)),

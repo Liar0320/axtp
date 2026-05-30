@@ -6,13 +6,15 @@
 
 版本：v1.0.0-rc1
 状态：Protocol Definition 元规范
-适用范围：`registry/schema/`、`registry/capability/` 与 `domains/*/domain.yaml` 中 type/capability 源条目的字段、约束和生成规则
+适用范围：`registry/schema/`、`registry/capability/` 与 `registry/domains/<domain>/domain.yaml` 中 type/capability 源条目的字段、约束和生成规则
 
 ---
 
 ## 1. 文档定位
 
-本文档只定义 schema / capability 元模型，不手写完整业务 schema 或能力树。具体类型内容必须写入 `registry/schema/`、`registry/capability/` 或 `domains/*/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `schemas:` 由 Generator 聚合生成。
+本文档只定义 schema / capability 元模型，不手写完整业务 schema 或能力树。具体类型内容必须写入 `registry/schema/`、`registry/capability/` 或 `registry/domains/<domain>/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `schemas:` 由 Generator 聚合生成。
+
+新增业务专属 type/capability 默认写入 `registry/domains/<domain>/domain.yaml`。只有跨 domain 复用的公共 schema、Core/MVP capability 或已经采纳的共享能力，才写入 `registry/schema/` 或 `registry/capability/`。晋升时必须迁移并删除 domain 中的原条目，不得复制。
 
 ---
 
@@ -121,4 +123,4 @@ capability schema
 按事件/流/profile 的复杂能力协商
 ```
 
-v2 Capability Model 可以引用 `schemas:`，但不得改变 v1 method/event/error/schema 的 stable wire format。完整设计草案迁移到 `protocol-source/future/AXTP-Capability-Model-v2.md`，不得回流为 v1 Core 必选项。
+v2 Capability Model 可以引用 `schemas:`，但不得改变 v1 method/event/error/schema 的 stable wire format。完整设计草案保留在 `docs/source/AXTP-Capability-Model-v2.md`，不得回流为 v1 Core 必选项。

@@ -1,4 +1,4 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -33,9 +33,22 @@ describe("protocol source pipeline", () => {
   it("loads registry/domain sources and builds a valid protocol definition", async () => {
     const sources = await loadProtocolSources(repoRoot);
     expect(validateSpec(sources)).toContain("[OK] method_registry.yaml: 9 methods checked");
+    expect(sources.methods.find((method) => method.name === "stream.open")?.requestSchema).toBe("StreamOpenRequest");
     const model = buildProtocolDefinition(sources);
     expect(model.methods.find((method) => method.name === "firmware.begin")?.request.type).toBe("FirmwareBeginRequest");
+    expect(model.methods.find((method) => method.name === "stream.open")?.response.type).toBe("StreamOpenResponse");
     expect(validateProtocolDefinition(model)).toContain("[OK] protocol/axtp.protocol.yaml: 9 methods checked");
+  });
+
+  it("rejects deprecated top-level domain YAML sources", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "axtp-legacy-domains-"));
+    try {
+      await mkdir(path.join(dir, "domains", "stream"), { recursive: true });
+      await writeFile(path.join(dir, "domains", "stream", "domain.yaml"), "domain: stream\n", "utf8");
+      await expect(loadProtocolSources(dir)).rejects.toThrow(/top-level domains\/ is deprecated/);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 });
 
@@ -120,6 +133,25 @@ describe("protocol definition validator", () => {
     model.profiles.find((profile) => profile.name === "AXTP-MVP")!.frameProfiles.push("UNUSED_FRAME");
     model.frameProfiles.push({ name: "UNUSED_FRAME", l1: "STANDARD_L1", l2: "STANDARD_L2" });
     expect(() => validateProtocolDefinition(model)).toThrow(/not used by transportProfiles/);
+  });
+
+  it("rejects compact frame profiles in current protocol ir", async () => {
+    const model = cloneModel(await loadCurrentProtocol());
+    model.frameProfiles.push({ name: "COMPACT_FRAME", l1: "COMPACT_L1", l2: "COMPACT_L2" });
+    expect(() => validateProtocolDefinition(model)).toThrow(/COMPACT_FRAME/);
+  });
+
+  it("rejects invalid websocket unframed json transport capabilities", async () => {
+    const model = cloneModel(await loadCurrentProtocol());
+    const transport = model.transports.find((item) => item.name === "AXTP-WS-JSON")!;
+    transport.supportsStream = true;
+    expect(() => validateProtocolDefinition(model)).toThrow(/must not support CONTROL or STREAM/);
+  });
+
+  it("rejects hid-64 profile references", async () => {
+    const model = cloneModel(await loadCurrentProtocol());
+    model.profiles.find((profile) => profile.name === "AXTP-HID-MEDIA")!.transportProfiles = ["AXTP-HID-64"];
+    expect(() => validateProtocolDefinition(model)).toThrow(/AXTP-USB-HID/);
   });
 
   it("rejects missing method type references", async () => {
@@ -210,16 +242,30 @@ describe("protocol definition emitters", () => {
       await emitProtocolDocs(model, dir);
       const json = await readFile(path.join(dir, "protocol.json"), "utf8");
       const markdown = await readFile(path.join(dir, "protocol.md"), "utf8");
+      expect(json).toContain("\"supportsStream\": false");
+      expect(json).toContain("\"supportsControl\": false");
       expect(markdown).toContain("## Main Table of Contents");
+      expect(markdown).toContain("## Protocol Framework");
+      expect(markdown).toContain("## Supported Connection Profiles");
+      expect(markdown).toContain("AXTP-USB-HID");
+      expect(markdown).toContain("AXTP-TCP");
+      expect(markdown).toContain("AXTP-WS-JSON");
+      expect(markdown).toContain("AXTP-WS-CLOUD-REVERSE");
+      expect(markdown).toContain("Logical Server sends Hello");
+      expect(markdown).not.toContain("AXTP-HID-64");
+      expect(markdown).not.toContain("Compact Header");
       expect(markdown).toContain("## firmware Methods");
       expect(markdown).toContain("### firmware.begin");
       expect(markdown).toContain("#### Request Fields");
       expect(markdown).toContain("#### Response Fields");
       expect(markdown).toContain("#### Payload Fields");
+      expect(markdown).toContain("## Implemented Domains");
+      expect(markdown).toContain("### Methods in this domain");
+      expect(markdown).toContain("# Errors Reference");
+      expect(markdown).toContain("# Profiles Reference");
       expect(markdown).not.toContain("## Frame Profiles");
-      expect(markdown).toContain("## Transport Profiles");
+      expect(markdown).not.toContain("## Transport Profiles");
       expect(markdown).toContain("## Payload Types");
-      expect(markdown).toContain("## Wire Format Examples");
       expect(markdown).not.toContain("## Control Rules");
       expect(markdown).not.toContain("## Stream Transfer Model");
       expect(markdown).not.toContain("## Types Reference");
