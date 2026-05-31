@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include "axtp/model/bytes.h"
 #include "axtp/model/protocol_types.h"
@@ -11,6 +12,10 @@ struct PayloadMeta {
     SourceProtocol sourceProtocol = SourceProtocol::AxtpV1;
     std::uint32_t sessionId = 0;
     std::uint32_t requestId = 0;
+    std::string jsonSid;
+    std::string jsonRequestId;
+    std::string jsonMethodOrEventName;
+    bool jsonRequestIdIsString = false;
     std::uint32_t legacySequence = 0;
     std::uint32_t legacyCommandValue = 0;
     std::uint16_t legacyAxdpVersion = 0;

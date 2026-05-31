@@ -14,13 +14,16 @@ This document mirrors the current implementation in this directory.
 | 6 | `axtp-cpp-runtime-phase-06` | TCP and WebSocket JSON transports |
 | 7 | `axtp-cpp-runtime-phase-07` | Broker and business routing |
 | 8 | `axtp-cpp-runtime-phase-08` | Legacy adapter and protocol mux |
+| 9 | `axtp-cpp-runtime-phase-09` | WebSocket Text JSON RPC session adapter |
 
 ## Runtime Flow
 
 ```mermaid
 flowchart TB
-    Transport["Transport<br/>TcpTransport / WebSocketTransport / MockTransport"]
-    Mux["AxtpCore ByteSink / ProtocolMux<br/>AXTP magic or AXDP HID bytes"]
+    Tcp["TCP / Mock bytes<br/>AXTP standard frames"]
+    Ws["WebSocket text<br/>sid / op / d JSON"]
+    Hid["HID / raw legacy bytes<br/>AXDP FF A5 frames"]
+    Mux["AxtpCore ByteSink / ProtocolMux<br/>AX magic or AXDP HID bytes"]
 
     subgraph Inbound["Inbound pipeline"]
         FD["FrameDecoder<br/>bytes -> Frame"]
@@ -47,18 +50,30 @@ flowchart TB
         AxdpEnc["LegacyFrameEncoder<br/>dst/src swap, cmd + 0x80, XMODEM CRC"]
     end
 
-    Generated["generated/axtp_legacy_mapping_generated.h<br/>cmd mapping + status mapping"]
+    subgraph JsonRpc["WebSocket Text JSON compatibility"]
+        JsonAdapter["WebSocketJsonRpcAdapter<br/>Hello / Identify / Request / Event"]
+        NameMap["RegistryLookup<br/>method/event/error names"]
+        JsonOut["JSON response/event encoder<br/>status/result"]
+    end
 
-    Transport --> Mux
+    Generated["generated/axtp_legacy_mapping_generated.h<br/>cmd mapping + status mapping"]
+    GeneratedRegistry["generated method/event/error registries"]
+
+    Tcp --> Mux
+    Hid --> Mux
+    Ws --> JsonAdapter --> NameMap --> CorePorts
     Mux -->|"AX magic"| FD
     Mux -->|"FF A5 or HID report"| AxdpDec --> CmdMap --> LegacyIn
     Generated --> CmdMap
     Generated --> LegacyOut
+    GeneratedRegistry --> NameMap
     FD --> MR --> PD --> CorePorts --> Core
     LegacyIn --> CorePorts
     Core --> CorePorts --> Broker --> Router --> Broker --> CorePorts --> Core
-    Core --> CorePorts --> PE --> MF --> FE --> Transport
-    Core -->|"legacy sourceProtocol"| LegacyOut --> AxdpEnc --> Transport
+    Core -->|"AXTP sourceProtocol"| CorePorts --> PE --> MF --> FE --> Tcp
+    Core -->|"legacy sourceProtocol"| LegacyOut --> AxdpEnc --> Hid
+    Core -->|"JsonRpc sourceProtocol"| JsonOut --> Ws
+    JsonAdapter --> JsonOut
 ```
 
 ## Ownership Boundaries
@@ -74,7 +89,7 @@ flowchart LR
     TransportDir["transport/<br/>bytes in/out"]
     BrokerDir["broker/<br/>business queue and routing"]
     LegacyDir["legacy/ + mux/<br/>AXDP HID compatibility"]
-    GeneratedDir["generated/<br/>legacy mapping tables"]
+    GeneratedDir["generated/<br/>method/event/error registries and legacy mapping tables"]
 
     Model --> InboundDir
     Model --> OutboundDir
@@ -85,6 +100,7 @@ flowchart LR
     TransportDir --> Ports
     CoreDir --> BrokerDir
     LegacyDir --> Ports
+    GeneratedDir --> TransportDir
     GeneratedDir --> LegacyDir
 ```
 
@@ -109,8 +125,9 @@ flowchart LR
 - `AxtpCore` does not inherit `IByteSink`, `IPayloadSink`, `IByteWriter`, or `IBrokerSink`.
 - `AxtpCore` owns thin port objects that implement those interfaces and delegate to private Core methods.
 - `attachTransport()` binds the transport to `AxtpCore`'s byte sink; once `attachLegacyInbound()` or `attachLegacy()` is configured, that byte sink auto-routes AXTP magic to the standard inbound pipeline and AXDP HID bytes to the legacy adapter.
+- WebSocket Text JSON is not routed through the AXTP standard frame decoder. `WebSocketJsonRpcAdapter` receives complete text messages, maps `method` names to methodIds, and submits normalized `RpcPayload` values to Core.
 - Core owns protocol state and queues, but business dispatch is in Broker.
 - AXDP HID compatibility stays in `legacy/` and `mux/`; Core and Broker operate on normalized `RpcPayload` values.
 - AXDP wire details are adapter-owned: optional HID report id, `FF A5` magic, big-endian header fields, CRC-16/XMODEM, device-family masks, and `cmd + 0x80` responses.
 - Legacy command and status mappings come from generated tables, not hard-coded Core or Broker logic.
-- WebSocket JSON is an RPC-only wire mode and does not carry CONTROL or STREAM.
+- WebSocket JSON is an RPC-only wire mode and does not carry CONTROL or STREAM. It implements Text JSON `Hello`, `Identify`, `Identified`, `Request`, `RequestResponse`, `Event`, and an unsupported-batch response.

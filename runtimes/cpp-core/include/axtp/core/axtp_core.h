@@ -60,6 +60,10 @@ public:
         legacyOutbound_ = &outbound;
     }
 
+    void attachJsonRpcOutbound(IProtocolOutbound& outbound) {
+        jsonRpcOutbound_ = &outbound;
+    }
+
     void attachLegacyInbound(IByteSink& inbound) {
         legacyInbound_ = &inbound;
     }
@@ -239,6 +243,10 @@ private:
     }
 
     void handleBrokerRpcResponse(RpcPayload payload) {
+        if (payload.meta.sourceProtocol == SourceProtocol::JsonRpc && jsonRpcOutbound_ != nullptr) {
+            jsonRpcOutbound_->sendRpc(std::move(payload));
+            return;
+        }
         if (payload.meta.sourceProtocol == SourceProtocol::Legacy && legacyOutbound_ != nullptr) {
             legacyOutbound_->sendRpc(std::move(payload));
             return;
@@ -247,6 +255,10 @@ private:
     }
 
     void handleBrokerRpcError(RpcPayload payload) {
+        if (payload.meta.sourceProtocol == SourceProtocol::JsonRpc && jsonRpcOutbound_ != nullptr) {
+            jsonRpcOutbound_->sendRpc(std::move(payload));
+            return;
+        }
         if (payload.meta.sourceProtocol == SourceProtocol::Legacy && legacyOutbound_ != nullptr) {
             legacyOutbound_->sendRpc(std::move(payload));
             return;
@@ -255,6 +267,10 @@ private:
     }
 
     void handleBrokerEvent(RpcPayload payload) {
+        if (payload.meta.sourceProtocol == SourceProtocol::JsonRpc && jsonRpcOutbound_ != nullptr) {
+            jsonRpcOutbound_->sendRpc(std::move(payload));
+            return;
+        }
         outbound_.sendEvent(std::move(payload));
     }
 
@@ -276,6 +292,7 @@ private:
     AxtpBroker* broker_ = nullptr;
     IByteSink* legacyInbound_ = nullptr;
     IProtocolOutbound* legacyOutbound_ = nullptr;
+    IProtocolOutbound* jsonRpcOutbound_ = nullptr;
 };
 
 } // namespace axtp

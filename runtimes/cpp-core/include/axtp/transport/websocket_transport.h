@@ -77,6 +77,10 @@ public:
         return acceptor_.is_open() ? acceptor_.local_endpoint(ec).port() : 0;
     }
 
+    bool hasConnection() const {
+        return websocket_ != nullptr;
+    }
+
 private:
     using WebSocket = boost::beast::websocket::stream<boost::asio::ip::tcp::socket>;
 
@@ -94,11 +98,16 @@ private:
         websocket_->accept(ec);
         if (ec) {
             websocket_.reset();
+            return;
         }
     }
 
     void readOne() {
         if (!websocket_ || !sink_) {
+            return;
+        }
+        boost::system::error_code availableEc;
+        if (websocket_->next_layer().available(availableEc) == 0 || availableEc) {
             return;
         }
         boost::beast::flat_buffer buffer;
