@@ -14,6 +14,7 @@
 #include "axtp/io/byte_sink.h"
 #include "axtp/io/byte_writer_sink.h"
 #include "axtp/outbound/axtp_outbound_processor.h"
+#include "axtp/transport/transport.h"
 
 namespace axtp {
 
@@ -76,6 +77,19 @@ public:
         return bytes;
     }
 
+    void attachTransport(ITransport& transport) {
+        transport_ = &transport;
+        transport_->bind(*this);
+    }
+
+    void flushOutbound() {
+        while (auto bytes = tryPopOutboundBytes()) {
+            if (transport_ != nullptr) {
+                transport_->sendBytes(bytes->data(), bytes->size());
+            }
+        }
+    }
+
     bool controlSessionOpen() const {
         return controlSession_.isOpen();
     }
@@ -88,6 +102,7 @@ private:
     StreamSession streamSession_;
     PendingCallTable pendingCalls_;
     std::queue<Bytes> outboundQueue_;
+    ITransport* transport_ = nullptr;
 };
 
 } // namespace axtp

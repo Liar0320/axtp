@@ -46,3 +46,11 @@ add_executable(phase4_core_test
 target_link_libraries(phase4_core_test PRIVATE axtp_cpp_core)
 
 add_test(NAME phase4_core_test COMMAND phase4_core_test)
+
+add_executable(phase5_transport_test
+    tests/phase5_transport_test.cpp
+)
+
+target_link_libraries(phase5_transport_test PRIVATE axtp_cpp_core)
+
+add_test(NAME phase5_transport_test COMMAND phase5_transport_test)
