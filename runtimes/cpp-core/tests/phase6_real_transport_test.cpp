@@ -58,7 +58,7 @@ axtp::Bytes encodeRpcRequest(std::uint32_t requestId) {
 int main() {
     {
         axtp::AxtpCore core;
-        axtp::AxtpBroker broker(core);
+        axtp::AxtpBroker broker(core.brokerSinkPort());
         core.attachBroker(broker);
         broker.registerMethod(0x0101, [](const axtp::RpcPayload&) {
             return axtp::Bytes{0xA1};
@@ -110,7 +110,7 @@ int main() {
 
     {
         axtp::AxtpCore core;
-        axtp::AxtpBroker broker(core);
+        axtp::AxtpBroker broker(core.brokerSinkPort());
         core.attachBroker(broker);
         broker.registerMethod(0x0101, [](const axtp::RpcPayload&) {
             return axtp::Bytes{0xB1, 0xB2};

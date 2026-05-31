@@ -41,7 +41,7 @@ std::string readFile(const char* path) {
 
 int main() {
     axtp::AxtpCore core;
-    axtp::AxtpBroker broker(core);
+    axtp::AxtpBroker broker(core.brokerSinkPort());
     core.attachBroker(broker);
 
     CapturingByteWriter legacyWriter;

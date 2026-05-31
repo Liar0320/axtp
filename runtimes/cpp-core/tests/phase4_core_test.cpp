@@ -56,7 +56,7 @@ axtp::Bytes encodeControl(axtp::ControlPayload payload) {
 int main() {
     {
         axtp::AxtpCore core;
-        axtp::AxtpBroker broker(core);
+        axtp::AxtpBroker broker(core.brokerSinkPort());
         core.attachBroker(broker);
         broker.registerMethod(0x0101, [](const axtp::RpcPayload& request) {
             assert(request.requestId == 100);
@@ -70,7 +70,7 @@ int main() {
         request.methodOrEventId = 0x0101;
         request.bodyEncoding = axtp::RpcBodyEncoding::Tlv8;
         auto requestBytes = encodeRpc(request);
-        core.onBytes(requestBytes.data(), requestBytes.size());
+        core.byteSinkPort().onBytes(requestBytes.data(), requestBytes.size());
         broker.poll();
 
         auto responseBytes = core.tryPopOutboundBytes();
@@ -91,7 +91,7 @@ int main() {
         open.opcode = axtp::ControlOpcode::Open;
         open.controlId = 1;
         auto bytes = encodeControl(open);
-        core.onBytes(bytes.data(), bytes.size());
+        core.byteSinkPort().onBytes(bytes.data(), bytes.size());
         assert(core.controlSessionOpen());
         auto responseBytes = core.tryPopOutboundBytes();
         assert(responseBytes.has_value());
@@ -106,7 +106,7 @@ int main() {
         ping.opcode = axtp::ControlOpcode::Ping;
         ping.controlId = 2;
         bytes = encodeControl(ping);
-        core.onBytes(bytes.data(), bytes.size());
+        core.byteSinkPort().onBytes(bytes.data(), bytes.size());
         responseBytes = core.tryPopOutboundBytes();
         assert(responseBytes.has_value());
         CapturingPayloadSink pingSink;
@@ -131,7 +131,7 @@ int main() {
         CapturingByteWriter writer;
         axtp::AxtpOutboundProcessor outbound(writer);
         outbound.sendRpcResponse(response);
-        core.onBytes(writer.bytes.data(), writer.bytes.size());
+        core.byteSinkPort().onBytes(writer.bytes.data(), writer.bytes.size());
         auto matched = core.tryTakeRpcResponse(55);
         assert(matched.has_value());
         assert((matched->body == axtp::Bytes{0x01}));

@@ -20,27 +20,163 @@
 
 namespace axtp {
 
-class AxtpCore : public IPayloadSink, public IByteSink, public IByteWriter, public IBrokerSink {
+class AxtpCore {
 public:
     AxtpCore()
-        : inbound_(*this), outbound_(*this) {}
+        : byteSinkPort_(*this),
+          payloadSinkPort_(*this),
+          byteWriterPort_(*this),
+          brokerSinkPort_(*this),
+          inbound_(payloadSinkPort_),
+          outbound_(byteWriterPort_) {}
 
-    void onBytes(const Byte* data, std::size_t size) override {
+    void expectRpcResponse(std::uint32_t requestId) {
+        pendingCalls_.expect(requestId);
+    }
+
+    std::optional<RpcPayload> tryTakeRpcResponse(std::uint32_t requestId) {
+        return pendingCalls_.tryTakeResolved(requestId);
+    }
+
+    std::optional<Bytes> tryPopOutboundBytes() {
+        if (outboundQueue_.empty()) {
+            return std::nullopt;
+        }
+        auto bytes = std::move(outboundQueue_.front());
+        outboundQueue_.pop();
+        return bytes;
+    }
+
+    void attachTransport(ITransport& transport) {
+        transport_ = &transport;
+        transport_->bind(byteSinkPort_);
+    }
+
+    void attachBroker(AxtpBroker& broker) {
+        broker_ = &broker;
+    }
+
+    void attachLegacyOutbound(IProtocolOutbound& outbound) {
+        legacyOutbound_ = &outbound;
+    }
+
+    void flushOutbound() {
+        while (auto bytes = tryPopOutboundBytes()) {
+            if (transport_ != nullptr) {
+                transport_->sendBytes(bytes->data(), bytes->size());
+            }
+        }
+    }
+
+    bool controlSessionOpen() const {
+        return controlSession_.isOpen();
+    }
+
+    IByteSink& byteSinkPort() {
+        return byteSinkPort_;
+    }
+
+    IPayloadSink& payloadSinkPort() {
+        return payloadSinkPort_;
+    }
+
+    IByteWriter& byteWriterPort() {
+        return byteWriterPort_;
+    }
+
+    IBrokerSink& brokerSinkPort() {
+        return brokerSinkPort_;
+    }
+
+private:
+    class ByteSinkPort : public IByteSink {
+    public:
+        explicit ByteSinkPort(AxtpCore& core)
+            : core_(core) {}
+
+        void onBytes(const Byte* data, std::size_t size) override {
+            core_.handleBytes(data, size);
+        }
+
+    private:
+        AxtpCore& core_;
+    };
+
+    class PayloadSinkPort : public IPayloadSink {
+    public:
+        explicit PayloadSinkPort(AxtpCore& core)
+            : core_(core) {}
+
+        void onControl(ControlPayload payload) override {
+            core_.handleControl(std::move(payload));
+        }
+
+        void onRpc(RpcPayload payload) override {
+            core_.handleRpc(std::move(payload));
+        }
+
+        void onStream(StreamPayload payload) override {
+            core_.handleStream(std::move(payload));
+        }
+
+    private:
+        AxtpCore& core_;
+    };
+
+    class ByteWriterPort : public IByteWriter {
+    public:
+        explicit ByteWriterPort(AxtpCore& core)
+            : core_(core) {}
+
+        void writeBytes(const Byte* data, std::size_t size) override {
+            core_.enqueueOutboundBytes(data, size);
+        }
+
+    private:
+        AxtpCore& core_;
+    };
+
+    class BrokerSinkPort : public IBrokerSink {
+    public:
+        explicit BrokerSinkPort(AxtpCore& core)
+            : core_(core) {}
+
+        void onBrokerRpcResponse(RpcPayload payload) override {
+            core_.handleBrokerRpcResponse(std::move(payload));
+        }
+
+        void onBrokerRpcError(RpcPayload payload) override {
+            core_.handleBrokerRpcError(std::move(payload));
+        }
+
+        void onBrokerEvent(RpcPayload payload) override {
+            core_.handleBrokerEvent(std::move(payload));
+        }
+
+        void onBrokerStream(StreamPayload payload) override {
+            core_.handleBrokerStream(std::move(payload));
+        }
+
+    private:
+        AxtpCore& core_;
+    };
+
+    void handleBytes(const Byte* data, std::size_t size) {
         inbound_.onBytes(data, size);
     }
 
-    void writeBytes(const Byte* data, std::size_t size) override {
+    void enqueueOutboundBytes(const Byte* data, std::size_t size) {
         outboundQueue_.push(Bytes(data, data + size));
     }
 
-    void onControl(ControlPayload payload) override {
+    void handleControl(ControlPayload payload) {
         auto response = controlSession_.handle(std::move(payload));
         if (response.has_value()) {
             outbound_.sendControl(std::move(*response));
         }
     }
 
-    void onRpc(RpcPayload payload) override {
+    void handleRpc(RpcPayload payload) {
         if (payload.op == RpcOp::Request) {
             if (broker_ != nullptr) {
                 BrokerTask task;
@@ -75,53 +211,11 @@ public:
         }
     }
 
-    void onStream(StreamPayload payload) override {
+    void handleStream(StreamPayload payload) {
         streamSession_.handle(std::move(payload));
     }
 
-    void expectRpcResponse(std::uint32_t requestId) {
-        pendingCalls_.expect(requestId);
-    }
-
-    std::optional<RpcPayload> tryTakeRpcResponse(std::uint32_t requestId) {
-        return pendingCalls_.tryTakeResolved(requestId);
-    }
-
-    std::optional<Bytes> tryPopOutboundBytes() {
-        if (outboundQueue_.empty()) {
-            return std::nullopt;
-        }
-        auto bytes = std::move(outboundQueue_.front());
-        outboundQueue_.pop();
-        return bytes;
-    }
-
-    void attachTransport(ITransport& transport) {
-        transport_ = &transport;
-        transport_->bind(*this);
-    }
-
-    void attachBroker(AxtpBroker& broker) {
-        broker_ = &broker;
-    }
-
-    void attachLegacyOutbound(IProtocolOutbound& outbound) {
-        legacyOutbound_ = &outbound;
-    }
-
-    void flushOutbound() {
-        while (auto bytes = tryPopOutboundBytes()) {
-            if (transport_ != nullptr) {
-                transport_->sendBytes(bytes->data(), bytes->size());
-            }
-        }
-    }
-
-    bool controlSessionOpen() const {
-        return controlSession_.isOpen();
-    }
-
-    void onBrokerRpcResponse(RpcPayload payload) override {
+    void handleBrokerRpcResponse(RpcPayload payload) {
         if (payload.meta.sourceProtocol == SourceProtocol::Legacy && legacyOutbound_ != nullptr) {
             legacyOutbound_->sendRpc(std::move(payload));
             return;
@@ -129,7 +223,7 @@ public:
         outbound_.sendRpcResponse(std::move(payload));
     }
 
-    void onBrokerRpcError(RpcPayload payload) override {
+    void handleBrokerRpcError(RpcPayload payload) {
         if (payload.meta.sourceProtocol == SourceProtocol::Legacy && legacyOutbound_ != nullptr) {
             legacyOutbound_->sendRpc(std::move(payload));
             return;
@@ -137,15 +231,18 @@ public:
         outbound_.sendRpcError(std::move(payload));
     }
 
-    void onBrokerEvent(RpcPayload payload) override {
+    void handleBrokerEvent(RpcPayload payload) {
         outbound_.sendEvent(std::move(payload));
     }
 
-    void onBrokerStream(StreamPayload payload) override {
+    void handleBrokerStream(StreamPayload payload) {
         outbound_.sendStream(std::move(payload));
     }
 
-private:
+    ByteSinkPort byteSinkPort_;
+    PayloadSinkPort payloadSinkPort_;
+    ByteWriterPort byteWriterPort_;
+    BrokerSinkPort brokerSinkPort_;
     AxtpInboundProcessor inbound_;
     AxtpOutboundProcessor outbound_;
     ControlSession controlSession_;

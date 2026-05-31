@@ -39,7 +39,7 @@ public:
         payload.meta.legacySequence = command->sequence;
         payload.meta.legacyCommandValue = command->cmdValue;
         payload.body = std::move(command->payload);
-        core_.onRpc(std::move(payload));
+        core_.payloadSinkPort().onRpc(std::move(payload));
     }
 
     void sendRpc(RpcPayload payload) override {

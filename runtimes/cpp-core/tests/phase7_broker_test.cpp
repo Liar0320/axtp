@@ -33,7 +33,7 @@ struct CapturingPayloadSink : axtp::IPayloadSink {
 
 int main() {
     axtp::AxtpCore core;
-    axtp::AxtpBroker broker(core);
+    axtp::AxtpBroker broker(core.brokerSinkPort());
     core.attachBroker(broker);
     axtp::MockTransport transport;
     core.attachTransport(transport);

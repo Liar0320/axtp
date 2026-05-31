@@ -36,7 +36,7 @@ public:
             request.body = jsonArrayToBytes(body->as_array());
         }
 
-        core_.onRpc(std::move(request));
+        core_.payloadSinkPort().onRpc(std::move(request));
         if (broker_ != nullptr) {
             broker_->poll();
         }
