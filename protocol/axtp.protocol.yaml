@@ -99,8 +99,9 @@ transports:
     frameProfile: STANDARD_FRAME
     production: true
     rpcEncodings:
-      - BINARY
+      - TLV
       - JSON
+      - RAW
     supportsControl: true
     supportsStream: true
     physicalClient: Host / App
@@ -115,8 +116,9 @@ transports:
     frameProfile: STANDARD_FRAME
     production: true
     rpcEncodings:
-      - BINARY
+      - TLV
       - JSON
+      - RAW
     supportsControl: true
     supportsStream: true
     physicalClient: App / PC
@@ -917,7 +919,7 @@ methods:
       type: DeviceGetInfoResponse
     encodings:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - device.info
     events: []
@@ -942,7 +944,7 @@ methods:
       type: CapabilitySupportedMethodsResponse
     encodings:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - capability.supportedMethods
     events: []
@@ -962,7 +964,7 @@ methods:
       type: DisplayGetBrightnessResponse
     encodings:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - display.brightness
     events: []
@@ -982,7 +984,7 @@ methods:
       type: Empty
     encodings:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - display.brightness
     events:
@@ -1008,7 +1010,7 @@ methods:
       type: FirmwareBeginResponse
     encodings:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - firmware.ota
     events:
@@ -1030,7 +1032,7 @@ methods:
       type: FirmwareEndResponse
     encodings:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - firmware.ota
     events: []
@@ -1051,7 +1053,7 @@ methods:
       type: FirmwareVerifyResponse
     encodings:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - firmware.ota
     events:
@@ -1074,7 +1076,7 @@ methods:
       type: FirmwareApplyResponse
     encodings:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - firmware.ota
     events:
@@ -1096,7 +1098,7 @@ methods:
       type: NetworkGetApInfoResponse
     encodings:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - network.softAp
     events:
@@ -1120,7 +1122,7 @@ methods:
       type: StreamOpenResponse
     encodings:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - stream.hidMedia
     events:

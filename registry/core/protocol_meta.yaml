@@ -103,7 +103,7 @@ transports:
     mode: standard-framed
     frameProfile: STANDARD_FRAME
     production: true
-    rpcEncodings: [BINARY, JSON]
+    rpcEncodings: [TLV, JSON, RAW]
     supportsControl: true
     supportsStream: true
     physicalClient: Host / App
@@ -117,7 +117,7 @@ transports:
     mode: standard-framed
     frameProfile: STANDARD_FRAME
     production: true
-    rpcEncodings: [BINARY, JSON]
+    rpcEncodings: [TLV, JSON, RAW]
     supportsControl: true
     supportsStream: true
     physicalClient: App / PC

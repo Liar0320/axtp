@@ -3,9 +3,9 @@
 #include <utility>
 #include <vector>
 
-#include "axtp/inbound/axtp_inbound_processor.h"
-#include "axtp/io/byte_writer_sink.h"
-#include "axtp/outbound/axtp_outbound_processor.h"
+#include "axtp/core/inbound/inbound_processor.hpp"
+#include "axtp/core/outbound/outbound_processor.hpp"
+#include "axtp/io/byte_writer_sink.hpp"
 
 namespace {
 
@@ -35,14 +35,14 @@ struct CapturingPayloadSink : axtp::IPayloadSink {
     }
 };
 
-} // namespace
+}  // namespace
 
 int main() {
     {
         CapturingByteWriter writer;
-        axtp::AxtpOutboundProcessor outbound(writer);
+        axtp::OutboundProcessor outbound(writer);
         axtp::RpcPayload rpc;
-        rpc.encoding = axtp::RpcEncoding::Binary;
+        rpc.encoding = axtp::RpcEncoding::Tlv;
         rpc.op = axtp::RpcOp::Request;
         rpc.requestId = 42;
         rpc.methodOrEventId = 0x0101;
@@ -52,7 +52,7 @@ int main() {
         outbound.sendRpcRequest(rpc);
 
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink);
+        axtp::InboundProcessor inbound(sink);
         inbound.onBytes(writer.bytes.data(), writer.bytes.size());
         assert(sink.rpcs.size() == 1);
         assert(sink.rpcs[0].requestId == 42);
@@ -62,9 +62,9 @@ int main() {
 
     {
         CapturingByteWriter writer;
-        axtp::AxtpOutboundProcessor outbound(writer, 24);
+        axtp::OutboundProcessor outbound(writer, 24);
         axtp::RpcPayload rpc;
-        rpc.encoding = axtp::RpcEncoding::Binary;
+        rpc.encoding = axtp::RpcEncoding::Tlv;
         rpc.op = axtp::RpcOp::Request;
         rpc.requestId = 43;
         rpc.methodOrEventId = 0x0101;
@@ -76,7 +76,7 @@ int main() {
         outbound.sendRpcRequest(rpc);
 
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink);
+        axtp::InboundProcessor inbound(sink);
         inbound.onBytes(writer.bytes.data(), writer.bytes.size());
         assert(sink.rpcs.size() == 1);
         assert(sink.rpcs[0].requestId == 43);
@@ -85,7 +85,7 @@ int main() {
 
     {
         CapturingByteWriter writer;
-        axtp::AxtpOutboundProcessor outbound(writer);
+        axtp::OutboundProcessor outbound(writer);
         axtp::ControlPayload control;
         control.opcode = axtp::ControlOpcode::Open;
         control.controlId = 7;
@@ -101,7 +101,7 @@ int main() {
         outbound.sendStream(stream);
 
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink);
+        axtp::InboundProcessor inbound(sink);
         inbound.onBytes(writer.bytes.data(), writer.bytes.size());
         assert(sink.controls.size() == 1);
         assert(sink.controls[0].opcode == axtp::ControlOpcode::Open);

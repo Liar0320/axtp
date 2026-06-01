@@ -14,7 +14,7 @@ methods:
     response_schema: NetworkGetApInfoResponse
     recommended_encoding:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - network.softAp
     events:

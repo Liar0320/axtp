@@ -3,9 +3,9 @@
 #include <utility>
 #include <vector>
 
-#include "axtp/inbound/axtp_inbound_processor.h"
-#include "axtp/io/byte_writer.h"
-#include "axtp/io/crc16.h"
+#include "axtp/core/inbound/inbound_processor.hpp"
+#include "axtp/io/byte_writer.hpp"
+#include "axtp/io/crc16.hpp"
 
 namespace {
 
@@ -49,11 +49,10 @@ axtp::Bytes makeFrame(axtp::PayloadType payloadType,
     return writer.takeBytes();
 }
 
-axtp::Bytes makeRpcPayload(std::uint32_t requestId,
-                           std::uint16_t methodId,
-                           const axtp::Bytes& body) {
+axtp::Bytes
+makeRpcPayload(std::uint32_t requestId, std::uint16_t methodId, const axtp::Bytes& body) {
     axtp::ByteWriter writer;
-    writer.writeU8(static_cast<std::uint8_t>(axtp::RpcEncoding::Binary));
+    writer.writeU8(static_cast<std::uint8_t>(axtp::RpcEncoding::Tlv));
     writer.writeU8(static_cast<std::uint8_t>(axtp::RpcOp::Request));
     writer.writeU32(requestId);
     writer.writeU16(methodId);
@@ -63,19 +62,20 @@ axtp::Bytes makeRpcPayload(std::uint32_t requestId,
     return writer.takeBytes();
 }
 
-} // namespace
+}  // namespace
 
 int main() {
     {
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink);
-        const auto frame = makeFrame(axtp::PayloadType::Rpc, 1, 0, 1, makeRpcPayload(7, 0x0101, {0xAA}));
+        axtp::InboundProcessor inbound(sink);
+        const auto frame =
+            makeFrame(axtp::PayloadType::Rpc, 1, 0, 1, makeRpcPayload(7, 0x0101, {0xAA}));
         inbound.onBytes(frame.data(), 6);
         assert(sink.rpcs.empty());
         inbound.onBytes(frame.data() + 6, frame.size() - 6);
         assert(sink.rpcs.size() == 1);
         assert(sink.rpcs[0].op == axtp::RpcOp::Request);
-        assert(sink.rpcs[0].encoding == axtp::RpcEncoding::Binary);
+        assert(sink.rpcs[0].encoding == axtp::RpcEncoding::Tlv);
         assert(sink.rpcs[0].requestId == 7);
         assert(sink.rpcs[0].methodOrEventId == 0x0101);
         assert((sink.rpcs[0].body == axtp::Bytes{0xAA}));
@@ -83,7 +83,7 @@ int main() {
 
     {
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink);
+        axtp::InboundProcessor inbound(sink);
         auto first = makeFrame(axtp::PayloadType::Rpc, 2, 0, 1, makeRpcPayload(8, 0x0101, {0x01}));
         auto second = makeFrame(axtp::PayloadType::Rpc, 3, 0, 1, makeRpcPayload(9, 0x0101, {0x02}));
         first.insert(first.end(), second.begin(), second.end());
@@ -95,7 +95,7 @@ int main() {
 
     {
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink);
+        axtp::InboundProcessor inbound(sink);
         const auto rpc = makeRpcPayload(10, 0x0101, {0x10, 0x11, 0x12, 0x13});
         const axtp::Bytes firstPart(rpc.begin(), rpc.begin() + 7);
         const axtp::Bytes secondPart(rpc.begin() + 7, rpc.end());
@@ -111,9 +111,10 @@ int main() {
 
     {
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink);
+        axtp::InboundProcessor inbound(sink);
         axtp::Bytes noise = {0x00, 0x41, 0x00, 0x99};
-        const auto frame = makeFrame(axtp::PayloadType::Rpc, 5, 0, 1, makeRpcPayload(11, 0x0101, {}));
+        const auto frame =
+            makeFrame(axtp::PayloadType::Rpc, 5, 0, 1, makeRpcPayload(11, 0x0101, {}));
         noise.insert(noise.end(), frame.begin(), frame.end());
         inbound.onBytes(noise.data(), noise.size());
         assert(sink.rpcs.size() == 1);

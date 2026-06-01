@@ -1,25 +1,27 @@
-#include <atomic>
 #include <array>
-#include <cassert>
-#include <chrono>
-#include <string>
-#include <thread>
-#include <utility>
-
+#include <atomic>
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/json.hpp>
+#include <cassert>
+#include <chrono>
+#include <iostream>
+#include <string>
+#include <thread>
+#include <utility>
 
-#include "axtp/broker/axtp_broker.h"
-#include "axtp/core/axtp_core.h"
-#include "axtp/inbound/axtp_inbound_processor.h"
-#include "axtp/io/byte_writer_sink.h"
-#include "axtp/outbound/axtp_outbound_processor.h"
-#include "axtp/transport/mock_transport.h"
-#include "axtp/transport/tcp_transport.h"
-#include "axtp/transport/websocket_json_rpc_adapter.h"
-#include "axtp/transport/websocket_transport.h"
+#include "axtp/broker/basic_broker.hpp"
+#include "axtp/core/axtp_core.hpp"
+#include "axtp/core/inbound/inbound_processor.hpp"
+#include "axtp/core/inbound/json_rpc_decoder.hpp"
+#include "axtp/core/outbound/outbound_processor.hpp"
+#include "axtp/io/byte_writer_sink.hpp"
+#include "axtp/json_rpc/websocket_json_rpc_adapter.hpp"
+#include "axtp/runtime/axtp_endpoint.hpp"
+#include "axtp/testing/mock_transport.hpp"
+#include "axtp/transports/tcp_boost/tcp_transport.hpp"
+#include "axtp/transports/websocket_boost/websocket_transport.hpp"
 
 namespace {
 
@@ -35,21 +37,23 @@ struct CapturingPayloadSink : axtp::IPayloadSink {
     std::vector<axtp::RpcPayload> rpcs;
 
     void onControl(axtp::ControlPayload) override {}
+
     void onRpc(axtp::RpcPayload payload) override {
         rpcs.push_back(std::move(payload));
     }
+
     void onStream(axtp::StreamPayload) override {}
 };
 
 axtp::Bytes encodeRpcRequest(std::uint32_t requestId) {
     axtp::RpcPayload request;
-    request.encoding = axtp::RpcEncoding::Binary;
+    request.encoding = axtp::RpcEncoding::Tlv;
     request.op = axtp::RpcOp::Request;
     request.requestId = requestId;
     request.methodOrEventId = 0x0101;
     request.bodyEncoding = axtp::RpcBodyEncoding::Tlv8;
     CapturingByteWriter writer;
-    axtp::AxtpOutboundProcessor outbound(writer);
+    axtp::OutboundProcessor outbound(writer);
     outbound.sendRpcRequest(request);
     return writer.bytes;
 }
@@ -58,9 +62,12 @@ void injectJson(axtp::MockTransport& transport, const std::string& text) {
     transport.injectIncoming(axtp::Bytes(text.begin(), text.end()));
 }
 
-boost::json::object popJson(axtp::MockTransport& transport) {
+boost::json::object popJson(axtp::MockTransport& transport, const char* label) {
     auto bytes = transport.tryPopOutgoing();
-    assert(bytes.has_value());
+    if (!bytes.has_value()) {
+        std::cerr << "missing JSON output: " << label << '\n';
+        assert(bytes.has_value());
+    }
     const std::string text(bytes->begin(), bytes->end());
     return boost::json::parse(text).as_object();
 }
@@ -69,19 +76,16 @@ std::string jsonString(const boost::json::object& object, const char* key) {
     return std::string(object.at(key).as_string());
 }
 
-} // namespace
+}  // namespace
 
 int main() {
     {
-        axtp::AxtpCore core;
-        axtp::AxtpBroker broker(core.brokerSinkPort());
-        core.attachBroker(broker);
-        broker.registerMethod(0x0101, [](const axtp::RpcPayload&) {
-            return axtp::Bytes{0xA1};
-        });
+        axtp::BasicBroker<> broker;
+        axtp::AxtpEndpoint endpoint(broker);
+        broker.registerMethod(0x0101, [](const axtp::RpcPayload&) { return axtp::Bytes{0xA1}; });
 
         axtp::TcpTransport server(0);
-        core.attachTransport(server);
+        endpoint.attachTransport(server);
         server.open();
         assert(server.profile().kind == axtp::TransportKind::Tcp);
         const auto port = server.localPort();
@@ -99,8 +103,7 @@ int main() {
         axtp::Bytes responseBytes;
         for (int i = 0; i < 100 && responseBytes.empty(); ++i) {
             server.poll();
-            broker.poll();
-            core.flushOutbound();
+            endpoint.poll();
             std::array<axtp::Byte, 4096> buffer{};
             boost::system::error_code ec;
             const auto n = client.read_some(boost::asio::buffer(buffer), ec);
@@ -115,7 +118,7 @@ int main() {
         }
         assert(!responseBytes.empty());
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink);
+        axtp::InboundProcessor inbound(sink);
         inbound.onBytes(responseBytes.data(), responseBytes.size());
         assert(!sink.rpcs.empty());
         assert(sink.rpcs[0].op == axtp::RpcOp::RequestResponse);
@@ -125,9 +128,8 @@ int main() {
     }
 
     {
-        axtp::AxtpCore core;
-        axtp::AxtpBroker broker(core.brokerSinkPort());
-        core.attachBroker(broker);
+        axtp::BasicBroker<> broker;
+        axtp::AxtpEndpoint endpoint(broker);
         broker.registerMethod(0x0101, [](const axtp::RpcPayload& request) {
             assert(request.meta.sourceProtocol == axtp::SourceProtocol::JsonRpc);
             assert(request.meta.jsonMethodOrEventName == "device.getInfo");
@@ -139,30 +141,31 @@ int main() {
             assert(params == R"({"value":80})");
             return axtp::Bytes{};
         });
-        broker.registerMethod(0x0501, [](const axtp::RpcPayload&) {
-            return axtp::Bytes{0xB1};
-        });
+        broker.registerMethod(0x0501, [](const axtp::RpcPayload&) { return axtp::Bytes{0xB1}; });
 
         axtp::MockTransport transport;
-        axtp::WebSocketJsonRpcAdapter adapter(core, transport, &broker);
+        endpoint.attachTransport(transport);
+        axtp::WebSocketJsonRpcAdapter adapter(endpoint, transport);
         transport.bind(adapter);
         transport.open();
 
         injectJson(transport, R"({"sid":"","op":7,"d":{"id":700,"method":"device.getInfo"}})");
-        auto beforeIdentify = popJson(transport);
-        assert(beforeIdentify.at("op").as_int64() == static_cast<int>(axtp::RpcOp::RequestResponse));
+        auto beforeIdentify = popJson(transport, "before identify");
+        assert(beforeIdentify.at("op").as_int64() ==
+               static_cast<int>(axtp::RpcOp::RequestResponse));
         assert(beforeIdentify.at("d").as_object().at("status").as_object().at("code").as_int64() ==
                static_cast<int>(axtp::ErrorCode::ControlOpenRequired));
 
         injectJson(transport, R"({"sid":"","op":2,"d":{"rpcVersion":1,"eventMasks":"850101"}})");
-        auto identified = popJson(transport);
+        auto identified = popJson(transport, "identified");
         assert(identified.at("op").as_int64() == static_cast<int>(axtp::RpcOp::Identified));
         const auto sid = jsonString(identified, "sid");
         assert(!sid.empty());
 
-        injectJson(transport, R"({"sid":")" + sid +
-                                  R"(","op":7,"d":{"id":701,"method":"device.getInfo","params":{}}})");
-        auto response = popJson(transport);
+        injectJson(transport,
+                   R"({"sid":")" + sid +
+                       R"(","op":7,"d":{"id":701,"method":"device.getInfo","params":{}}})");
+        auto response = popJson(transport, "device.getInfo");
         assert(response.at("sid").as_string() == sid);
         assert(response.at("op").as_int64() == static_cast<int>(axtp::RpcOp::RequestResponse));
         auto d = response.at("d").as_object();
@@ -170,31 +173,35 @@ int main() {
         assert(d.at("status").as_object().at("ok").as_bool());
         assert(d.at("result").as_object().at("model").as_string() == "AXTP");
 
-        injectJson(transport, R"({"sid":")" + sid +
-                                  R"(","op":7,"d":{"id":702,"method":"display.setBrightness","params":{"value":80}}})");
-        response = popJson(transport);
+        injectJson(
+            transport,
+            R"({"sid":")" + sid +
+                R"(","op":7,"d":{"id":702,"method":"display.setBrightness","params":{"value":80}}})");
+        response = popJson(transport, "display.setBrightness");
         d = response.at("d").as_object();
         assert(d.at("id").as_int64() == 702);
         assert(d.at("status").as_object().at("ok").as_bool());
         assert(!d.contains("result"));
 
-        injectJson(transport, R"({"sid":")" + sid +
-                                  R"(","op":7,"d":{"id":703,"method":"display.unknown","params":{}}})");
-        response = popJson(transport);
+        injectJson(transport,
+                   R"({"sid":")" + sid +
+                       R"(","op":7,"d":{"id":703,"method":"display.unknown","params":{}}})");
+        response = popJson(transport, "unknown method");
         d = response.at("d").as_object();
         assert(d.at("status").as_object().at("code").as_int64() ==
                static_cast<int>(axtp::ErrorCode::RpcMethodNotFound));
 
-        injectJson(transport, R"({"sid":")" + sid +
-                                  R"(","op":7,"d":{"id":704,"method":"display.getBrightness","params":{}}})");
-        response = popJson(transport);
+        injectJson(transport,
+                   R"({"sid":")" + sid +
+                       R"(","op":7,"d":{"id":704,"method":"display.getBrightness","params":{}}})");
+        response = popJson(transport, "invalid JSON response body");
         d = response.at("d").as_object();
         assert(d.at("status").as_object().at("code").as_int64() ==
                static_cast<int>(axtp::ErrorCode::RpcBodyDecodeFailed));
         assert(!d.contains("result"));
 
         injectJson(transport, R"({"sid":")" + sid + R"(","op":9,"d":{"id":705,"requests":[]}})");
-        response = popJson(transport);
+        response = popJson(transport, "batch unsupported");
         d = response.at("d").as_object();
         assert(response.at("op").as_int64() == static_cast<int>(axtp::RpcOp::RequestBatchResponse));
         assert(d.at("status").as_object().at("code").as_int64() ==
@@ -208,7 +215,7 @@ int main() {
         const std::string eventData = R"({"value":81})";
         event.body = axtp::Bytes(eventData.begin(), eventData.end());
         adapter.sendEvent(std::move(event));
-        auto eventJson = popJson(transport);
+        auto eventJson = popJson(transport, "event");
         assert(eventJson.at("op").as_int64() == static_cast<int>(axtp::RpcOp::Event));
         auto eventD = eventJson.at("d").as_object();
         assert(eventD.at("event").as_string() == "display.brightnessChanged");
@@ -217,7 +224,7 @@ int main() {
 
     {
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink, axtp::AxtpWireMode::WebSocketJsonRpc);
+        axtp::JsonRpcDecoder inbound(sink);
         const std::string text =
             R"({"sid":"json-session","op":7,"d":{"id":901,"method":"device.getInfo","params":{}}})";
         inbound.onBytes(reinterpret_cast<const axtp::Byte*>(text.data()), text.size());
@@ -229,16 +236,16 @@ int main() {
     }
 
     {
-        axtp::AxtpCore core;
-        axtp::AxtpBroker broker(core.brokerSinkPort());
-        core.attachBroker(broker);
+        axtp::BasicBroker<> broker;
+        axtp::AxtpEndpoint endpoint(broker);
         broker.registerMethod(0x0101, [](const axtp::RpcPayload&) {
             const std::string result = R"({"ok":true})";
             return axtp::Bytes(result.begin(), result.end());
         });
 
         axtp::WebSocketTransport server(0);
-        axtp::WebSocketJsonRpcAdapter adapter(core, server, &broker);
+        endpoint.attachTransport(server);
+        axtp::WebSocketJsonRpcAdapter adapter(endpoint, server);
         server.bind(adapter);
         server.open();
         assert(server.profile().kind == axtp::TransportKind::WebSocket);
@@ -261,15 +268,15 @@ int main() {
             ws.read(buffer);
             helloText = boost::beast::buffers_to_string(buffer.data());
             buffer.consume(buffer.size());
-            ws.write(boost::asio::buffer(std::string(
-                R"({"sid":"","op":2,"d":{"rpcVersion":1}})")));
+            ws.write(boost::asio::buffer(std::string(R"({"sid":"","op":2,"d":{"rpcVersion":1}})")));
             ws.read(buffer);
             identifiedText = boost::beast::buffers_to_string(buffer.data());
             auto identified = boost::json::parse(identifiedText).as_object();
             const auto sid = std::string(identified.at("sid").as_string());
             buffer.consume(buffer.size());
-            ws.write(boost::asio::buffer(std::string(
-                R"({"sid":")" + sid + R"(","op":7,"d":{"id":801,"method":"device.getInfo","params":{}}})")));
+            ws.write(boost::asio::buffer(
+                std::string(R"({"sid":")" + sid +
+                            R"(","op":7,"d":{"id":801,"method":"device.getInfo","params":{}}})")));
             ws.read(buffer);
             responseText = boost::beast::buffers_to_string(buffer.data());
             clientDone = true;

@@ -159,8 +159,16 @@ inline constexpr ErrorDescriptor kErrorRegistry[] = {
     { 0x0B04, "DIAG_TEST_FAILED", "diagnostic", false },
     { 0x0B05, "DIAG_METRIC_UNAVAILABLE", "diagnostic", true },
     { 0x0B06, "DIAG_LOOPBACK_FAILED", "diagnostic", false },
+    { 0x7F01, "LEGACY_CMD_UNMAPPED", "legacy", false },
+    { 0x7F02, "LEGACY_STATUS_UNMAPPED", "legacy", false },
+    { 0x7F03, "LEGACY_PAYLOAD_INVALID", "legacy", false },
+    { 0x7F04, "LEGACY_PAYLOAD_TOO_SHORT", "legacy", false },
+    { 0x7F05, "LEGACY_PAYLOAD_TOO_LONG", "legacy", false },
+    { 0x7F06, "LEGACY_FIELD_UNSUPPORTED", "legacy", false },
+    { 0x7F07, "LEGACY_CAPABILITY_CONFLICT", "legacy", false },
+    { 0x7F08, "LEGACY_RESPONSE_TIMEOUT", "legacy", true },
 };
 
-inline constexpr std::size_t kErrorRegistryCount = 146;
+inline constexpr std::size_t kErrorRegistryCount = 154;
 
 } // namespace axtp

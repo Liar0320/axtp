@@ -17,13 +17,13 @@ export async function emitTestVectors(_spec: SpecModel, outDir: string): Promise
 
 export async function emitTestVectorFiles(_spec: SpecModel, dir: string): Promise<void> {
   const vectors: Vector[] = [
-    { name: "control_open", payloadType: "CONTROL", encoding: "binary_tlv", hexFile: "control_open.hex", expectDecode: { opcode: "OPEN" } },
-    { name: "rpc_device_get_info_request", payloadType: "RPC", encoding: "binary_tlv", hexFile: "rpc_device_get_info.hex", expectDecode: { method: "device.getInfo" } },
-    { name: "rpc_display_brightness_set_request", payloadType: "RPC", encoding: "binary_tlv", hexFile: "rpc_display_brightness_set.hex", expectDecode: { method: "display.setBrightness", value: 80 } },
-    { name: "event_display_brightness_changed", payloadType: "RPC", encoding: "binary_tlv", hexFile: "event_display_brightness_changed.hex", expectDecode: { event: "display.brightnessChanged", value: 80 } },
+    { name: "control_open", payloadType: "CONTROL", encoding: "tlv", hexFile: "control_open.hex", expectDecode: { opcode: "OPEN" } },
+    { name: "rpc_device_get_info_request", payloadType: "RPC", encoding: "tlv", hexFile: "rpc_device_get_info.hex", expectDecode: { method: "device.getInfo" } },
+    { name: "rpc_display_brightness_set_request", payloadType: "RPC", encoding: "tlv", hexFile: "rpc_display_brightness_set.hex", expectDecode: { method: "display.setBrightness", value: 80 } },
+    { name: "event_display_brightness_changed", payloadType: "RPC", encoding: "tlv", hexFile: "event_display_brightness_changed.hex", expectDecode: { event: "display.brightnessChanged", value: 80 } },
     { name: "stream_ota_chunk", payloadType: "STREAM", encoding: "binary", hexFile: "stream_ota_chunk.hex", expectDecode: { streamProfile: "firmware.ota" } },
-    { name: "compact_crc8_error", payloadType: "RPC", encoding: "binary_tlv", hexFile: "compact_crc8_error.hex", expectError: "FRAME_CRC_ERROR" },
-    { name: "compact_message_id_overflow", payloadType: "RPC", encoding: "binary_tlv", hexFile: "compact_message_id_overflow.hex", expectError: "COMPACT_MESSAGE_ID_OVERFLOW" }
+    { name: "compact_crc8_error", payloadType: "RPC", encoding: "tlv", hexFile: "compact_crc8_error.hex", expectError: "FRAME_CRC_ERROR" },
+    { name: "compact_message_id_overflow", payloadType: "RPC", encoding: "tlv", hexFile: "compact_message_id_overflow.hex", expectError: "COMPACT_MESSAGE_ID_OVERFLOW" }
   ];
 
   const hexData: Record<string, string> = {

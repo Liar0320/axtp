@@ -3,11 +3,12 @@
 #include <utility>
 #include <vector>
 
-#include "axtp/broker/axtp_broker.h"
-#include "axtp/core/axtp_core.h"
-#include "axtp/inbound/axtp_inbound_processor.h"
-#include "axtp/io/byte_writer_sink.h"
-#include "axtp/outbound/axtp_outbound_processor.h"
+#include "axtp/broker/basic_broker.hpp"
+#include "axtp/core/axtp_core.hpp"
+#include "axtp/core/inbound/inbound_processor.hpp"
+#include "axtp/core/outbound/outbound_processor.hpp"
+#include "axtp/io/byte_writer_sink.hpp"
+#include "axtp/runtime/axtp_endpoint.hpp"
 
 namespace {
 
@@ -39,44 +40,43 @@ struct CapturingPayloadSink : axtp::IPayloadSink {
 
 axtp::Bytes encodeRpc(axtp::RpcPayload payload) {
     CapturingByteWriter writer;
-    axtp::AxtpOutboundProcessor outbound(writer);
+    axtp::OutboundProcessor outbound(writer);
     outbound.sendRpcRequest(std::move(payload));
     return writer.bytes;
 }
 
 axtp::Bytes encodeControl(axtp::ControlPayload payload) {
     CapturingByteWriter writer;
-    axtp::AxtpOutboundProcessor outbound(writer);
+    axtp::OutboundProcessor outbound(writer);
     outbound.sendControl(std::move(payload));
     return writer.bytes;
 }
 
-} // namespace
+}  // namespace
 
 int main() {
     {
-        axtp::AxtpCore core;
-        axtp::AxtpBroker broker(core.brokerSinkPort());
-        core.attachBroker(broker);
+        axtp::BasicBroker<> broker;
+        axtp::AxtpEndpoint endpoint(broker);
         broker.registerMethod(0x0101, [](const axtp::RpcPayload& request) {
             assert(request.requestId == 100);
             return axtp::Bytes{0x99, 0x88};
         });
 
         axtp::RpcPayload request;
-        request.encoding = axtp::RpcEncoding::Binary;
+        request.encoding = axtp::RpcEncoding::Tlv;
         request.op = axtp::RpcOp::Request;
         request.requestId = 100;
         request.methodOrEventId = 0x0101;
         request.bodyEncoding = axtp::RpcBodyEncoding::Tlv8;
         auto requestBytes = encodeRpc(request);
-        core.byteSinkPort().onBytes(requestBytes.data(), requestBytes.size());
-        broker.poll();
+        endpoint.core().byteSink().onBytes(requestBytes.data(), requestBytes.size());
+        endpoint.poll();
 
-        auto responseBytes = core.tryPopOutboundBytes();
+        auto responseBytes = endpoint.core().tryPopOutboundBytes();
         assert(responseBytes.has_value());
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink);
+        axtp::InboundProcessor inbound(sink);
         inbound.onBytes(responseBytes->data(), responseBytes->size());
         assert(sink.rpcs.size() == 1);
         assert(sink.rpcs[0].op == axtp::RpcOp::RequestResponse);
@@ -91,12 +91,12 @@ int main() {
         open.opcode = axtp::ControlOpcode::Open;
         open.controlId = 1;
         auto bytes = encodeControl(open);
-        core.byteSinkPort().onBytes(bytes.data(), bytes.size());
+        core.byteSink().onBytes(bytes.data(), bytes.size());
         assert(core.controlSessionOpen());
         auto responseBytes = core.tryPopOutboundBytes();
         assert(responseBytes.has_value());
         CapturingPayloadSink sink;
-        axtp::AxtpInboundProcessor inbound(sink);
+        axtp::InboundProcessor inbound(sink);
         inbound.onBytes(responseBytes->data(), responseBytes->size());
         assert(sink.controls.size() == 1);
         assert(sink.controls[0].opcode == axtp::ControlOpcode::Accept);
@@ -106,11 +106,11 @@ int main() {
         ping.opcode = axtp::ControlOpcode::Ping;
         ping.controlId = 2;
         bytes = encodeControl(ping);
-        core.byteSinkPort().onBytes(bytes.data(), bytes.size());
+        core.byteSink().onBytes(bytes.data(), bytes.size());
         responseBytes = core.tryPopOutboundBytes();
         assert(responseBytes.has_value());
         CapturingPayloadSink pingSink;
-        axtp::AxtpInboundProcessor pingInbound(pingSink);
+        axtp::InboundProcessor pingInbound(pingSink);
         pingInbound.onBytes(responseBytes->data(), responseBytes->size());
         assert(pingSink.controls.size() == 1);
         assert(pingSink.controls[0].opcode == axtp::ControlOpcode::Pong);
@@ -121,7 +121,7 @@ int main() {
         core.expectRpcResponse(55);
 
         axtp::RpcPayload response;
-        response.encoding = axtp::RpcEncoding::Binary;
+        response.encoding = axtp::RpcEncoding::Tlv;
         response.op = axtp::RpcOp::RequestResponse;
         response.requestId = 55;
         response.methodOrEventId = 0x0101;
@@ -129,9 +129,9 @@ int main() {
         response.body = {0x01};
 
         CapturingByteWriter writer;
-        axtp::AxtpOutboundProcessor outbound(writer);
+        axtp::OutboundProcessor outbound(writer);
         outbound.sendRpcResponse(response);
-        core.byteSinkPort().onBytes(writer.bytes.data(), writer.bytes.size());
+        core.byteSink().onBytes(writer.bytes.data(), writer.bytes.size());
         auto matched = core.tryTakeRpcResponse(55);
         assert(matched.has_value());
         assert((matched->body == axtp::Bytes{0x01}));

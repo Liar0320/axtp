@@ -3,7 +3,7 @@
     {
       "name": "control_open",
       "payloadType": "CONTROL",
-      "encoding": "binary_tlv",
+      "encoding": "tlv",
       "hexFile": "control_open.hex",
       "expectDecode": {
         "opcode": "OPEN"
@@ -12,7 +12,7 @@
     {
       "name": "rpc_device_get_info_request",
       "payloadType": "RPC",
-      "encoding": "binary_tlv",
+      "encoding": "tlv",
       "hexFile": "rpc_device_get_info.hex",
       "expectDecode": {
         "method": "device.getInfo"
@@ -21,7 +21,7 @@
     {
       "name": "rpc_display_brightness_set_request",
       "payloadType": "RPC",
-      "encoding": "binary_tlv",
+      "encoding": "tlv",
       "hexFile": "rpc_display_brightness_set.hex",
       "expectDecode": {
         "method": "display.setBrightness",
@@ -31,7 +31,7 @@
     {
       "name": "event_display_brightness_changed",
       "payloadType": "RPC",
-      "encoding": "binary_tlv",
+      "encoding": "tlv",
       "hexFile": "event_display_brightness_changed.hex",
       "expectDecode": {
         "event": "display.brightnessChanged",
@@ -50,14 +50,14 @@
     {
       "name": "compact_crc8_error",
       "payloadType": "RPC",
-      "encoding": "binary_tlv",
+      "encoding": "tlv",
       "hexFile": "compact_crc8_error.hex",
       "expectError": "FRAME_CRC_ERROR"
     },
     {
       "name": "compact_message_id_overflow",
       "payloadType": "RPC",
-      "encoding": "binary_tlv",
+      "encoding": "tlv",
       "hexFile": "compact_message_id_overflow.hex",
       "expectError": "COMPACT_MESSAGE_ID_OVERFLOW"
     }

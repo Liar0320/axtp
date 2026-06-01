@@ -60,7 +60,6 @@ export async function emitCppFiles(spec: SpecModel, cppDir: string): Promise<voi
     writeTextFile(path.join(cppDir, "axtp_event_registry_generated.h"), emitEventRegistry(spec)),
     writeTextFile(path.join(cppDir, "axtp_error_code_generated.h"), emitErrorRegistry(spec)),
     writeTextFile(path.join(cppDir, "axtp_capability_generated.h"), emitCapabilityRegistry(spec)),
-    writeTextFile(path.join(cppDir, "axtp_legacy_mapping_generated.h"), emitLegacyMapping(spec)),
     writeTextFile(path.join(cppDir, "axtp_tlv_codec_generated.h"), emitTlvSkeleton(spec))
   ]);
 }
@@ -257,56 +256,6 @@ ${rows}
 };
 
 inline constexpr std::size_t kCapabilityRegistryCount = ${spec.capabilities.length};
-
-} // namespace axtp
-`;
-}
-
-function emitLegacyMapping(spec: SpecModel): string {
-  const mappings = [...spec.legacyMappings].sort((a, b) => a.legacyCmdValue - b.legacyCmdValue);
-  const statusArrays = mappings.map((item, index) => {
-    const entries = Object.entries(item.statusMapping).sort((a, b) => Number(a[0]) - Number(b[0]));
-    if (entries.length === 0) return "";
-    const rows = entries.map(([legacyStatus, errorName]) =>
-      `    { ${hex(Number(legacyStatus), 2)}, ErrorCode::${cppName(errorName)}, "${errorName}" },`
-    ).join("\n");
-    return `inline constexpr LegacyStatusMapping kLegacyStatusMappings${index}[] = {\n${rows}\n};`;
-  }).filter(Boolean).join("\n\n");
-  const rows = mappings.map((item, index) => {
-    const statusCount = Object.keys(item.statusMapping).length;
-    const statusPtr = statusCount === 0 ? "nullptr" : `kLegacyStatusMappings${index}`;
-    return `    { "${item.legacyProtocol}", ${hex(item.legacyCmdValue, 8)}, ${hex(item.axtpMethodId)}, "${item.axtpMethodName}", ${statusPtr}, ${statusCount} },`;
-  }).join("\n");
-  return `${banner}#pragma once
-#include <cstddef>
-#include <cstdint>
-
-#include "axtp_ids_generated.h"
-
-namespace axtp {
-
-struct LegacyStatusMapping {
-    std::uint16_t legacy_status;
-    ErrorCode axtp_error;
-    const char* axtp_error_name;
-};
-
-struct LegacyCmdMapping {
-    const char* legacy_protocol;
-    std::uint32_t legacy_cmd_value;
-    std::uint16_t axtp_method_id;
-    const char* axtp_method_name;
-    const LegacyStatusMapping* status_mappings;
-    std::size_t status_mapping_count;
-};
-
-${statusArrays}
-
-inline constexpr LegacyCmdMapping kLegacyMappings[] = {
-${rows}
-};
-
-inline constexpr std::size_t kLegacyMappingCount = ${spec.legacyMappings.length};
 
 } // namespace axtp
 `;

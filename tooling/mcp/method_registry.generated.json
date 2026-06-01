@@ -13,7 +13,7 @@
       "responseSchema": "DeviceGetInfoResponse",
       "recommendedEncoding": [
         "json",
-        "binary_tlv"
+        "tlv"
       ],
       "capabilities": [
         "device.info"
@@ -44,7 +44,7 @@
       "responseSchema": "CapabilitySupportedMethodsResponse",
       "recommendedEncoding": [
         "json",
-        "binary_tlv"
+        "tlv"
       ],
       "capabilities": [
         "capability.supportedMethods"
@@ -69,7 +69,7 @@
       "responseSchema": "DisplayGetBrightnessResponse",
       "recommendedEncoding": [
         "json",
-        "binary_tlv"
+        "tlv"
       ],
       "capabilities": [
         "display.brightness"
@@ -94,7 +94,7 @@
       "responseSchema": "CommonEmptyResponse",
       "recommendedEncoding": [
         "json",
-        "binary_tlv"
+        "tlv"
       ],
       "capabilities": [
         "display.brightness"
@@ -128,7 +128,7 @@
       "responseSchema": "StreamOpenResponse",
       "recommendedEncoding": [
         "json",
-        "binary_tlv"
+        "tlv"
       ],
       "capabilities": [
         "stream.hidMedia"
@@ -163,7 +163,7 @@
       "responseSchema": "FirmwareBeginResponse",
       "recommendedEncoding": [
         "json",
-        "binary_tlv"
+        "tlv"
       ],
       "capabilities": [
         "firmware.ota"
@@ -191,7 +191,7 @@
       "responseSchema": "FirmwareEndResponse",
       "recommendedEncoding": [
         "json",
-        "binary_tlv"
+        "tlv"
       ],
       "capabilities": [
         "firmware.ota"
@@ -217,7 +217,7 @@
       "responseSchema": "FirmwareVerifyResponse",
       "recommendedEncoding": [
         "json",
-        "binary_tlv"
+        "tlv"
       ],
       "capabilities": [
         "firmware.ota"
@@ -246,7 +246,7 @@
       "responseSchema": "FirmwareApplyResponse",
       "recommendedEncoding": [
         "json",
-        "binary_tlv"
+        "tlv"
       ],
       "capabilities": [
         "firmware.ota"
@@ -275,7 +275,7 @@
       "responseSchema": "NetworkGetApInfoResponse",
       "recommendedEncoding": [
         "json",
-        "binary_tlv"
+        "tlv"
       ],
       "capabilities": [
         "network.softAp"

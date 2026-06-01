@@ -14,7 +14,7 @@ methods:
     response_schema: StreamOpenResponse
     recommended_encoding:
       - json
-      - binary_tlv
+      - tlv
     capabilities:
       - stream.hidMedia
     events:

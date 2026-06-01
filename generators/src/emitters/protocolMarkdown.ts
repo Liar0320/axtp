@@ -311,7 +311,7 @@ function renderProtocolFramework(model: ProtocolModel): string[] {
           "Standard Framed",
           list(framed.map((transport) => transport.name)),
           "STANDARD_FRAME",
-          "`BINARY`, `JSON`",
+          "`TLV`, `JSON`, `RAW`",
           "Yes",
           "Yes"
         ],

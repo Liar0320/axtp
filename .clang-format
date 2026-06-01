@@ -1,0 +1,98 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# AXTP C++ style:
+# Skia-like library discipline, AXTP naming.
+# 4 spaces, 100 columns, K&R braces, no tabs.
+# Private data members use _member naming by project convention.
+# File names use lower_snake_case by project convention.
+# clang-format does not enforce identifier or file naming; see docs/dev/AXTP_CPP_STYLE.md.
+
+Standard: c++17
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 100
+
+# Braces: K&R / attached braces.
+BreakBeforeBraces: Attach
+
+# Keep control statements readable.
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+
+# Function and parameter formatting.
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: true
+AllowAllParametersOfDeclarationOnNextLine: true
+
+# Constructor initializer formatting.
+ConstructorInitializerIndentWidth: 4
+BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers: Never
+
+# Namespace formatting.
+NamespaceIndentation: None
+FixNamespaceComments: true
+CompactNamespaces: false
+
+# Include formatting.
+SortIncludes: CaseSensitive
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<.*>$'
+    Priority: 1
+  - Regex: '^"axtp/.*"$'
+    Priority: 2
+  - Regex: '^".*"$'
+    Priority: 3
+
+# Pointer/reference alignment.
+PointerAlignment: Left
+ReferenceAlignment: Left
+
+# Access modifiers.
+AccessModifierOffset: -4
+
+# Class layout readability.
+EmptyLineBeforeAccessModifier: LogicalBlock
+SeparateDefinitionBlocks: Always
+
+# Switch formatting.
+IndentCaseLabels: false
+IndentCaseBlocks: false
+
+# Continuation indentation.
+ContinuationIndentWidth: 4
+
+# Template and declaration formatting.
+AlwaysBreakTemplateDeclarations: Yes
+BreakBeforeConceptDeclarations: true
+
+# Operators.
+BreakBeforeBinaryOperators: None
+BreakBeforeTernaryOperators: true
+
+# Comments.
+ReflowComments: true
+SpacesBeforeTrailingComments: 2
+
+# Preprocessor.
+IndentPPDirectives: AfterHash
+
+# Misc.
+DerivePointerAlignment: false
+Cpp11BracedListStyle: true
+SpaceAfterCStyleCast: false
+SpaceBeforeParens: ControlStatements
+SpacesInParentheses: false
+SpacesInAngles: false
+SpaceInEmptyParentheses: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+...

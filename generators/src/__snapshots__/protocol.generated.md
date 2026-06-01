@@ -58,7 +58,7 @@ AXTP v1 has two formal integration paths:
 
 | Path | Transports | Frame | RPC Encodings | CONTROL | STREAM |
 | ---- | ---- | ---- | ---- | ---- | ---- |
-| Standard Framed | AXTP-USB-HID<br>AXTP-TCP | STANDARD_FRAME | `BINARY`, `JSON` | Yes | Yes |
+| Standard Framed | AXTP-USB-HID<br>AXTP-TCP | STANDARD_FRAME | `TLV`, `JSON`, `RAW` | Yes | Yes |
 | WebSocket Unframed JSON | AXTP-WS-JSON<br>AXTP-WS-CLOUD-REVERSE | None | `JSON` | No | No |
 
 Compact/HID-64/BLE/UART framing is a low-bandwidth degradation path, not an AXTP v1 Core requirement. See `docs/specs/17-AXTP-Low-Bandwidth-Degradation.md` for that path.
@@ -102,8 +102,8 @@ The current protocol definition exposes the connection profiles that are intende
 
 | Profile | Family | Mode | Frame | RPC Encodings | CONTROL | STREAM | Notes |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-| AXTP-USB-HID | usb-hid | standard-framed | STANDARD_FRAME | `BINARY`, `JSON` | Yes | Yes | USB HID High Speed or large-report HID transport using Standard Frame. |
-| AXTP-TCP | tcp | standard-framed | STANDARD_FRAME | `BINARY`, `JSON` | Yes | Yes | TCP byte stream transport using Standard Frame magic and length parsing. |
+| AXTP-USB-HID | usb-hid | standard-framed | STANDARD_FRAME | `TLV`, `JSON`, `RAW` | Yes | Yes | USB HID High Speed or large-report HID transport using Standard Frame. |
+| AXTP-TCP | tcp | standard-framed | STANDARD_FRAME | `TLV`, `JSON`, `RAW` | Yes | Yes | TCP byte stream transport using Standard Frame magic and length parsing. |
 | AXTP-WS-JSON | websocket | unframed-json | None | `JSON` | No | No | Formal RPC-only WebSocket JSON profile using the sid/op/d envelope. |
 | AXTP-WS-CLOUD-REVERSE | websocket | unframed-json-cloud-reverse | None | `JSON` | No | No | Device initiates the WebSocket connection but remains the Logical Server. |
 
@@ -199,7 +199,7 @@ Return the per-domain method bitmap supported by the current session.
 - Bit Offset: `0`
 - Status: `stable`
 - Added in v1.0.0
-- Encodings: `json`, `binary_tlv`
+- Encodings: `json`, `tlv`
 - Required Capabilities: `capability.supportedMethods`
 - Possible Events: `None`
 - Possible Errors: `SUCCESS`, `RPC_METHOD_NOT_FOUND`
@@ -238,7 +238,7 @@ Return static device identity and firmware metadata.
 - Bit Offset: `0`
 - Status: `stable`
 - Added in v1.0.0
-- Encodings: `json`, `binary_tlv`
+- Encodings: `json`, `tlv`
 - Required Capabilities: `device.info`
 - Possible Events: `None`
 - Possible Errors: `SUCCESS`, `RPC_METHOD_NOT_FOUND`, `RPC_PARAM_INVALID`
@@ -280,7 +280,7 @@ Read the current display brightness percentage.
 - Bit Offset: `0`
 - Status: `stable`
 - Added in v1.0.0
-- Encodings: `json`, `binary_tlv`
+- Encodings: `json`, `tlv`
 - Required Capabilities: `display.brightness`
 - Possible Events: `None`
 - Possible Errors: `SUCCESS`, `RPC_METHOD_NOT_FOUND`
@@ -310,7 +310,7 @@ Set the display brightness and optionally request a transition duration.
 - Bit Offset: `1`
 - Status: `stable`
 - Added in v1.0.0
-- Encodings: `json`, `binary_tlv`
+- Encodings: `json`, `tlv`
 - Required Capabilities: `display.brightness`
 - Possible Events: `display.brightnessChanged`
 - Possible Errors: `SUCCESS`, `RPC_PARAM_INVALID`, `BUSY`
@@ -352,7 +352,7 @@ Begin a firmware OTA transfer and allocate the STREAM context.
 - Bit Offset: `0`
 - Status: `stable`
 - Added in v1.0.0
-- Encodings: `json`, `binary_tlv`
+- Encodings: `json`, `tlv`
 - Required Capabilities: `firmware.ota`
 - Possible Events: `firmware.updateProgress`
 - Possible Errors: `SUCCESS`, `RPC_PARAM_INVALID`, `BUSY`
@@ -401,7 +401,7 @@ Finish sending firmware data for the active OTA stream.
 - Bit Offset: `1`
 - Status: `stable`
 - Added in v1.0.0
-- Encodings: `json`, `binary_tlv`
+- Encodings: `json`, `tlv`
 - Required Capabilities: `firmware.ota`
 - Possible Events: `None`
 - Possible Errors: `SUCCESS`, `STREAM_NOT_FOUND`, `BUSY`
@@ -437,7 +437,7 @@ Verify the transferred firmware object before applying it.
 - Bit Offset: `2`
 - Status: `stable`
 - Added in v1.0.0
-- Encodings: `json`, `binary_tlv`
+- Encodings: `json`, `tlv`
 - Required Capabilities: `firmware.ota`
 - Possible Events: `firmware.updateCompleted`, `firmware.updateFailed`
 - Possible Errors: `SUCCESS`, `STREAM_CRC_ERROR`, `BUSY`
@@ -470,7 +470,7 @@ Apply a verified firmware image.
 - Bit Offset: `3`
 - Status: `stable`
 - Added in v1.0.0
-- Encodings: `json`, `binary_tlv`
+- Encodings: `json`, `tlv`
 - Required Capabilities: `firmware.ota`
 - Possible Events: `firmware.updateCompleted`, `firmware.updateFailed`
 - Possible Errors: `SUCCESS`, `BUSY`
@@ -512,7 +512,7 @@ Return information about the device-hosted SoftAP.
 - Bit Offset: `0`
 - Status: `draft`
 - Added in v1.0.0
-- Encodings: `json`, `binary_tlv`
+- Encodings: `json`, `tlv`
 - Required Capabilities: `network.softAp`
 - Possible Events: `network.apInfoChanged`
 - Possible Errors: `SUCCESS`, `RPC_METHOD_NOT_FOUND`, `CAPABILITY_METHOD_UNSUPPORTED`, `NOT_SUPPORTED`, `INVALID_STATE`
@@ -557,7 +557,7 @@ Open an AXTP STREAM media channel over USB HID High Speed using media.video or m
 - Bit Offset: `0`
 - Status: `draft`
 - Added in v1.0.0
-- Encodings: `json`, `binary_tlv`
+- Encodings: `json`, `tlv`
 - Required Capabilities: `stream.hidMedia`
 - Possible Events: `stream.opened`, `stream.error`
 - Possible Errors: `SUCCESS`, `BUSY`, `RPC_PARAM_INVALID`, `MEDIA_SOURCE_NOT_FOUND`, `MEDIA_SOURCE_UNAVAILABLE`, `MEDIA_CODEC_UNSUPPORTED`, `MEDIA_RESOLUTION_UNSUPPORTED`, `MEDIA_FRAMERATE_UNSUPPORTED`, `MEDIA_STREAM_START_FAILED`

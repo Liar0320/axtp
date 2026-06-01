@@ -8,7 +8,7 @@ methods:
     rpcOp: request_response
     requestSchema: DeviceGetInfoRequest
     responseSchema: DeviceGetInfoResponse
-    recommendedEncoding: [json, binary_tlv]
+    recommendedEncoding: [json, tlv]
     capabilities: [device.info]
     events: []
     errors: [SUCCESS, RPC_METHOD_NOT_FOUND, RPC_PARAM_INVALID]
@@ -26,7 +26,7 @@ methods:
     rpcOp: request_response
     requestSchema: CapabilitySupportedMethodsRequest
     responseSchema: CapabilitySupportedMethodsResponse
-    recommendedEncoding: [json, binary_tlv]
+    recommendedEncoding: [json, tlv]
     capabilities: [capability.supportedMethods]
     events: []
     errors: [SUCCESS, RPC_METHOD_NOT_FOUND]
@@ -40,7 +40,7 @@ methods:
     rpcOp: request_response
     requestSchema: DisplayGetBrightnessRequest
     responseSchema: DisplayGetBrightnessResponse
-    recommendedEncoding: [json, binary_tlv]
+    recommendedEncoding: [json, tlv]
     capabilities: [display.brightness]
     events: []
     errors: [SUCCESS, RPC_METHOD_NOT_FOUND]
@@ -54,7 +54,7 @@ methods:
     rpcOp: request_response
     requestSchema: DisplaySetBrightnessRequest
     responseSchema: CommonEmptyResponse
-    recommendedEncoding: [json, binary_tlv]
+    recommendedEncoding: [json, tlv]
     capabilities: [display.brightness]
     events: [display.brightnessChanged]
     errors: [SUCCESS, RPC_PARAM_INVALID, BUSY]
@@ -72,7 +72,7 @@ methods:
     rpcOp: request_response
     requestSchema: FirmwareBeginRequest
     responseSchema: FirmwareBeginResponse
-    recommendedEncoding: [json, binary_tlv]
+    recommendedEncoding: [json, tlv]
     capabilities: [firmware.ota]
     events: [firmware.updateProgress]
     errors: [SUCCESS, RPC_PARAM_INVALID, BUSY]
@@ -86,7 +86,7 @@ methods:
     rpcOp: request_response
     requestSchema: FirmwareEndRequest
     responseSchema: FirmwareEndResponse
-    recommendedEncoding: [json, binary_tlv]
+    recommendedEncoding: [json, tlv]
     capabilities: [firmware.ota]
     events: []
     errors: [SUCCESS, STREAM_NOT_FOUND, BUSY]
@@ -100,7 +100,7 @@ methods:
     rpcOp: request_response
     requestSchema: FirmwareVerifyRequest
     responseSchema: FirmwareVerifyResponse
-    recommendedEncoding: [json, binary_tlv]
+    recommendedEncoding: [json, tlv]
     capabilities: [firmware.ota]
     events: [firmware.updateCompleted, firmware.updateFailed]
     errors: [SUCCESS, STREAM_CRC_ERROR, BUSY]
@@ -114,7 +114,7 @@ methods:
     rpcOp: request_response
     requestSchema: FirmwareApplyRequest
     responseSchema: FirmwareApplyResponse
-    recommendedEncoding: [json, binary_tlv]
+    recommendedEncoding: [json, tlv]
     capabilities: [firmware.ota]
     events: [firmware.updateCompleted, firmware.updateFailed]
     errors: [SUCCESS, BUSY]

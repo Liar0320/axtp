@@ -1,12 +1,12 @@
 #include <cassert>
 #include <cstdint>
 
-#include "axtp/io/byte_buffer.h"
-#include "axtp/io/byte_reader.h"
-#include "axtp/io/byte_writer.h"
-#include "axtp/model/frame.h"
-#include "axtp/model/message.h"
-#include "axtp/model/payload.h"
+#include "axtp/io/byte_buffer.hpp"
+#include "axtp/io/byte_reader.hpp"
+#include "axtp/io/byte_writer.hpp"
+#include "axtp/model/frame.hpp"
+#include "axtp/model/message.hpp"
+#include "axtp/model/payload.hpp"
 
 int main() {
     {
@@ -18,9 +18,20 @@ int main() {
 
         const axtp::Bytes expected = {
             0x12,
-            0x56, 0x34,
-            0xDE, 0xBC, 0x9A, 0x78,
-            0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11,
+            0x56,
+            0x34,
+            0xDE,
+            0xBC,
+            0x9A,
+            0x78,
+            0x88,
+            0x77,
+            0x66,
+            0x55,
+            0x44,
+            0x33,
+            0x22,
+            0x11,
         };
         assert(writer.bytes() == expected);
 
@@ -103,7 +114,7 @@ int main() {
         assert(control.body.empty());
 
         axtp::RpcPayload rpc;
-        rpc.encoding = axtp::RpcEncoding::Binary;
+        rpc.encoding = axtp::RpcEncoding::Tlv;
         rpc.op = axtp::RpcOp::Request;
         rpc.requestId = 7;
         rpc.methodOrEventId = static_cast<std::uint16_t>(axtp::MethodId::DeviceGetInfo);
