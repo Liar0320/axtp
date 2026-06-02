@@ -1,7 +1,7 @@
 {
   "methods": [
     {
-      "id": 1282,
+      "id": 1538,
       "name": "display.setBrightness",
       "domain": "display",
       "status": "mvp",
@@ -21,7 +21,7 @@
       "errors": [
         "SUCCESS"
       ],
-      "idHex": "0x0502"
+      "idHex": "0x0602"
     }
   ]
 }

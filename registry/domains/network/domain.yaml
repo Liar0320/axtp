@@ -27,7 +27,7 @@ methods:
       - INVALID_STATE
 
 events:
-  - id: 0x8E01
+  - id: 0x0E01
     name: network.apInfoChanged
     domain: network
     status: draft

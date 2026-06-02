@@ -13,13 +13,13 @@ struct EventDescriptor {
 };
 
 inline constexpr EventDescriptor kEventRegistry[] = {
-    { 0x8507, "display.brightnessChanged", "display", "DisplayBrightnessChangedEvent" },
-    { 0x8901, "stream.opened", "stream", "StreamOpenedEvent" },
-    { 0x8903, "stream.error", "stream", "StreamErrorEvent" },
-    { 0x8B02, "firmware.updateProgress", "firmware", "FirmwareUpdateProgressEvent" },
-    { 0x8B03, "firmware.updateCompleted", "firmware", "FirmwareUpdateCompletedEvent" },
-    { 0x8B04, "firmware.updateFailed", "firmware", "FirmwareUpdateFailedEvent" },
-    { 0x8E01, "network.apInfoChanged", "network", "NetworkApInfoChangedEvent" },
+    { 0x0402, "firmware.updateProgress", "firmware", "FirmwareUpdateProgressEvent" },
+    { 0x0403, "firmware.updateCompleted", "firmware", "FirmwareUpdateCompletedEvent" },
+    { 0x0404, "firmware.updateFailed", "firmware", "FirmwareUpdateFailedEvent" },
+    { 0x0501, "stream.opened", "stream", "StreamOpenedEvent" },
+    { 0x0503, "stream.error", "stream", "StreamErrorEvent" },
+    { 0x0607, "display.brightnessChanged", "display", "DisplayBrightnessChangedEvent" },
+    { 0x0E01, "network.apInfoChanged", "network", "NetworkApInfoChangedEvent" },
 };
 
 inline constexpr std::size_t kEventRegistryCount = 7;

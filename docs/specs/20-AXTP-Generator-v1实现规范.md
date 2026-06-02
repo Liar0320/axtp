@@ -253,7 +253,7 @@ domain: stream
 description: STREAM control-plane methods and events.
 
 methods:
-  - id: 0x0901
+  - id: 0x0501
     name: stream.open
     domain: stream
     status: draft
@@ -269,7 +269,7 @@ methods:
     errors: [SUCCESS, RPC_PARAM_INVALID, BUSY]
 
 events:
-  - id: 0x8901
+  - id: 0x0501
     name: stream.opened
     domain: stream
     status: draft
@@ -301,7 +301,7 @@ errors:
     retryable: false
 
 capabilities:
-  - id: 0x040A
+  - id: 0x050A
     name: stream.hidMedia
     domain: stream
     status: draft
@@ -433,7 +433,7 @@ Types Reference
 
 Begin a firmware OTA transfer and allocate the STREAM context.
 
-- Method ID: `0x0B02`
+- Method ID: `0x0402`
 - Domain: `firmware`
 - Bit Offset: `0`
 - Status: `stable`
@@ -546,8 +546,8 @@ error name/code 唯一
 type name 唯一
 transport/profile name 唯一
 method/event domain 必须匹配 name 前缀
-eventId 必须 >= 0x8000
-eventId high byte 必须与 domain methodId high byte 对齐
+eventId 必须按 domain 分段分配
+eventId high byte 必须与同 domain methodId high byte 对齐
 method/event bitOffset 在同 domain 内唯一且从 0 连续
 method description 必须存在
 method request/response type 必须存在

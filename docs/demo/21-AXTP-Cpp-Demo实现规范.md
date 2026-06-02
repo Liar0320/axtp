@@ -1223,14 +1223,14 @@ axtp_schema_ids.h
 namespace axtp {
 
 enum class MethodId : uint16_t {
-    CAPABILITY_GET_ALL = 0x0301,
+    CAPABILITY_GET_ALL = 0x0201,
     DEVICE_GET_INFO    = 0x0101,
-    DISPLAY_GET_BRIGHTNESS = 0x0501,
-    DISPLAY_SET_BRIGHTNESS = 0x0502,
-    FIRMWARE_BEGIN         = 0x0B02,
-    FIRMWARE_END           = 0x0B03,
-    FIRMWARE_VERIFY        = 0x0B04,
-    FIRMWARE_APPLY         = 0x0B05,
+    DISPLAY_GET_BRIGHTNESS = 0x0601,
+    DISPLAY_SET_BRIGHTNESS = 0x0602,
+    FIRMWARE_BEGIN         = 0x0402,
+    FIRMWARE_END           = 0x0403,
+    FIRMWARE_VERIFY        = 0x0404,
+    FIRMWARE_APPLY         = 0x0405,
 };
 
 } // namespace axtp
@@ -1246,13 +1246,13 @@ enum class MethodId : uint16_t {
 namespace axtp {
 
 enum class EventId : uint16_t {
-    DEVICE_STATUS_CHANGED       = 0x8103,
-    CAPABILITY_CHANGED          = 0x8301,
-    BRIGHTNESS_CHANGED          = 0x8507,
-    STREAM_ERROR                = 0x8905,
-    FIRMWARE_UPDATE_PROGRESS    = 0x8B02,
-    FIRMWARE_UPDATE_COMPLETED   = 0x8B03,
-    FIRMWARE_UPDATE_FAILED      = 0x8B04,
+    DEVICE_STATUS_CHANGED       = 0x0103,
+    CAPABILITY_CHANGED          = 0x0201,
+    BRIGHTNESS_CHANGED          = 0x0607,
+    STREAM_ERROR                = 0x0505,
+    FIRMWARE_UPDATE_PROGRESS    = 0x0402,
+    FIRMWARE_UPDATE_COMPLETED   = 0x0403,
+    FIRMWARE_UPDATE_FAILED      = 0x0404,
 };
 
 } // namespace axtp

@@ -25,11 +25,11 @@ enum class RpcOp : std::uint8_t {
 };
 
 enum class MethodId : std::uint16_t {
-    DisplaySetBrightness = 0x0502,
+    DisplaySetBrightness = 0x0602,
 };
 
 enum class EventId : std::uint16_t {
-    DisplayBrightnessChanged = 0x8507,
+    DisplayBrightnessChanged = 0x0607,
 };
 
 enum class ErrorCode : std::uint16_t {

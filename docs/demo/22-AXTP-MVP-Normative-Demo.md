@@ -109,13 +109,12 @@ Client 发送 RPC Request：
 Device 返回 RPC Response，body 中至少包含 `capabilityMasks`（域级掩码 Hex 字符串）：
 
 ```text
-protocol.payloadTypes
-protocol.frameProfile
-protocol.frameCrcProfiles
-protocol.messageIdWidths
-protocol.ackModes
-rpc.encodings
-stream.profiles
+protocol.payload.control
+protocol.payload.rpc
+protocol.payload.stream
+stream.profile
+firmware.ota
+display.brightness
 ```
 
 `capabilityMasks` 格式见 08《Registry 总则》§23 和 12《Capability 注册表》§4.1。

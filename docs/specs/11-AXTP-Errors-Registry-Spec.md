@@ -23,7 +23,7 @@
 ```yaml
 errors:
   - name: INVALID_PARAMS
-    code: 0x030B
+    code: 0x003B
     category: rpc
     severity: error
     message: Invalid parameters.
@@ -53,12 +53,13 @@ errors:
 
 | 范围 | Category | 用途 |
 |---:|---|---|
-| `0x0000-0x00FF` | common | 通用结果 |
-| `0x0100-0x01FF` | frame | Frame 解析、CRC、分片 |
-| `0x0200-0x02FF` | control | OPEN / ACCEPT / ACK / NACK / RESUME |
-| `0x0300-0x03FF` | rpc | RPC 编码、method、参数 |
-| `0x0400-0x04FF` | stream | STREAM session、seq、resume、CRC |
-| `0x0500-0x6FFF` | business | 业务域错误 |
+| `0x0000-0x00FF` | common / frame / control / rpc | 通用结果与协议内部错误 |
+| `0x0100-0x01FF` | device | 设备基础错误 |
+| `0x0200-0x02FF` | capability | 能力查询与协商错误 |
+| `0x0300-0x03FF` | system | 系统级错误 |
+| `0x0400-0x04FF` | firmware | 固件 / OTA 错误 |
+| `0x0500-0x05FF` | stream | STREAM session、seq、resume、CRC |
+| `0x0600-0x15FF` | business domains | 其他业务域错误，按 08《Registry 总则》§9 的 Domain Registry 高字节分段 |
 | `0x7000-0x7EFF` | vendor | 厂商扩展 |
 | `0x7F00-0x7FFF` | legacy | Legacy Adapter |
 

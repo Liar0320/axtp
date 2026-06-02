@@ -31,6 +31,16 @@
       "idHex": "0x0003"
     },
     {
+      "id": 9,
+      "name": "protocol.reservedRequestIdWidth",
+      "domain": "protocol",
+      "status": "reserved",
+      "description": "Historical requestId width negotiation bit; AXTP v1 fixes requestId as uint32.",
+      "deprecated": false,
+      "type": "reserved",
+      "idHex": "0x0009"
+    },
+    {
       "id": 257,
       "name": "device.info",
       "domain": "device",
@@ -41,27 +51,28 @@
       "idHex": "0x0101"
     },
     {
-      "id": 769,
+      "id": 513,
       "name": "capability.supportedMethods",
       "domain": "capability",
       "status": "mvp",
       "description": "Device supports capability.supportedMethods.",
       "deprecated": false,
       "type": "bool",
-      "idHex": "0x0301"
+      "idHex": "0x0201"
     },
     {
-      "id": 777,
-      "name": "reserved.requestIdWidth",
-      "domain": "reserved",
-      "status": "reserved",
-      "description": "Historical requestId width negotiation bit; AXTP v1 fixes requestId as uint32.",
+      "id": 1025,
+      "name": "firmware.ota",
+      "domain": "firmware",
+      "status": "mvp",
+      "description": "Device supports firmware OTA over STREAM.",
       "deprecated": false,
-      "type": "reserved",
-      "idHex": "0x0309"
+      "type": "object",
+      "schema": "FirmwareOtaCapability",
+      "idHex": "0x0401"
     },
     {
-      "id": 1034,
+      "id": 1290,
       "name": "stream.hidMedia",
       "domain": "stream",
       "status": "draft",
@@ -69,7 +80,7 @@
       "deprecated": false,
       "type": "object",
       "schema": "StreamHidMediaCapability",
-      "idHex": "0x040A"
+      "idHex": "0x050A"
     },
     {
       "id": 1537,
@@ -110,17 +121,6 @@
       "deprecated": false,
       "type": "uint16",
       "idHex": "0x0604"
-    },
-    {
-      "id": 2817,
-      "name": "firmware.ota",
-      "domain": "firmware",
-      "status": "mvp",
-      "description": "Device supports firmware OTA over STREAM.",
-      "deprecated": false,
-      "type": "object",
-      "schema": "FirmwareOtaCapability",
-      "idHex": "0x0B01"
     },
     {
       "id": 3590,

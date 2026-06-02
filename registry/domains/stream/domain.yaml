@@ -2,7 +2,7 @@ domain: stream
 description: STREAM control-plane methods and events.
 
 methods:
-  - id: 0x0901
+  - id: 0x0501
     name: stream.open
     domain: stream
     status: draft
@@ -32,7 +32,7 @@ methods:
       - MEDIA_STREAM_START_FAILED
 
 events:
-  - id: 0x8901
+  - id: 0x0501
     name: stream.opened
     domain: stream
     status: draft
@@ -46,7 +46,7 @@ events:
     capabilities:
       - stream.hidMedia
 
-  - id: 0x8903
+  - id: 0x0503
     name: stream.error
     domain: stream
     status: draft

@@ -194,7 +194,7 @@ Capability discovery is exposed through `capability.supportedMethods`. The `Capa
 
 Return the per-domain method bitmap supported by the current session.
 
-- Method ID: `0x0301`
+- Method ID: `0x0201`
 - Domain: `capability`
 - Bit Offset: `0`
 - Status: `stable`
@@ -275,7 +275,7 @@ Type: `DeviceGetInfoResponse`
 
 Read the current display brightness percentage.
 
-- Method ID: `0x0501`
+- Method ID: `0x0601`
 - Domain: `display`
 - Bit Offset: `0`
 - Status: `stable`
@@ -305,7 +305,7 @@ Type: `DisplayGetBrightnessResponse`
 
 Set the display brightness and optionally request a transition duration.
 
-- Method ID: `0x0502`
+- Method ID: `0x0602`
 - Domain: `display`
 - Bit Offset: `1`
 - Status: `stable`
@@ -347,7 +347,7 @@ No fields.
 
 Begin a firmware OTA transfer and allocate the STREAM context.
 
-- Method ID: `0x0B02`
+- Method ID: `0x0402`
 - Domain: `firmware`
 - Bit Offset: `0`
 - Status: `stable`
@@ -396,7 +396,7 @@ Type: `FirmwareBeginResponse`
 
 Finish sending firmware data for the active OTA stream.
 
-- Method ID: `0x0B03`
+- Method ID: `0x0403`
 - Domain: `firmware`
 - Bit Offset: `1`
 - Status: `stable`
@@ -432,7 +432,7 @@ Type: `FirmwareEndResponse`
 
 Verify the transferred firmware object before applying it.
 
-- Method ID: `0x0B04`
+- Method ID: `0x0404`
 - Domain: `firmware`
 - Bit Offset: `2`
 - Status: `stable`
@@ -465,7 +465,7 @@ Type: `FirmwareVerifyResponse`
 
 Apply a verified firmware image.
 
-- Method ID: `0x0B05`
+- Method ID: `0x0405`
 - Domain: `firmware`
 - Bit Offset: `3`
 - Status: `stable`
@@ -552,7 +552,7 @@ Type: `NetworkGetApInfoResponse`
 
 Open an AXTP STREAM media channel over USB HID High Speed using media.video or media.audio, without UVC or UAC.
 
-- Method ID: `0x0901`
+- Method ID: `0x0501`
 - Domain: `stream`
 - Bit Offset: `0`
 - Status: `draft`
@@ -612,7 +612,7 @@ Type: `StreamOpenResponse`
 
 Emitted when display brightness changes.
 
-- Event ID: `0x8507`
+- Event ID: `0x0607`
 - Domain: `display`
 - Bit Offset: `0`
 - Status: `stable`
@@ -646,7 +646,7 @@ Type: `DisplayBrightnessChangedEvent`
 
 Emitted while firmware OTA transfer or processing advances.
 
-- Event ID: `0x8B02`
+- Event ID: `0x0402`
 - Domain: `firmware`
 - Bit Offset: `0`
 - Status: `stable`
@@ -670,7 +670,7 @@ Type: `FirmwareUpdateProgressEvent`
 
 Emitted when firmware update processing completes successfully.
 
-- Event ID: `0x8B03`
+- Event ID: `0x0403`
 - Domain: `firmware`
 - Bit Offset: `1`
 - Status: `stable`
@@ -693,7 +693,7 @@ Type: `FirmwareUpdateCompletedEvent`
 
 Emitted when firmware update processing fails.
 
-- Event ID: `0x8B04`
+- Event ID: `0x0404`
 - Domain: `firmware`
 - Bit Offset: `2`
 - Status: `stable`
@@ -725,7 +725,7 @@ Type: `FirmwareUpdateFailedEvent`
 
 Emitted when the device-hosted SoftAP state or visible AP information changes.
 
-- Event ID: `0x8E01`
+- Event ID: `0x0E01`
 - Domain: `network`
 - Bit Offset: `0`
 - Status: `draft`
@@ -764,7 +764,7 @@ Type: `NetworkApInfoChangedEvent`
 
 Emitted after a STREAM media channel is opened and bound to a streamId.
 
-- Event ID: `0x8901`
+- Event ID: `0x0501`
 - Domain: `stream`
 - Bit Offset: `0`
 - Status: `draft`
@@ -790,7 +790,7 @@ Type: `StreamOpenedEvent`
 
 Emitted when a STREAM media channel fails or cannot continue.
 
-- Event ID: `0x8903`
+- Event ID: `0x0503`
 - Domain: `stream`
 - Bit Offset: `1`
 - Status: `draft`
@@ -893,136 +893,136 @@ Describes HID-backed media STREAM support.
 | 0x000D | ALREADY_EXISTS | common | error | No | draft | Resource already exists. |
 | 0x000E | INTERNAL_ERROR | common | error | No | stable | Internal error. |
 | 0x000F | UNAVAILABLE | common | warning | Yes | draft | Service is temporarily unavailable. |
-| 0x0101 | FRAME_MAGIC_INVALID | frame | error | No | stable | Frame magic is invalid. |
-| 0x0102 | FRAME_VERSION_UNSUPPORTED | frame | error | No | stable | Frame version is not supported. |
-| 0x0103 | FRAME_HEADER_INVALID | frame | error | No | stable | Frame header is invalid. |
-| 0x0104 | FRAME_LENGTH_INVALID | frame | error | No | stable | Frame payload length or total length is invalid. |
-| 0x0105 | FRAME_PAYLOAD_TYPE_INVALID | frame | error | No | stable | Frame payload type is invalid. |
-| 0x0106 | FRAME_CRC_ERROR | frame | warning | Yes | stable | Frame CRC check failed. |
-| 0x0107 | FRAME_FRAGMENT_INVALID | frame | error | No | stable | Frame fragment metadata is invalid. |
-| 0x0108 | FRAME_FRAGMENT_MISSING | frame | warning | Yes | stable | One or more frame fragments are missing. |
-| 0x0109 | FRAME_REASSEMBLY_TIMEOUT | frame | warning | Yes | stable | Frame reassembly timed out. |
-| 0x010A | FRAME_TOO_LARGE | frame | error | No | stable | Frame exceeds the negotiated maximum size. |
-| 0x010B | TRANSPORT_MTU_EXCEEDED | frame | error | No | stable | Transport MTU was exceeded. |
-| 0x010C | TRANSPORT_WRITE_FAILED | frame | warning | Yes | draft | Transport write failed. |
-| 0x010D | TRANSPORT_READ_FAILED | frame | warning | Yes | draft | Transport read failed. |
-| 0x010E | TRANSPORT_DISCONNECTED | frame | warning | Yes | stable | Transport disconnected. |
-| 0x0201 | CONTROL_OPCODE_INVALID | control | error | No | stable | Control opcode is invalid. |
-| 0x0202 | CONTROL_PAYLOAD_INVALID | control | error | No | stable | Control payload is invalid. |
-| 0x0203 | RESERVED_CONTROL_BODY_ENCODING_UNSUPPORTED | control | error | No | reserved | Historical control body encoding negotiation error. AXTP v1 implementations must not emit it. |
-| 0x0204 | CONTROL_OPEN_REQUIRED | control | error | No | stable | Session has not completed CONTROL OPEN. |
-| 0x0205 | CONTROL_OPEN_REJECTED | control | error | No | stable | Control OPEN was rejected. |
-| 0x0206 | RESERVED_CONTROL_PROFILE_UNSUPPORTED | control | error | No | reserved | Historical header profile negotiation error. AXTP v1 implementations must not emit it. |
-| 0x0207 | CONTROL_NEGOTIATION_FAILED | control | error | No | stable | Control negotiation failed. |
-| 0x0208 | CONTROL_SESSION_INVALID | control | error | No | stable | SessionId is invalid. |
-| 0x0209 | CONTROL_SESSION_EXPIRED | control | error | No | stable | Session has expired. |
-| 0x020A | CONTROL_RESUME_FAILED | control | error | No | stable | Session resume failed. |
-| 0x020B | CONTROL_ACK_TARGET_INVALID | control | error | No | stable | ACK/NACK target type is invalid. |
-| 0x020C | CONTROL_WINDOW_EXCEEDED | control | warning | Yes | stable | Flow-control window was exceeded. |
-| 0x020D | CONTROL_HEARTBEAT_TIMEOUT | control | warning | Yes | stable | Control heartbeat timed out. |
-| 0x0301 | RPC_ENCODING_UNSUPPORTED | rpc | error | No | stable | RPC encoding is not supported. |
-| 0x0302 | RPC_OP_INVALID | rpc | error | No | stable | RPC operation is invalid. |
-| 0x0303 | RPC_PAYLOAD_INVALID | rpc | error | No | stable | RPC payload is invalid. |
-| 0x0304 | RPC_BODY_ENCODING_UNSUPPORTED | rpc | error | No | stable | RPC body encoding is not supported. |
-| 0x0305 | RPC_BODY_DECODE_FAILED | rpc | error | No | stable | RPC body decoding failed. |
-| 0x0306 | RPC_METHOD_NOT_FOUND | rpc | error | No | stable | MethodId or method name is not registered. |
-| 0x0307 | RPC_METHOD_NOT_SUPPORTED | rpc | error | No | stable | Method exists but is not supported by the current device. |
-| 0x0308 | RPC_METHOD_DISABLED | rpc | error | No | draft | Method is disabled. |
-| 0x0309 | RPC_REQUEST_ID_INVALID | rpc | error | No | stable | RPC requestId is invalid. |
-| 0x030A | RPC_PARAM_MISSING | rpc | error | No | stable | Required RPC parameter is missing. |
-| 0x030B | RPC_PARAM_INVALID | rpc | error | No | stable | RPC parameters are invalid. |
-| 0x030C | RPC_PARAM_OUT_OF_RANGE | rpc | error | No | stable | RPC parameter is out of range. |
-| 0x030D | RPC_EXECUTION_FAILED | rpc | error | No | stable | RPC method execution failed. |
-| 0x030E | RPC_RESPONSE_TIMEOUT | rpc | warning | Yes | stable | RPC response timed out. |
-| 0x030F | RPC_BATCH_UNSUPPORTED | rpc | error | No | draft | RPC batch is not supported. |
-| 0x0310 | RPC_BATCH_PARTIAL_FAILED | rpc | error | No | draft | One or more RPC batch items failed. |
-| 0x0401 | STREAM_NOT_FOUND | stream | error | No | stable | Stream context does not exist. |
-| 0x0402 | STREAM_TIMEOUT | stream | warning | Yes | stable | Stream timed out. |
-| 0x0403 | STREAM_CRC_ERROR | stream | warning | Yes | stable | Stream chunk CRC check failed. |
-| 0x0404 | STREAM_PAYLOAD_INVALID | stream | error | No | stable | Stream payload is invalid. |
-| 0x0405 | STREAM_ID_INVALID | stream | error | No | stable | StreamId is invalid. |
-| 0x0406 | STREAM_NOT_OPEN | stream | error | No | stable | Stream is not open. |
-| 0x0407 | STREAM_ALREADY_OPEN | stream | error | No | draft | Stream is already open. |
-| 0x0408 | STREAM_SEQ_INVALID | stream | error | No | stable | Stream seqId is invalid. |
-| 0x0409 | STREAM_SEQ_DUPLICATED | stream | error | No | draft | Stream seqId is duplicated. |
-| 0x040A | STREAM_CHUNK_MISSING | stream | warning | Yes | stable | Stream chunk is missing. |
-| 0x040B | STREAM_OFFSET_INVALID | stream | error | No | stable | Stream cursor or offset is invalid. |
-| 0x040C | STREAM_WINDOW_FULL | stream | warning | Yes | stable | Stream receive window is full. |
-| 0x040D | STREAM_BACKPRESSURE | stream | warning | Yes | draft | Stream receiver reported backpressure. |
-| 0x040E | STREAM_RESUME_UNSUPPORTED | stream | error | No | stable | Stream resume is not supported. |
-| 0x040F | STREAM_RESUME_FAILED | stream | error | No | stable | Stream resume failed. |
-| 0x0410 | STREAM_CLOSED | stream | error | No | stable | Stream is closed. |
-| 0x0411 | STREAM_TRANSFER_ABORTED | stream | error | No | stable | Stream transfer was aborted. |
-| 0x0501 | CAPABILITY_NOT_FOUND | business | error | No | stable | Capability does not exist. |
-| 0x0502 | CAPABILITY_DOMAIN_NOT_FOUND | business | error | No | stable | Capability domain does not exist. |
-| 0x0503 | CAPABILITY_METHOD_UNSUPPORTED | business | error | No | stable | Method capability is not supported. |
-| 0x0504 | CAPABILITY_EVENT_UNSUPPORTED | business | error | No | stable | Event capability is not supported. |
-| 0x0505 | CAPABILITY_STREAM_UNSUPPORTED | business | error | No | stable | Stream capability is not supported. |
-| 0x0506 | CAPABILITY_ENCODING_UNSUPPORTED | business | error | No | stable | Encoding capability is not supported. |
-| 0x0507 | CAPABILITY_NEGOTIATION_FAILED | business | error | No | stable | Business capability negotiation failed. |
-| 0x0508 | CAPABILITY_LIMIT_EXCEEDED | business | error | No | stable | Capability limit was exceeded. |
-| 0x0601 | FW_IMAGE_INVALID | business | error | No | stable | Firmware image is invalid. |
-| 0x0602 | FW_IMAGE_TYPE_UNSUPPORTED | business | error | No | stable | Firmware image type is not supported. |
-| 0x0603 | FW_VERSION_UNSUPPORTED | business | error | No | stable | Firmware version is not supported. |
-| 0x0604 | FW_VERSION_TOO_OLD | business | error | No | draft | Firmware version is too old. |
-| 0x0605 | FW_TRANSFER_NOT_STARTED | business | error | No | stable | Firmware transfer has not started. |
-| 0x0606 | FW_TRANSFER_ALREADY_STARTED | business | error | No | draft | Firmware transfer has already started. |
-| 0x0607 | FW_CHUNK_INVALID | business | error | No | stable | Firmware chunk is invalid. |
-| 0x0608 | FW_CHUNK_CRC_ERROR | business | warning | Yes | stable | Firmware chunk CRC failed. |
-| 0x0609 | FW_SIZE_MISMATCH | business | error | No | stable | Firmware size does not match the declared size. |
-| 0x060A | FW_HASH_MISMATCH | business | error | No | stable | Firmware hash does not match the declared verification value. |
-| 0x060B | FW_VERIFY_FAILED | business | error | No | stable | Firmware verification failed. |
-| 0x060C | FW_APPLY_FAILED | business | error | No | stable | Firmware apply failed. |
-| 0x060D | FW_ROLLBACK_FAILED | business | error | No | draft | Firmware rollback failed. |
-| 0x060E | FW_STORAGE_NOT_ENOUGH | business | error | No | stable | Not enough storage for firmware update. |
-| 0x060F | FW_DEVICE_NOT_READY | business | warning | Yes | stable | Device is not ready for firmware update. |
-| 0x0610 | FW_REBOOT_REQUIRED | business | error | No | draft | Reboot is required before continuing. |
-| 0x0701 | FILE_NOT_FOUND | business | error | No | stable | File does not exist. |
-| 0x0702 | FILE_ALREADY_EXISTS | business | error | No | draft | File already exists. |
-| 0x0703 | FILE_PERMISSION_DENIED | business | error | No | stable | File permission denied. |
-| 0x0704 | FILE_PATH_INVALID | business | error | No | stable | File path is invalid. |
-| 0x0705 | FILE_TYPE_UNSUPPORTED | business | error | No | stable | File type is not supported. |
-| 0x0706 | FILE_TOO_LARGE | business | error | No | stable | File is too large. |
-| 0x0707 | FILE_READ_FAILED | business | warning | Yes | stable | File read failed. |
-| 0x0708 | FILE_WRITE_FAILED | business | warning | Yes | stable | File write failed. |
-| 0x0709 | FILE_DELETE_FAILED | business | error | No | draft | File delete failed. |
-| 0x070A | FILE_TRANSFER_FAILED | business | warning | Yes | stable | File transfer failed. |
-| 0x070B | FILE_VERIFY_FAILED | business | error | No | stable | File verification failed. |
-| 0x070C | FILE_STORAGE_FULL | business | error | No | stable | File storage is full. |
-| 0x0801 | MEDIA_SOURCE_NOT_FOUND | business | error | No | stable | Requested media source does not exist. |
-| 0x0802 | MEDIA_SOURCE_UNAVAILABLE | business | warning | Yes | stable | Requested media source is currently unavailable. |
-| 0x0803 | MEDIA_CODEC_UNSUPPORTED | business | error | No | stable | Requested media codec or sample format is unsupported. |
-| 0x0804 | MEDIA_RESOLUTION_UNSUPPORTED | business | error | No | stable | Requested video resolution is unsupported. |
-| 0x0805 | MEDIA_FRAMERATE_UNSUPPORTED | business | error | No | stable | Requested video frame rate is unsupported. |
-| 0x0806 | MEDIA_BITRATE_UNSUPPORTED | business | error | No | draft | Requested media bitrate is unsupported. |
-| 0x0807 | MEDIA_STREAM_START_FAILED | business | warning | Yes | stable | Device failed to start the requested media stream. |
-| 0x0808 | MEDIA_STREAM_STOP_FAILED | business | warning | Yes | draft | Device failed to stop the media stream. |
-| 0x0809 | MEDIA_FRAME_DROPPED | business | warning | Yes | draft | Media frame was dropped. |
-| 0x080A | MEDIA_AUDIO_DEVICE_NOT_FOUND | business | error | No | draft | Audio device was not found. |
-| 0x080B | MEDIA_VIDEO_SIGNAL_LOST | business | warning | Yes | draft | Video signal was lost. |
-| 0x0901 | DEVICE_INFO_UNAVAILABLE | business | warning | Yes | stable | Device information is unavailable. |
-| 0x0902 | DEVICE_REBOOT_FAILED | business | error | No | draft | Device reboot failed. |
-| 0x0903 | DEVICE_FACTORY_RESET_FAILED | business | error | No | draft | Device factory reset failed. |
-| 0x0904 | DEVICE_LOW_POWER | business | warning | Yes | draft | Device power is low. |
-| 0x0905 | DEVICE_OVER_TEMPERATURE | business | warning | Yes | draft | Device temperature is too high. |
-| 0x0906 | DEVICE_STORAGE_FULL | business | error | No | stable | Device storage is full. |
-| 0x0907 | DEVICE_MODE_CONFLICT | business | error | No | stable | Device mode conflicts with the requested operation. |
-| 0x0908 | DEVICE_RESOURCE_BUSY | business | warning | Yes | stable | Device resource is busy. |
-| 0x0909 | DEVICE_HARDWARE_FAILURE | business | error | No | draft | Device hardware failure. |
-| 0x0A01 | SEC_AUTH_REQUIRED | business | error | No | draft | Authentication is required. |
-| 0x0A02 | SEC_AUTH_FAILED | business | error | No | draft | Authentication failed. |
-| 0x0A03 | SEC_PERMISSION_DENIED | business | error | No | draft | Security permission denied. |
-| 0x0A04 | SEC_ENCRYPTION_REQUIRED | business | error | No | draft | Encryption is required. |
-| 0x0A05 | SEC_DECRYPT_FAILED | business | error | No | draft | Decryption failed. |
-| 0x0A06 | SEC_SIGNATURE_INVALID | business | error | No | draft | Signature is invalid. |
-| 0x0A07 | SEC_CERT_INVALID | business | error | No | draft | Certificate is invalid. |
-| 0x0A08 | SEC_TOKEN_EXPIRED | business | error | No | draft | Security token expired. |
-| 0x0B01 | DIAG_TEST_NOT_FOUND | business | error | No | draft | Diagnostic test was not found. |
-| 0x0B02 | DIAG_TEST_UNSUPPORTED | business | error | No | draft | Diagnostic test is not supported. |
-| 0x0B03 | DIAG_TEST_RUNNING | business | error | No | draft | Diagnostic test is already running. |
-| 0x0B04 | DIAG_TEST_FAILED | business | error | No | draft | Diagnostic test failed. |
-| 0x0B05 | DIAG_METRIC_UNAVAILABLE | business | warning | Yes | draft | Diagnostic metric is unavailable. |
-| 0x0B06 | DIAG_LOOPBACK_FAILED | business | error | No | draft | Diagnostic loopback failed. |
+| 0x0011 | FRAME_MAGIC_INVALID | frame | error | No | stable | Frame magic is invalid. |
+| 0x0012 | FRAME_VERSION_UNSUPPORTED | frame | error | No | stable | Frame version is not supported. |
+| 0x0013 | FRAME_HEADER_INVALID | frame | error | No | stable | Frame header is invalid. |
+| 0x0014 | FRAME_LENGTH_INVALID | frame | error | No | stable | Frame payload length or total length is invalid. |
+| 0x0015 | FRAME_PAYLOAD_TYPE_INVALID | frame | error | No | stable | Frame payload type is invalid. |
+| 0x0016 | FRAME_CRC_ERROR | frame | warning | Yes | stable | Frame CRC check failed. |
+| 0x0017 | FRAME_FRAGMENT_INVALID | frame | error | No | stable | Frame fragment metadata is invalid. |
+| 0x0018 | FRAME_FRAGMENT_MISSING | frame | warning | Yes | stable | One or more frame fragments are missing. |
+| 0x0019 | FRAME_REASSEMBLY_TIMEOUT | frame | warning | Yes | stable | Frame reassembly timed out. |
+| 0x001A | FRAME_TOO_LARGE | frame | error | No | stable | Frame exceeds the negotiated maximum size. |
+| 0x001B | TRANSPORT_MTU_EXCEEDED | frame | error | No | stable | Transport MTU was exceeded. |
+| 0x001C | TRANSPORT_WRITE_FAILED | frame | warning | Yes | draft | Transport write failed. |
+| 0x001D | TRANSPORT_READ_FAILED | frame | warning | Yes | draft | Transport read failed. |
+| 0x001E | TRANSPORT_DISCONNECTED | frame | warning | Yes | stable | Transport disconnected. |
+| 0x0021 | CONTROL_OPCODE_INVALID | control | error | No | stable | Control opcode is invalid. |
+| 0x0022 | CONTROL_PAYLOAD_INVALID | control | error | No | stable | Control payload is invalid. |
+| 0x0023 | RESERVED_CONTROL_BODY_ENCODING_UNSUPPORTED | control | error | No | reserved | Historical control body encoding negotiation error. AXTP v1 implementations must not emit it. |
+| 0x0024 | CONTROL_OPEN_REQUIRED | control | error | No | stable | Session has not completed CONTROL OPEN. |
+| 0x0025 | CONTROL_OPEN_REJECTED | control | error | No | stable | Control OPEN was rejected. |
+| 0x0026 | RESERVED_CONTROL_PROFILE_UNSUPPORTED | control | error | No | reserved | Historical header profile negotiation error. AXTP v1 implementations must not emit it. |
+| 0x0027 | CONTROL_NEGOTIATION_FAILED | control | error | No | stable | Control negotiation failed. |
+| 0x0028 | CONTROL_SESSION_INVALID | control | error | No | stable | SessionId is invalid. |
+| 0x0029 | CONTROL_SESSION_EXPIRED | control | error | No | stable | Session has expired. |
+| 0x002A | CONTROL_RESUME_FAILED | control | error | No | stable | Session resume failed. |
+| 0x002B | CONTROL_ACK_TARGET_INVALID | control | error | No | stable | ACK/NACK target type is invalid. |
+| 0x002C | CONTROL_WINDOW_EXCEEDED | control | warning | Yes | stable | Flow-control window was exceeded. |
+| 0x002D | CONTROL_HEARTBEAT_TIMEOUT | control | warning | Yes | stable | Control heartbeat timed out. |
+| 0x0031 | RPC_ENCODING_UNSUPPORTED | rpc | error | No | stable | RPC encoding is not supported. |
+| 0x0032 | RPC_OP_INVALID | rpc | error | No | stable | RPC operation is invalid. |
+| 0x0033 | RPC_PAYLOAD_INVALID | rpc | error | No | stable | RPC payload is invalid. |
+| 0x0034 | RPC_BODY_ENCODING_UNSUPPORTED | rpc | error | No | stable | RPC body encoding is not supported. |
+| 0x0035 | RPC_BODY_DECODE_FAILED | rpc | error | No | stable | RPC body decoding failed. |
+| 0x0036 | RPC_METHOD_NOT_FOUND | rpc | error | No | stable | MethodId or method name is not registered. |
+| 0x0037 | RPC_METHOD_NOT_SUPPORTED | rpc | error | No | stable | Method exists but is not supported by the current device. |
+| 0x0038 | RPC_METHOD_DISABLED | rpc | error | No | draft | Method is disabled. |
+| 0x0039 | RPC_REQUEST_ID_INVALID | rpc | error | No | stable | RPC requestId is invalid. |
+| 0x003A | RPC_PARAM_MISSING | rpc | error | No | stable | Required RPC parameter is missing. |
+| 0x003B | RPC_PARAM_INVALID | rpc | error | No | stable | RPC parameters are invalid. |
+| 0x003C | RPC_PARAM_OUT_OF_RANGE | rpc | error | No | stable | RPC parameter is out of range. |
+| 0x003D | RPC_EXECUTION_FAILED | rpc | error | No | stable | RPC method execution failed. |
+| 0x003E | RPC_RESPONSE_TIMEOUT | rpc | warning | Yes | stable | RPC response timed out. |
+| 0x003F | RPC_BATCH_UNSUPPORTED | rpc | error | No | draft | RPC batch is not supported. |
+| 0x0040 | RPC_BATCH_PARTIAL_FAILED | rpc | error | No | draft | One or more RPC batch items failed. |
+| 0x0101 | DEVICE_INFO_UNAVAILABLE | device | warning | Yes | stable | Device information is unavailable. |
+| 0x0102 | DEVICE_REBOOT_FAILED | device | error | No | draft | Device reboot failed. |
+| 0x0103 | DEVICE_FACTORY_RESET_FAILED | device | error | No | draft | Device factory reset failed. |
+| 0x0104 | DEVICE_LOW_POWER | device | warning | Yes | draft | Device power is low. |
+| 0x0105 | DEVICE_OVER_TEMPERATURE | device | warning | Yes | draft | Device temperature is too high. |
+| 0x0106 | DEVICE_STORAGE_FULL | device | error | No | stable | Device storage is full. |
+| 0x0107 | DEVICE_MODE_CONFLICT | device | error | No | stable | Device mode conflicts with the requested operation. |
+| 0x0108 | DEVICE_RESOURCE_BUSY | device | warning | Yes | stable | Device resource is busy. |
+| 0x0109 | DEVICE_HARDWARE_FAILURE | device | error | No | draft | Device hardware failure. |
+| 0x0201 | CAPABILITY_NOT_FOUND | capability | error | No | stable | Capability does not exist. |
+| 0x0202 | CAPABILITY_DOMAIN_NOT_FOUND | capability | error | No | stable | Capability domain does not exist. |
+| 0x0203 | CAPABILITY_METHOD_UNSUPPORTED | capability | error | No | stable | Method capability is not supported. |
+| 0x0204 | CAPABILITY_EVENT_UNSUPPORTED | capability | error | No | stable | Event capability is not supported. |
+| 0x0205 | CAPABILITY_STREAM_UNSUPPORTED | capability | error | No | stable | Stream capability is not supported. |
+| 0x0206 | CAPABILITY_ENCODING_UNSUPPORTED | capability | error | No | stable | Encoding capability is not supported. |
+| 0x0207 | CAPABILITY_NEGOTIATION_FAILED | capability | error | No | stable | Business capability negotiation failed. |
+| 0x0208 | CAPABILITY_LIMIT_EXCEEDED | capability | error | No | stable | Capability limit was exceeded. |
+| 0x0401 | FW_IMAGE_INVALID | firmware | error | No | stable | Firmware image is invalid. |
+| 0x0402 | FW_IMAGE_TYPE_UNSUPPORTED | firmware | error | No | stable | Firmware image type is not supported. |
+| 0x0403 | FW_VERSION_UNSUPPORTED | firmware | error | No | stable | Firmware version is not supported. |
+| 0x0404 | FW_VERSION_TOO_OLD | firmware | error | No | draft | Firmware version is too old. |
+| 0x0405 | FW_TRANSFER_NOT_STARTED | firmware | error | No | stable | Firmware transfer has not started. |
+| 0x0406 | FW_TRANSFER_ALREADY_STARTED | firmware | error | No | draft | Firmware transfer has already started. |
+| 0x0407 | FW_CHUNK_INVALID | firmware | error | No | stable | Firmware chunk is invalid. |
+| 0x0408 | FW_CHUNK_CRC_ERROR | firmware | warning | Yes | stable | Firmware chunk CRC failed. |
+| 0x0409 | FW_SIZE_MISMATCH | firmware | error | No | stable | Firmware size does not match the declared size. |
+| 0x040A | FW_HASH_MISMATCH | firmware | error | No | stable | Firmware hash does not match the declared verification value. |
+| 0x040B | FW_VERIFY_FAILED | firmware | error | No | stable | Firmware verification failed. |
+| 0x040C | FW_APPLY_FAILED | firmware | error | No | stable | Firmware apply failed. |
+| 0x040D | FW_ROLLBACK_FAILED | firmware | error | No | draft | Firmware rollback failed. |
+| 0x040E | FW_STORAGE_NOT_ENOUGH | firmware | error | No | stable | Not enough storage for firmware update. |
+| 0x040F | FW_DEVICE_NOT_READY | firmware | warning | Yes | stable | Device is not ready for firmware update. |
+| 0x0410 | FW_REBOOT_REQUIRED | firmware | error | No | draft | Reboot is required before continuing. |
+| 0x0501 | STREAM_NOT_FOUND | stream | error | No | stable | Stream context does not exist. |
+| 0x0502 | STREAM_TIMEOUT | stream | warning | Yes | stable | Stream timed out. |
+| 0x0503 | STREAM_CRC_ERROR | stream | warning | Yes | stable | Stream chunk CRC check failed. |
+| 0x0504 | STREAM_PAYLOAD_INVALID | stream | error | No | stable | Stream payload is invalid. |
+| 0x0505 | STREAM_ID_INVALID | stream | error | No | stable | StreamId is invalid. |
+| 0x0506 | STREAM_NOT_OPEN | stream | error | No | stable | Stream is not open. |
+| 0x0507 | STREAM_ALREADY_OPEN | stream | error | No | draft | Stream is already open. |
+| 0x0508 | STREAM_SEQ_INVALID | stream | error | No | stable | Stream seqId is invalid. |
+| 0x0509 | STREAM_SEQ_DUPLICATED | stream | error | No | draft | Stream seqId is duplicated. |
+| 0x050A | STREAM_CHUNK_MISSING | stream | warning | Yes | stable | Stream chunk is missing. |
+| 0x050B | STREAM_OFFSET_INVALID | stream | error | No | stable | Stream cursor or offset is invalid. |
+| 0x050C | STREAM_WINDOW_FULL | stream | warning | Yes | stable | Stream receive window is full. |
+| 0x050D | STREAM_BACKPRESSURE | stream | warning | Yes | draft | Stream receiver reported backpressure. |
+| 0x050E | STREAM_RESUME_UNSUPPORTED | stream | error | No | stable | Stream resume is not supported. |
+| 0x050F | STREAM_RESUME_FAILED | stream | error | No | stable | Stream resume failed. |
+| 0x0510 | STREAM_CLOSED | stream | error | No | stable | Stream is closed. |
+| 0x0511 | STREAM_TRANSFER_ABORTED | stream | error | No | stable | Stream transfer was aborted. |
+| 0x0801 | MEDIA_SOURCE_NOT_FOUND | video | error | No | stable | Requested media source does not exist. |
+| 0x0802 | MEDIA_SOURCE_UNAVAILABLE | video | warning | Yes | stable | Requested media source is currently unavailable. |
+| 0x0803 | MEDIA_CODEC_UNSUPPORTED | video | error | No | stable | Requested media codec or sample format is unsupported. |
+| 0x0804 | MEDIA_RESOLUTION_UNSUPPORTED | video | error | No | stable | Requested video resolution is unsupported. |
+| 0x0805 | MEDIA_FRAMERATE_UNSUPPORTED | video | error | No | stable | Requested video frame rate is unsupported. |
+| 0x0806 | MEDIA_BITRATE_UNSUPPORTED | video | error | No | draft | Requested media bitrate is unsupported. |
+| 0x0807 | MEDIA_STREAM_START_FAILED | video | warning | Yes | stable | Device failed to start the requested media stream. |
+| 0x0808 | MEDIA_STREAM_STOP_FAILED | video | warning | Yes | draft | Device failed to stop the media stream. |
+| 0x0809 | MEDIA_FRAME_DROPPED | video | warning | Yes | draft | Media frame was dropped. |
+| 0x080B | MEDIA_VIDEO_SIGNAL_LOST | video | warning | Yes | draft | Video signal was lost. |
+| 0x090A | MEDIA_AUDIO_DEVICE_NOT_FOUND | audio | error | No | draft | Audio device was not found. |
+| 0x1001 | FILE_NOT_FOUND | file | error | No | stable | File does not exist. |
+| 0x1002 | FILE_ALREADY_EXISTS | file | error | No | draft | File already exists. |
+| 0x1003 | FILE_PERMISSION_DENIED | file | error | No | stable | File permission denied. |
+| 0x1004 | FILE_PATH_INVALID | file | error | No | stable | File path is invalid. |
+| 0x1005 | FILE_TYPE_UNSUPPORTED | file | error | No | stable | File type is not supported. |
+| 0x1006 | FILE_TOO_LARGE | file | error | No | stable | File is too large. |
+| 0x1007 | FILE_READ_FAILED | file | warning | Yes | stable | File read failed. |
+| 0x1008 | FILE_WRITE_FAILED | file | warning | Yes | stable | File write failed. |
+| 0x1009 | FILE_DELETE_FAILED | file | error | No | draft | File delete failed. |
+| 0x100A | FILE_TRANSFER_FAILED | file | warning | Yes | stable | File transfer failed. |
+| 0x100B | FILE_VERIFY_FAILED | file | error | No | stable | File verification failed. |
+| 0x100C | FILE_STORAGE_FULL | file | error | No | stable | File storage is full. |
+| 0x1201 | DIAG_TEST_NOT_FOUND | diagnostic | error | No | draft | Diagnostic test was not found. |
+| 0x1202 | DIAG_TEST_UNSUPPORTED | diagnostic | error | No | draft | Diagnostic test is not supported. |
+| 0x1203 | DIAG_TEST_RUNNING | diagnostic | error | No | draft | Diagnostic test is already running. |
+| 0x1204 | DIAG_TEST_FAILED | diagnostic | error | No | draft | Diagnostic test failed. |
+| 0x1205 | DIAG_METRIC_UNAVAILABLE | diagnostic | warning | Yes | draft | Diagnostic metric is unavailable. |
+| 0x1206 | DIAG_LOOPBACK_FAILED | diagnostic | error | No | draft | Diagnostic loopback failed. |
+| 0x1401 | SEC_AUTH_REQUIRED | auth | error | No | draft | Authentication is required. |
+| 0x1402 | SEC_AUTH_FAILED | auth | error | No | draft | Authentication failed. |
+| 0x1403 | SEC_PERMISSION_DENIED | auth | error | No | draft | Security permission denied. |
+| 0x1404 | SEC_ENCRYPTION_REQUIRED | auth | error | No | draft | Encryption is required. |
+| 0x1405 | SEC_DECRYPT_FAILED | auth | error | No | draft | Decryption failed. |
+| 0x1406 | SEC_SIGNATURE_INVALID | auth | error | No | draft | Signature is invalid. |
+| 0x1407 | SEC_CERT_INVALID | auth | error | No | draft | Certificate is invalid. |
+| 0x1408 | SEC_TOKEN_EXPIRED | auth | error | No | draft | Security token expired. |
 | 0x7F01 | LEGACY_CMD_UNMAPPED | legacy | error | No | stable | Legacy CmdValue is not mapped to an AXTP method. |
 | 0x7F02 | LEGACY_STATUS_UNMAPPED | legacy | error | No | stable | Legacy status is not mapped to an AXTP ErrorCode. |
 | 0x7F03 | LEGACY_PAYLOAD_INVALID | legacy | error | No | stable | Legacy payload is invalid. |
@@ -1051,8 +1051,8 @@ Describes HID-backed media STREAM support.
 - Status: `stable`
 - Added in v1.0.0
 - Extends: `-`
-- Required Methods: `device.getInfo`, `capability.supportedMethods`, `display.getBrightness`, `display.setBrightness`, `firmware.begin`, `firmware.end`, `firmware.verify`, `firmware.apply`
-- Required Events: `display.brightnessChanged`, `firmware.updateProgress`, `firmware.updateCompleted`, `firmware.updateFailed`
+- Required Methods: `device.getInfo`, `capability.supportedMethods`, `firmware.begin`, `firmware.end`, `firmware.verify`, `firmware.apply`, `display.getBrightness`, `display.setBrightness`
+- Required Events: `firmware.updateProgress`, `firmware.updateCompleted`, `firmware.updateFailed`, `display.brightnessChanged`
 - Required Errors: `SUCCESS`, `RPC_METHOD_NOT_FOUND`, `RPC_PARAM_INVALID`, `STREAM_NOT_FOUND`, `STREAM_CRC_ERROR`, `BUSY`
 - Notes: -
 
@@ -1063,8 +1063,8 @@ Describes HID-backed media STREAM support.
 - Status: `stable`
 - Added in v1.0.0
 - Extends: `AXTP-MVP`
-- Required Methods: `device.getInfo`, `capability.supportedMethods`, `display.getBrightness`, `display.setBrightness`, `firmware.begin`, `firmware.end`, `firmware.verify`, `firmware.apply`
-- Required Events: `display.brightnessChanged`, `firmware.updateProgress`, `firmware.updateCompleted`, `firmware.updateFailed`
+- Required Methods: `device.getInfo`, `capability.supportedMethods`, `firmware.begin`, `firmware.end`, `firmware.verify`, `firmware.apply`, `display.getBrightness`, `display.setBrightness`
+- Required Events: `firmware.updateProgress`, `firmware.updateCompleted`, `firmware.updateFailed`, `display.brightnessChanged`
 - Required Errors: `SUCCESS`, `RPC_METHOD_NOT_FOUND`, `RPC_PARAM_INVALID`, `STREAM_NOT_FOUND`, `STREAM_CRC_ERROR`, `BUSY`
 - Notes: -
 

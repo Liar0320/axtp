@@ -81,7 +81,7 @@ int main() {
             });
         dynamicBroker.registerTlvMethod(
             "display.setBrightness", [](const axtp::RpcContext& context, const axtp::Bytes& body) {
-                assert(context.methodId == 0x0502);
+                assert(context.methodId == 0x0602);
                 assert((body == axtp::Bytes{0x01, 0x01, 0x50}));
                 return axtp::Bytes{0x02, 0x01, 0x01};
             });
@@ -108,7 +108,7 @@ int main() {
         tlvTask.rpc.encoding = axtp::RpcEncoding::Tlv;
         tlvTask.rpc.op = axtp::RpcOp::Request;
         tlvTask.rpc.requestId = 1002;
-        tlvTask.rpc.methodOrEventId = 0x0502;
+        tlvTask.rpc.methodOrEventId = 0x0602;
         tlvTask.rpc.bodyEncoding = axtp::RpcBodyEncoding::Tlv8;
         tlvTask.rpc.body = {0x01, 0x01, 0x50};
         dynamicBroker.submit(std::move(tlvTask));

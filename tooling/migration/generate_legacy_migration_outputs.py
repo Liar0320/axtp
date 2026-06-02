@@ -23,25 +23,25 @@ OUTPUT_DIR = ROOT / "docs" / "migration" / "generated"
 
 EXISTING_METHODS = {
     "device.getInfo": {"id": 0x0101, "domain": "device", "bit_offset": 0},
-    "capability.supportedMethods": {"id": 0x0301, "domain": "capability", "bit_offset": 0},
-    "display.getBrightness": {"id": 0x0501, "domain": "display", "bit_offset": 0},
-    "display.setBrightness": {"id": 0x0502, "domain": "display", "bit_offset": 1},
-    "firmware.begin": {"id": 0x0B02, "domain": "firmware", "bit_offset": 0},
-    "firmware.end": {"id": 0x0B03, "domain": "firmware", "bit_offset": 1},
-    "firmware.verify": {"id": 0x0B04, "domain": "firmware", "bit_offset": 2},
-    "firmware.apply": {"id": 0x0B05, "domain": "firmware", "bit_offset": 3},
-    "stream.open": {"id": 0x0901, "domain": "stream", "bit_offset": 0},
+    "capability.supportedMethods": {"id": 0x0201, "domain": "capability", "bit_offset": 0},
+    "display.getBrightness": {"id": 0x0601, "domain": "display", "bit_offset": 0},
+    "display.setBrightness": {"id": 0x0602, "domain": "display", "bit_offset": 1},
+    "firmware.begin": {"id": 0x0402, "domain": "firmware", "bit_offset": 0},
+    "firmware.end": {"id": 0x0403, "domain": "firmware", "bit_offset": 1},
+    "firmware.verify": {"id": 0x0404, "domain": "firmware", "bit_offset": 2},
+    "firmware.apply": {"id": 0x0405, "domain": "firmware", "bit_offset": 3},
+    "stream.open": {"id": 0x0501, "domain": "stream", "bit_offset": 0},
     "network.getApInfo": {"id": 0x0E07, "domain": "network", "bit_offset": 0},
 }
 
 EXISTING_EVENTS = {
-    "display.brightnessChanged": {"id": 0x8507, "domain": "display", "bit_offset": 0},
-    "firmware.updateProgress": {"id": 0x8B02, "domain": "firmware", "bit_offset": 0},
-    "firmware.updateCompleted": {"id": 0x8B03, "domain": "firmware", "bit_offset": 1},
-    "firmware.updateFailed": {"id": 0x8B04, "domain": "firmware", "bit_offset": 2},
-    "stream.opened": {"id": 0x8901, "domain": "stream", "bit_offset": 0},
-    "stream.error": {"id": 0x8903, "domain": "stream", "bit_offset": 1},
-    "network.apInfoChanged": {"id": 0x8E01, "domain": "network", "bit_offset": 0},
+    "display.brightnessChanged": {"id": 0x0607, "domain": "display", "bit_offset": 0},
+    "firmware.updateProgress": {"id": 0x0402, "domain": "firmware", "bit_offset": 0},
+    "firmware.updateCompleted": {"id": 0x0403, "domain": "firmware", "bit_offset": 1},
+    "firmware.updateFailed": {"id": 0x0404, "domain": "firmware", "bit_offset": 2},
+    "stream.opened": {"id": 0x0501, "domain": "stream", "bit_offset": 0},
+    "stream.error": {"id": 0x0503, "domain": "stream", "bit_offset": 1},
+    "network.apInfoChanged": {"id": 0x0E01, "domain": "network", "bit_offset": 0},
 }
 
 EXISTING_CAPABILITIES = {
@@ -49,10 +49,10 @@ EXISTING_CAPABILITIES = {
     "protocol.payload.rpc": {"id": 0x0002, "domain": "protocol"},
     "protocol.payload.stream": {"id": 0x0003, "domain": "protocol"},
     "device.info": {"id": 0x0101, "domain": "device"},
-    "capability.supportedMethods": {"id": 0x0301, "domain": "capability"},
+    "capability.supportedMethods": {"id": 0x0201, "domain": "capability"},
     "display.brightness": {"id": 0x0601, "domain": "display"},
-    "firmware.ota": {"id": 0x0B01, "domain": "firmware"},
-    "stream.hidMedia": {"id": 0x040A, "domain": "stream"},
+    "firmware.ota": {"id": 0x0401, "domain": "firmware"},
+    "stream.hidMedia": {"id": 0x050A, "domain": "stream"},
     "network.softAp": {"id": 0x0E06, "domain": "network"},
 }
 

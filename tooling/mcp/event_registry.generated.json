@@ -1,65 +1,7 @@
 {
   "events": [
     {
-      "id": 34055,
-      "bitOffset": 0,
-      "name": "display.brightnessChanged",
-      "domain": "display",
-      "status": "mvp",
-      "description": "Emitted when display brightness changes.",
-      "deprecated": false,
-      "eventSchema": "DisplayBrightnessChangedEvent",
-      "severity": "info",
-      "trigger": [
-        "display.setBrightness",
-        "device_local_change"
-      ],
-      "capabilities": [
-        "display.brightness"
-      ],
-      "idHex": "0x8507"
-    },
-    {
-      "id": 35073,
-      "bitOffset": 0,
-      "name": "stream.opened",
-      "domain": "stream",
-      "status": "draft",
-      "description": "Emitted after a STREAM media channel is opened and bound to a streamId.",
-      "since": "1.0.0",
-      "deprecated": false,
-      "eventSchema": "StreamOpenedEvent",
-      "severity": "info",
-      "trigger": [
-        "stream.open"
-      ],
-      "capabilities": [
-        "stream.hidMedia"
-      ],
-      "idHex": "0x8901"
-    },
-    {
-      "id": 35075,
-      "bitOffset": 1,
-      "name": "stream.error",
-      "domain": "stream",
-      "status": "draft",
-      "description": "Emitted when a STREAM media channel fails or cannot continue.",
-      "since": "1.0.0",
-      "deprecated": false,
-      "eventSchema": "StreamErrorEvent",
-      "severity": "error",
-      "trigger": [
-        "stream.open",
-        "stream runtime"
-      ],
-      "capabilities": [
-        "stream.hidMedia"
-      ],
-      "idHex": "0x8903"
-    },
-    {
-      "id": 35586,
+      "id": 1026,
       "bitOffset": 0,
       "name": "firmware.updateProgress",
       "domain": "firmware",
@@ -75,10 +17,10 @@
       "capabilities": [
         "firmware.ota"
       ],
-      "idHex": "0x8B02"
+      "idHex": "0x0402"
     },
     {
-      "id": 35587,
+      "id": 1027,
       "bitOffset": 1,
       "name": "firmware.updateCompleted",
       "domain": "firmware",
@@ -94,10 +36,10 @@
       "capabilities": [
         "firmware.ota"
       ],
-      "idHex": "0x8B03"
+      "idHex": "0x0403"
     },
     {
-      "id": 35588,
+      "id": 1028,
       "bitOffset": 2,
       "name": "firmware.updateFailed",
       "domain": "firmware",
@@ -114,10 +56,68 @@
       "capabilities": [
         "firmware.ota"
       ],
-      "idHex": "0x8B04"
+      "idHex": "0x0404"
     },
     {
-      "id": 36353,
+      "id": 1281,
+      "bitOffset": 0,
+      "name": "stream.opened",
+      "domain": "stream",
+      "status": "draft",
+      "description": "Emitted after a STREAM media channel is opened and bound to a streamId.",
+      "since": "1.0.0",
+      "deprecated": false,
+      "eventSchema": "StreamOpenedEvent",
+      "severity": "info",
+      "trigger": [
+        "stream.open"
+      ],
+      "capabilities": [
+        "stream.hidMedia"
+      ],
+      "idHex": "0x0501"
+    },
+    {
+      "id": 1283,
+      "bitOffset": 1,
+      "name": "stream.error",
+      "domain": "stream",
+      "status": "draft",
+      "description": "Emitted when a STREAM media channel fails or cannot continue.",
+      "since": "1.0.0",
+      "deprecated": false,
+      "eventSchema": "StreamErrorEvent",
+      "severity": "error",
+      "trigger": [
+        "stream.open",
+        "stream runtime"
+      ],
+      "capabilities": [
+        "stream.hidMedia"
+      ],
+      "idHex": "0x0503"
+    },
+    {
+      "id": 1543,
+      "bitOffset": 0,
+      "name": "display.brightnessChanged",
+      "domain": "display",
+      "status": "mvp",
+      "description": "Emitted when display brightness changes.",
+      "deprecated": false,
+      "eventSchema": "DisplayBrightnessChangedEvent",
+      "severity": "info",
+      "trigger": [
+        "display.setBrightness",
+        "device_local_change"
+      ],
+      "capabilities": [
+        "display.brightness"
+      ],
+      "idHex": "0x0607"
+    },
+    {
+      "id": 3585,
       "bitOffset": 0,
       "name": "network.apInfoChanged",
       "domain": "network",
@@ -134,7 +134,7 @@
       "capabilities": [
         "network.softAp"
       ],
-      "idHex": "0x8E01"
+      "idHex": "0x0E01"
     }
   ]
 }

@@ -17,7 +17,7 @@ methods:
       name: BetaDeviceInfo
       payloadFormat: fixed_struct
 
-  - id: 0x0301
+  - id: 0x0201
     name: capability.supportedMethods
     description: Return the per-domain method bitmap supported by the current session.
     domain: capability
@@ -31,7 +31,63 @@ methods:
     events: []
     errors: [SUCCESS, RPC_METHOD_NOT_FOUND]
 
-  - id: 0x0501
+  - id: 0x0402
+    name: firmware.begin
+    description: Begin a firmware OTA transfer and allocate the STREAM context.
+    domain: firmware
+    status: mvp
+    bitOffset: 0
+    rpcOp: request_response
+    requestSchema: FirmwareBeginRequest
+    responseSchema: FirmwareBeginResponse
+    recommendedEncoding: [json, tlv]
+    capabilities: [firmware.ota]
+    events: [firmware.updateProgress]
+    errors: [SUCCESS, RPC_PARAM_INVALID, BUSY]
+
+  - id: 0x0403
+    name: firmware.end
+    description: Finish sending firmware data for the active OTA stream.
+    domain: firmware
+    status: mvp
+    bitOffset: 1
+    rpcOp: request_response
+    requestSchema: FirmwareEndRequest
+    responseSchema: FirmwareEndResponse
+    recommendedEncoding: [json, tlv]
+    capabilities: [firmware.ota]
+    events: []
+    errors: [SUCCESS, STREAM_NOT_FOUND, BUSY]
+
+  - id: 0x0404
+    name: firmware.verify
+    description: Verify the transferred firmware object before applying it.
+    domain: firmware
+    status: mvp
+    bitOffset: 2
+    rpcOp: request_response
+    requestSchema: FirmwareVerifyRequest
+    responseSchema: FirmwareVerifyResponse
+    recommendedEncoding: [json, tlv]
+    capabilities: [firmware.ota]
+    events: [firmware.updateCompleted, firmware.updateFailed]
+    errors: [SUCCESS, STREAM_CRC_ERROR, BUSY]
+
+  - id: 0x0405
+    name: firmware.apply
+    description: Apply a verified firmware image.
+    domain: firmware
+    status: mvp
+    bitOffset: 3
+    rpcOp: request_response
+    requestSchema: FirmwareApplyRequest
+    responseSchema: FirmwareApplyResponse
+    recommendedEncoding: [json, tlv]
+    capabilities: [firmware.ota]
+    events: [firmware.updateCompleted, firmware.updateFailed]
+    errors: [SUCCESS, BUSY]
+
+  - id: 0x0601
     name: display.getBrightness
     description: Read the current display brightness percentage.
     domain: display
@@ -45,7 +101,7 @@ methods:
     events: []
     errors: [SUCCESS, RPC_METHOD_NOT_FOUND]
 
-  - id: 0x0502
+  - id: 0x0602
     name: display.setBrightness
     description: Set the display brightness and optionally request a transition duration.
     domain: display
@@ -62,59 +118,3 @@ methods:
       cmdValue: 0x000B0042
       name: BetaBrightnessSet
       payloadFormat: fixed_struct
-
-  - id: 0x0B02
-    name: firmware.begin
-    description: Begin a firmware OTA transfer and allocate the STREAM context.
-    domain: firmware
-    status: mvp
-    bitOffset: 0
-    rpcOp: request_response
-    requestSchema: FirmwareBeginRequest
-    responseSchema: FirmwareBeginResponse
-    recommendedEncoding: [json, tlv]
-    capabilities: [firmware.ota]
-    events: [firmware.updateProgress]
-    errors: [SUCCESS, RPC_PARAM_INVALID, BUSY]
-
-  - id: 0x0B03
-    name: firmware.end
-    description: Finish sending firmware data for the active OTA stream.
-    domain: firmware
-    status: mvp
-    bitOffset: 1
-    rpcOp: request_response
-    requestSchema: FirmwareEndRequest
-    responseSchema: FirmwareEndResponse
-    recommendedEncoding: [json, tlv]
-    capabilities: [firmware.ota]
-    events: []
-    errors: [SUCCESS, STREAM_NOT_FOUND, BUSY]
-
-  - id: 0x0B04
-    name: firmware.verify
-    description: Verify the transferred firmware object before applying it.
-    domain: firmware
-    status: mvp
-    bitOffset: 2
-    rpcOp: request_response
-    requestSchema: FirmwareVerifyRequest
-    responseSchema: FirmwareVerifyResponse
-    recommendedEncoding: [json, tlv]
-    capabilities: [firmware.ota]
-    events: [firmware.updateCompleted, firmware.updateFailed]
-    errors: [SUCCESS, STREAM_CRC_ERROR, BUSY]
-
-  - id: 0x0B05
-    name: firmware.apply
-    description: Apply a verified firmware image.
-    domain: firmware
-    status: mvp
-    bitOffset: 3
-    rpcOp: request_response
-    requestSchema: FirmwareApplyRequest
-    responseSchema: FirmwareApplyResponse
-    recommendedEncoding: [json, tlv]
-    capabilities: [firmware.ota]
-    events: [firmware.updateCompleted, firmware.updateFailed]
-    errors: [SUCCESS, BUSY]

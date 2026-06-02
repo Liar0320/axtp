@@ -25,22 +25,22 @@ docs/source/
 | methodId | name | domain | request | response | status |
 |---|---|---|---|---|---|
 | `0x0101` | `device.getInfo` | `device` | `DeviceGetInfoRequest` | `DeviceGetInfoResponse` | stable |
-| `0x0301` | `capability.supportedMethods` | `capability` | `CapabilitySupportedMethodsRequest` | `CapabilitySupportedMethodsResponse` | stable |
-| `0x0501` | `display.getBrightness` | `display` | `DisplayGetBrightnessRequest` | `DisplayGetBrightnessResponse` | stable |
-| `0x0502` | `display.setBrightness` | `display` | `DisplaySetBrightnessRequest` | `CommonEmptyResponse` | stable |
-| `0x0B02` | `firmware.beginOta` | `firmware` | `FirmwareBeginRequest` | `FirmwareBeginResponse` | stable |
-| `0x0B03` | `firmware.commitOtaBatch` | `firmware` | `FirmwareEndRequest` | `CommonEmptyResponse` | stable |
-| `0x0B04` | `firmware.verifyOtaFiles` | `firmware` | `FirmwareVerifyRequest` | `CommonEmptyResponse` | stable |
-| `0x0B05` | `firmware.installOta` | `firmware` | `FirmwareApplyRequest` | `CommonEmptyResponse` | stable |
+| `0x0201` | `capability.supportedMethods` | `capability` | `CapabilitySupportedMethodsRequest` | `CapabilitySupportedMethodsResponse` | stable |
+| `0x0601` | `display.getBrightness` | `display` | `DisplayGetBrightnessRequest` | `DisplayGetBrightnessResponse` | stable |
+| `0x0602` | `display.setBrightness` | `display` | `DisplaySetBrightnessRequest` | `CommonEmptyResponse` | stable |
+| `0x0402` | `firmware.beginOta` | `firmware` | `FirmwareBeginRequest` | `FirmwareBeginResponse` | stable |
+| `0x0403` | `firmware.commitOtaBatch` | `firmware` | `FirmwareEndRequest` | `CommonEmptyResponse` | stable |
+| `0x0404` | `firmware.verifyOtaFiles` | `firmware` | `FirmwareVerifyRequest` | `CommonEmptyResponse` | stable |
+| `0x0405` | `firmware.installOta` | `firmware` | `FirmwareApplyRequest` | `CommonEmptyResponse` | stable |
 
 ## 3. Current v1 MVP Events
 
 | eventId | name | domain | payload | severity |
 |---|---|---|---|---|
-| `0x8507` | `display.brightnessChanged` | `display` | `DisplayBrightnessChangedEvent` | info |
-| `0x8B02` | `firmware.otaProgressReported` | `firmware` | `FirmwareUpdateProgressEvent` | info |
-| `0x8B03` | `firmware.otaStateChanged` | `firmware` | `FirmwareUpdateCompletedEvent` | info |
-| `0x8B04` | `firmware.otaResultReported` | `firmware` | `FirmwareUpdateFailedEvent` | error |
+| `0x0607` | `display.brightnessChanged` | `display` | `DisplayBrightnessChangedEvent` | info |
+| `0x0402` | `firmware.otaProgressReported` | `firmware` | `FirmwareUpdateProgressEvent` | info |
+| `0x0403` | `firmware.otaStateChanged` | `firmware` | `FirmwareUpdateCompletedEvent` | info |
+| `0x0404` | `firmware.otaResultReported` | `firmware` | `FirmwareUpdateFailedEvent` | error |
 
 ## 4. Current Error Set
 
@@ -49,25 +49,25 @@ docs/source/
 | `0x0000` | `SUCCESS` | common | stable | false |
 | `0x0001` | `UNKNOWN_ERROR` | common | stable | false |
 | `0x0005` | `BUSY` | common | stable | true |
-| `0x0102` | `FRAME_VERSION_UNSUPPORTED` | frame | stable | false |
-| `0x0106` | `FRAME_CRC_ERROR` | frame | stable | true |
-| `0x0108` | `FRAME_FRAGMENT_MISSING` | frame | stable | true |
-| `0x0201` | `CONTROL_OPCODE_INVALID` | control | stable | false |
-| `0x0202` | `CONTROL_PAYLOAD_INVALID` | control | stable | false |
-| `0x0204` | `CONTROL_OPEN_REQUIRED` | control | stable | false |
-| `0x0205` | `CONTROL_OPEN_REJECTED` | control | stable | false |
-| `0x0206` | `RESERVED_CONTROL_PROFILE_UNSUPPORTED` | control | reserved | false |
-| `0x0207` | `CONTROL_NEGOTIATION_FAILED` | control | stable | false |
-| `0x0208` | `CONTROL_SESSION_INVALID` | control | stable | false |
-| `0x020A` | `CONTROL_RESUME_FAILED` | control | stable | false |
-| `0x020C` | `CONTROL_WINDOW_EXCEEDED` | control | stable | true |
-| `0x0301` | `RPC_ENCODING_UNSUPPORTED` | rpc | stable | false |
-| `0x0306` | `RPC_METHOD_NOT_FOUND` | rpc | stable | false |
-| `0x030B` | `RPC_PARAM_INVALID` | rpc | stable | false |
-| `0x0401` | `STREAM_NOT_FOUND` | stream | stable | false |
-| `0x0402` | `STREAM_TIMEOUT` | stream | stable | true |
-| `0x0403` | `STREAM_CRC_ERROR` | stream | stable | true |
-| `0x060B` | `FW_VERIFY_FAILED` | firmware | stable | false |
+| `0x0012` | `FRAME_VERSION_UNSUPPORTED` | frame | stable | false |
+| `0x0016` | `FRAME_CRC_ERROR` | frame | stable | true |
+| `0x0018` | `FRAME_FRAGMENT_MISSING` | frame | stable | true |
+| `0x0021` | `CONTROL_OPCODE_INVALID` | control | stable | false |
+| `0x0022` | `CONTROL_PAYLOAD_INVALID` | control | stable | false |
+| `0x0024` | `CONTROL_OPEN_REQUIRED` | control | stable | false |
+| `0x0025` | `CONTROL_OPEN_REJECTED` | control | stable | false |
+| `0x0026` | `RESERVED_CONTROL_PROFILE_UNSUPPORTED` | control | reserved | false |
+| `0x0027` | `CONTROL_NEGOTIATION_FAILED` | control | stable | false |
+| `0x0028` | `CONTROL_SESSION_INVALID` | control | stable | false |
+| `0x002A` | `CONTROL_RESUME_FAILED` | control | stable | false |
+| `0x002C` | `CONTROL_WINDOW_EXCEEDED` | control | stable | true |
+| `0x0031` | `RPC_ENCODING_UNSUPPORTED` | rpc | stable | false |
+| `0x0036` | `RPC_METHOD_NOT_FOUND` | rpc | stable | false |
+| `0x003B` | `RPC_PARAM_INVALID` | rpc | stable | false |
+| `0x0501` | `STREAM_NOT_FOUND` | stream | stable | false |
+| `0x0502` | `STREAM_TIMEOUT` | stream | stable | true |
+| `0x0503` | `STREAM_CRC_ERROR` | stream | stable | true |
+| `0x040B` | `FW_VERIFY_FAILED` | firmware | stable | false |
 
 ## 5. Type Inventory
 

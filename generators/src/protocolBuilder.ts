@@ -90,14 +90,35 @@ function eventToProtocol(event: Event, emptyNames: Set<string>): Record<string, 
 }
 
 function errorCategory(code: number): string {
+  const domainByHighByte: Record<number, string> = {
+    0x01: "device",
+    0x02: "capability",
+    0x03: "system",
+    0x04: "firmware",
+    0x05: "stream",
+    0x06: "display",
+    0x07: "camera",
+    0x08: "video",
+    0x09: "audio",
+    0x0a: "input",
+    0x0b: "output",
+    0x0c: "room",
+    0x0d: "signage",
+    0x0e: "network",
+    0x0f: "storage",
+    0x10: "file",
+    0x11: "log",
+    0x12: "diagnostic",
+    0x13: "sensor",
+    0x14: "auth",
+    0x15: "privacy"
+  };
   if (code <= 0x00ff) return "common";
-  if (code <= 0x01ff) return "frame";
-  if (code <= 0x02ff) return "control";
-  if (code <= 0x03ff) return "rpc";
-  if (code <= 0x04ff) return "stream";
-  if (code <= 0x6fff) return "business";
-  if (code <= 0x7eff) return "vendor";
-  return "legacy";
+  const highByte = code >> 8;
+  if (domainByHighByte[highByte]) return domainByHighByte[highByte];
+  if (highByte >= 0x70 && highByte <= 0x7e) return "vendor";
+  if (highByte === 0x7f) return "legacy";
+  return "reserved";
 }
 
 function errorSeverity(error: ErrorCode): string {
@@ -109,7 +130,7 @@ function errorToProtocol(error: ErrorCode): Record<string, unknown> {
   return {
     name: error.name,
     code: error.id,
-    category: error.category ?? errorCategory(error.id),
+    category: error.category ?? error.domain ?? errorCategory(error.id),
     since: error.since ?? "1.0.0",
     status: protocolStatus(error.status),
     severity: error.severity ?? errorSeverity(error),

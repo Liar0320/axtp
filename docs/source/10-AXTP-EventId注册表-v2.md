@@ -38,7 +38,7 @@ EventId 不应出现在 Frame Header、Control Payload Header 或 Stream Payload
 
 每个事件在其 Domain 内分配一个唯一的、自增的 `bitOffset`（0 到 255）。`bitOffset` 与 EventId 低字节无关，独立分配，由 Registry 管理。
 
-`eventMasks` 中的 DomainId 等于 EventId 的高字节（如 `display.*` 事件 EventId 为 `0x85xx`，DomainId = `0x85`）。
+`eventMasks` 中的 DomainId 等于 EventId 的高字节，并与同 domain 的 MethodId 高字节一致（如 `display.*` 方法和事件均使用 `0x06xx`，DomainId = `0x06`）。
 
 设备端判定某事件是否被订阅：
 
@@ -55,34 +55,34 @@ bool isEventSubscribed(const uint8_t* bitmask, uint8_t maskLen, uint8_t bitOffse
 
 ## 3. EventId 分段规划
 
-EventId 使用 `uint16`，从 `0x8000` 开始分配，与 MethodId 区分。
+EventId 使用 `uint16`，按与 MethodId 相同的 domain 分段分配。Event 与 Method 通过 RPC `rpcOp` 区分，不通过高位区间区分；同一 domain 的 EventId、MethodId 和域级掩码 DomainId 必须使用同一个高字节。
 
 | 范围 | Domain | 说明 |
 |---:| --- |---|
-| `0x8000-0x80FF` | reserved | 保留 |
-| `0x8100-0x81FF` | `device.*` | 设备基础事件 |
-| `0x8200-0x82FF` | reserved | 保留 |
-| `0x8300-0x83FF` | `capability.*` | 能力变化事件 |
-| `0x8400-0x84FF` | `system.*` | 系统状态事件 |
-| `0x8500-0x85FF` | `display.*` | 显示类事件 |
-| `0x8600-0x86FF` | `camera.*` | 摄像头事件 |
-| `0x8700-0x87FF` | `video.*` | 视频控制面事件 |
-| `0x8800-0x88FF` | `audio.*` | 音频控制面事件 |
-| `0x8900-0x89FF` | `stream.*` | 流状态事件 |
-| `0x8A00-0x8AFF` | `file.*` | 文件传输事件 |
-| `0x8B00-0x8BFF` | `firmware.*` | OTA / 固件升级事件 |
-| `0x8C00-0x8CFF` | `log.*` | 日志事件 |
-| `0x8D00-0x8DFF` | `diagnostic.*` | 诊断 / 产测事件 |
-| `0x8E00-0x8EFF` | `network.*` | 网络事件 |
-| `0x8F00-0x8FFF` | `storage.*` | 存储事件 |
-| `0x9000-0x90FF` | `input.*` | 输入 / KVM 事件 |
-| `0x9100-0x91FF` | `sensor.*` | 传感器事件 |
-| `0x9200-0x92FF` | `auth.*` | 认证事件 |
-| `0x9300-0x93FF` | `privacy.*` | 隐私事件 |
-| `0x9400-0x94FF` | `output.*` | 输出源 / 路由 / 布局事件 |
-| `0x9500-0x95FF` | `room.*` | 会议室 / 协作空间事件 |
-| `0x9600-0x96FF` | `signage.*` | 数字标牌事件 |
-| `0xF000-0xFFFF` | `vendor.*` | 厂商私有事件 |
+| `0x0000-0x00FF` | reserved | 保留 |
+| `0x0100-0x01FF` | `device.*` | 设备基础事件 |
+| `0x0200-0x02FF` | `capability.*` | 能力变化事件 |
+| `0x0300-0x03FF` | `system.*` | 系统状态事件 |
+| `0x0400-0x04FF` | `firmware.*` | OTA / 固件升级事件 |
+| `0x0500-0x05FF` | `stream.*` | 流状态事件 |
+| `0x0600-0x06FF` | `display.*` | 显示类事件 |
+| `0x0700-0x07FF` | `camera.*` | 摄像头事件 |
+| `0x0800-0x08FF` | `video.*` | 视频控制面事件 |
+| `0x0900-0x09FF` | `audio.*` | 音频控制面事件 |
+| `0x0A00-0x0AFF` | `input.*` | 输入 / KVM 事件 |
+| `0x0B00-0x0BFF` | `output.*` | 输出源 / 路由 / 布局事件 |
+| `0x0C00-0x0CFF` | `room.*` | 会议室 / 协作空间事件 |
+| `0x0D00-0x0DFF` | `signage.*` | 数字标牌事件 |
+| `0x0E00-0x0EFF` | `network.*` | 网络事件 |
+| `0x0F00-0x0FFF` | `storage.*` | 存储事件 |
+| `0x1000-0x10FF` | `file.*` | 文件传输事件 |
+| `0x1100-0x11FF` | `log.*` | 日志事件 |
+| `0x1200-0x12FF` | `diagnostic.*` | 诊断 / 产测事件 |
+| `0x1300-0x13FF` | `sensor.*` | 传感器事件 |
+| `0x1400-0x14FF` | `auth.*` | 认证事件 |
+| `0x1500-0x15FF` | `privacy.*` | 隐私事件 |
+| `0x7000-0x7FFF` | `vendor.*` | 厂商私有事件 |
+| `0x8000-0xFFFF` | reserved | 保留 |
 
 ---
 
@@ -92,10 +92,10 @@ MVP EventId 表以 `registry/event/event_registry.yaml` 与 `registry/domains/<d
 
 | eventId | eventName | Domain | bitOffset | 状态 | 说明 |
 | ---: | --- | --- | ---: | --- | --- |
-| `0x8507` | `display.brightnessChanged` | display | 0 | mvp | 亮度变化 |
-| `0x8B02` | `firmware.otaProgressReported` | firmware | 0 | mvp | OTA 进度上报 |
-| `0x8B03` | `firmware.otaStateChanged` | firmware | 1 | mvp | OTA 状态变化 |
-| `0x8B04` | `firmware.otaResultReported` | firmware | 2 | mvp | OTA 结果上报 |
+| `0x0607` | `display.brightnessChanged` | display | 0 | mvp | 亮度变化 |
+| `0x0402` | `firmware.otaProgressReported` | firmware | 0 | mvp | OTA 进度上报 |
+| `0x0403` | `firmware.otaStateChanged` | firmware | 1 | mvp | OTA 状态变化 |
+| `0x0404` | `firmware.otaResultReported` | firmware | 2 | mvp | OTA 结果上报 |
 
 说明：当前 registry YAML 尚未完成本轮 domain-feature 迁移；本 source 表使用目标主名称，旧事件名只在 legacy / deprecated / migration 说明中出现。
 
@@ -109,11 +109,11 @@ MVP EventId 表以 `registry/event/event_registry.yaml` 与 `registry/domains/<d
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8101` | `device.stateChanged` | draft | 设备状态变化 |
-| `0x8102` | `device.powerStateChanged` | draft | 电源状态变化 |
-| `0x8103` | `device.indicatorConfigChanged` | draft | 指示灯/蜂鸣配置变化 |
-| `0x8104` | `device.inventoryChanged` | draft | 设备库存/子模块信息变化 |
-| `0x8105` | `device.childDeviceStateChanged` | draft | 子设备状态变化 |
+| `0x0101` | `device.stateChanged` | draft | 设备状态变化 |
+| `0x0102` | `device.powerStateChanged` | draft | 电源状态变化 |
+| `0x0103` | `device.indicatorConfigChanged` | draft | 指示灯/蜂鸣配置变化 |
+| `0x0104` | `device.inventoryChanged` | draft | 设备库存/子模块信息变化 |
+| `0x0105` | `device.childDeviceStateChanged` | draft | 子设备状态变化 |
 
 ### 5.2 reserved / session 说明
 
@@ -125,206 +125,206 @@ MVP EventId 表以 `registry/event/event_registry.yaml` 与 `registry/domains/<d
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8301` | `capability.registryChanged` | draft | 能力注册表变化 |
-| `0x8302` | `capability.methodStateChanged` | draft | 支持的方法集合变化 |
-| `0x8303` | `capability.limitStateChanged` | draft | 设备限制参数变化 |
+| `0x0201` | `capability.registryChanged` | draft | 能力注册表变化 |
+| `0x0202` | `capability.methodStateChanged` | draft | 支持的方法集合变化 |
+| `0x0203` | `capability.limitStateChanged` | draft | 设备限制参数变化 |
 
 ### 5.4 system 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8401` | `system.timeConfigChanged` | draft | 系统时间配置变化 |
-| `0x8402` | `system.lifecycleStateChanged` | draft | 生命周期状态变化 |
-| `0x8403` | `system.resetStateChanged` | draft | 重置流程状态变化 |
-| `0x8404` | `system.initializationStateChanged` | draft | 初始化状态变化 |
-| `0x8405` | `system.licenseStateChanged` | draft | 系统级 license 状态变化 |
+| `0x0301` | `system.timeConfigChanged` | draft | 系统时间配置变化 |
+| `0x0302` | `system.lifecycleStateChanged` | draft | 生命周期状态变化 |
+| `0x0303` | `system.resetStateChanged` | draft | 重置流程状态变化 |
+| `0x0304` | `system.initializationStateChanged` | draft | 初始化状态变化 |
+| `0x0305` | `system.licenseStateChanged` | draft | 系统级 license 状态变化 |
 
-### 5.5 display 事件
+### 5.5 firmware 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8501` | `display.powerStateChanged` | draft | 显示电源状态变化 |
-| `0x8502` | `display.colorConfigChanged` | draft | 色彩配置变化 |
-| `0x8503` | `display.backlightConfigChanged` | draft | 背光配置变化 |
-| `0x8504` | `display.inputStateChanged` | draft | 显示输入状态变化 |
-| `0x8505` | `display.outputStateChanged` | draft | 显示输出状态变化 |
-| `0x8507` | `display.brightnessChanged` | mvp | 亮度值变化 |
-| `0x8508` | `display.brightnessConfigChanged` | draft | 亮度配置变化 |
+| `0x0401` | `firmware.infoChanged` | draft | 固件信息变化 |
+| `0x0402` | `firmware.otaProgressReported` | mvp | OTA 进度上报 |
+| `0x0403` | `firmware.otaStateChanged` | mvp | OTA 状态变化 |
+| `0x0404` | `firmware.otaResultReported` | mvp | OTA 结果上报 |
+| `0x0405` | `firmware.updatePolicyChanged` | draft | 固件更新策略变化 |
 
-### 5.6 camera 事件
+### 5.6 stream 事件
+
+| eventId | eventName | 状态 | 说明 |
+|---:| --- |---| --- |
+| `0x0501` | `stream.flowControlStateChanged` | draft | 公共流控状态变化 |
+| `0x0502` | `stream.windowUpdated` | draft | 流控窗口变化 |
+| `0x0503` | `stream.statsReported` | draft | STREAM 统计上报 |
+| `0x0504` | `stream.errorReported` | draft | STREAM 数据面错误上报 |
+
+### 5.7 display 事件
+
+| eventId | eventName | 状态 | 说明 |
+|---:| --- |---| --- |
+| `0x0601` | `display.powerStateChanged` | draft | 显示电源状态变化 |
+| `0x0602` | `display.colorConfigChanged` | draft | 色彩配置变化 |
+| `0x0603` | `display.backlightConfigChanged` | draft | 背光配置变化 |
+| `0x0604` | `display.inputStateChanged` | draft | 显示输入状态变化 |
+| `0x0605` | `display.outputStateChanged` | draft | 显示输出状态变化 |
+| `0x0607` | `display.brightnessChanged` | mvp | 亮度值变化 |
+| `0x0608` | `display.brightnessConfigChanged` | draft | 亮度配置变化 |
+
+### 5.8 camera 事件
 
 摄像头控制面事件归入 `camera.*`；视频帧数据本身仍必须通过 STREAM 承载。
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8601` | `camera.imageConfigChanged` | draft | 图像配置变化 |
-| `0x8602` | `camera.exposureConfigChanged` | draft | 曝光配置变化 |
-| `0x8603` | `camera.whiteBalanceConfigChanged` | draft | 白平衡配置变化 |
-| `0x8604` | `camera.focusStateChanged` | draft | 对焦状态变化 |
-| `0x8605` | `camera.zoomStateChanged` | draft | 变焦状态变化 |
-| `0x8606` | `camera.ptzStateChanged` | draft | PTZ 状态变化 |
-| `0x8607` | `camera.calibrationStateChanged` | draft | 校准状态变化 |
+| `0x0701` | `camera.imageConfigChanged` | draft | 图像配置变化 |
+| `0x0702` | `camera.exposureConfigChanged` | draft | 曝光配置变化 |
+| `0x0703` | `camera.whiteBalanceConfigChanged` | draft | 白平衡配置变化 |
+| `0x0704` | `camera.focusStateChanged` | draft | 对焦状态变化 |
+| `0x0705` | `camera.zoomStateChanged` | draft | 变焦状态变化 |
+| `0x0706` | `camera.ptzStateChanged` | draft | PTZ 状态变化 |
+| `0x0707` | `camera.calibrationStateChanged` | draft | 校准状态变化 |
 
-### 5.7 video 事件
+### 5.9 video 事件
 
 视频帧数据本身不通过 Event 承载，应通过 `PayloadType = STREAM` 承载。
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8701` | `video.framingConfigChanged` | draft | 视频构图配置变化 |
-| `0x8702` | `video.outputTransformConfigChanged` | draft | 输出变换配置变化 |
-| `0x8703` | `video.encoderConfigChanged` | draft | 编码配置变化 |
-| `0x8704` | `video.layoutConfigChanged` | draft | 视频布局配置变化 |
-| `0x8705` | `video.sceneConfigChanged` | draft | 视频场景配置变化 |
-| `0x8706` | `video.streamStateChanged` | draft | 视频业务流状态变化 |
-| `0x8707` | `video.rtspConfigChanged` | draft | RTSP 配置变化 |
-| `0x8708` | `video.ndiConfigChanged` | draft | NDI 配置变化 |
+| `0x0801` | `video.framingConfigChanged` | draft | 视频构图配置变化 |
+| `0x0802` | `video.outputTransformConfigChanged` | draft | 输出变换配置变化 |
+| `0x0803` | `video.encoderConfigChanged` | draft | 编码配置变化 |
+| `0x0804` | `video.layoutConfigChanged` | draft | 视频布局配置变化 |
+| `0x0805` | `video.sceneConfigChanged` | draft | 视频场景配置变化 |
+| `0x0806` | `video.streamStateChanged` | draft | 视频业务流状态变化 |
+| `0x0807` | `video.rtspConfigChanged` | draft | RTSP 配置变化 |
+| `0x0808` | `video.ndiConfigChanged` | draft | NDI 配置变化 |
 
-### 5.8 audio 事件
-
-| eventId | eventName | 状态 | 说明 |
-|---:| --- |---| --- |
-| `0x8801` | `audio.algorithmConfigChanged` | draft | 音频算法配置变化 |
-| `0x8802` | `audio.eqConfigChanged` | draft | EQ 配置变化 |
-| `0x8803` | `audio.volumeStateChanged` | draft | 音量状态变化 |
-| `0x8804` | `audio.routingConfigChanged` | draft | 音频路由配置变化 |
-| `0x8805` | `audio.recordingStreamStateChanged` | draft | 音频录制流状态变化 |
-| `0x8806` | `audio.playbackStateChanged` | draft | 播放状态变化 |
-
-### 5.9 stream 事件
+### 5.10 audio 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8901` | `stream.flowControlStateChanged` | draft | 公共流控状态变化 |
-| `0x8902` | `stream.windowUpdated` | draft | 流控窗口变化 |
-| `0x8903` | `stream.statsReported` | draft | STREAM 统计上报 |
-| `0x8904` | `stream.errorReported` | draft | STREAM 数据面错误上报 |
+| `0x0901` | `audio.algorithmConfigChanged` | draft | 音频算法配置变化 |
+| `0x0902` | `audio.eqConfigChanged` | draft | EQ 配置变化 |
+| `0x0903` | `audio.volumeStateChanged` | draft | 音量状态变化 |
+| `0x0904` | `audio.routingConfigChanged` | draft | 音频路由配置变化 |
+| `0x0905` | `audio.recordingStreamStateChanged` | draft | 音频录制流状态变化 |
+| `0x0906` | `audio.playbackStateChanged` | draft | 播放状态变化 |
 
-### 5.10 file 事件
-
-| eventId | eventName | 状态 | 说明 |
-|---:| --- |---| --- |
-| `0x8A01` | `file.transferStateChanged` | draft | 文件传输状态变化 |
-| `0x8A02` | `file.transferProgressReported` | draft | 文件传输进度上报 |
-| `0x8A03` | `file.storageStateChanged` | draft | 文件存储状态变化 |
-
-### 5.11 firmware 事件
+### 5.11 input / KVM 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8B01` | `firmware.infoChanged` | draft | 固件信息变化 |
-| `0x8B02` | `firmware.otaProgressReported` | mvp | OTA 进度上报 |
-| `0x8B03` | `firmware.otaStateChanged` | mvp | OTA 状态变化 |
-| `0x8B04` | `firmware.otaResultReported` | mvp | OTA 结果上报 |
-| `0x8B05` | `firmware.updatePolicyChanged` | draft | 固件更新策略变化 |
+| `0x0A01` | `input.keyConfigChanged` | draft | 按键配置变化 |
+| `0x0A02` | `input.hidConfigChanged` | draft | HID 配置变化 |
+| `0x0A03` | `input.sourceStateChanged` | draft | 输入源状态变化 |
+| `0x0A04` | `input.kvmStateChanged` | draft | KVM 状态变化 |
+| `0x0A05` | `input.gpioStateChanged` | draft | GPIO 状态变化 |
 
-### 5.12 log 事件
-
-| eventId | eventName | 状态 | 说明 |
-|---:| --- |---| --- |
-| `0x8C01` | `log.streamStateChanged` | draft | 实时日志流状态变化 |
-| `0x8C02` | `log.exportStateChanged` | draft | 日志导出状态变化 |
-| `0x8C03` | `log.exportProgressReported` | draft | 日志导出进度上报 |
-| `0x8C04` | `log.filesChanged` | draft | 日志文件列表变化 |
-
-### 5.13 diagnostic 事件
+### 5.12 output 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8D01` | `diagnostic.selfTestStateChanged` | draft | 自检状态变化 |
-| `0x8D02` | `diagnostic.selfTestProgressReported` | draft | 自检进度上报 |
-| `0x8D03` | `diagnostic.networkTestStateChanged` | draft | 网络测试状态变化 |
-| `0x8D04` | `diagnostic.audioTestStateChanged` | draft | 音频测试状态变化 |
-| `0x8D05` | `diagnostic.videoTestStateChanged` | draft | 视频测试状态变化 |
-| `0x8D06` | `diagnostic.reportExportStateChanged` | draft | 诊断报告导出状态变化 |
-| `0x8D07` | `diagnostic.reportExportProgressReported` | draft | 诊断报告导出进度上报 |
+| `0x0B01` | `output.sourceChanged` | draft | 输出源变化 |
+| `0x0B02` | `output.routingChanged` | draft | 输出路由变化 |
+| `0x0B03` | `output.layoutChanged` | draft | 输出布局变化 |
 
-### 5.14 input / KVM 事件
+### 5.13 room 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x9001` | `input.keyConfigChanged` | draft | 按键配置变化 |
-| `0x9002` | `input.hidConfigChanged` | draft | HID 配置变化 |
-| `0x9003` | `input.sourceStateChanged` | draft | 输入源状态变化 |
-| `0x9004` | `input.kvmStateChanged` | draft | KVM 状态变化 |
-| `0x9005` | `input.gpioStateChanged` | draft | GPIO 状态变化 |
+| `0x0C01` | `room.infoChanged` | draft | 会议室信息变化 |
+| `0x0C02` | `room.scheduleChanged` | draft | 日程变化 |
+| `0x0C03` | `room.sourceChanged` | draft | 会议室输入源变化 |
+| `0x0C04` | `room.layoutChanged` | draft | 会议室布局变化 |
+| `0x0C05` | `room.participantChanged` | draft | 参会者变化 |
+
+### 5.14 signage 事件
+
+| eventId | eventName | 状态 | 说明 |
+|---:| --- |---| --- |
+| `0x0D01` | `signage.mediaChanged` | draft | 标牌媒体变化 |
+| `0x0D02` | `signage.playlistChanged` | draft | 播放列表变化 |
+| `0x0D03` | `signage.scheduleChanged` | draft | 播放计划变化 |
+| `0x0D04` | `signage.playbackStateChanged` | draft | 播放状态变化 |
+| `0x0D05` | `signage.osdChanged` | draft | OSD 配置变化 |
 
 ### 5.15 network 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8E01` | `network.interfaceStateChanged` | draft | 网络接口状态变化 |
-| `0x8E02` | `network.ipConfigChanged` | draft | IP 配置变化 |
-| `0x8E03` | `network.wifiConfigChanged` | draft | Wi-Fi 配置变化 |
-| `0x8E04` | `network.wifiStateChanged` | draft | Wi-Fi 状态变化 |
-| `0x8E05` | `network.wifiScanResultReported` | draft | Wi-Fi 扫描结果上报 |
-| `0x8E06` | `network.apConfigChanged` | draft | AP 配置变化 |
-| `0x8E07` | `network.apStateChanged` | draft | AP 状态变化 |
-| `0x8E08` | `network.apClientChanged` | draft | AP 客户端变化 |
-| `0x8E09` | `network.serviceEndpointStateChanged` | draft | 服务端点状态变化 |
+| `0x0E01` | `network.interfaceStateChanged` | draft | 网络接口状态变化 |
+| `0x0E02` | `network.ipConfigChanged` | draft | IP 配置变化 |
+| `0x0E03` | `network.wifiConfigChanged` | draft | Wi-Fi 配置变化 |
+| `0x0E04` | `network.wifiStateChanged` | draft | Wi-Fi 状态变化 |
+| `0x0E05` | `network.wifiScanResultReported` | draft | Wi-Fi 扫描结果上报 |
+| `0x0E06` | `network.apConfigChanged` | draft | AP 配置变化 |
+| `0x0E07` | `network.apStateChanged` | draft | AP 状态变化 |
+| `0x0E08` | `network.apClientChanged` | draft | AP 客户端变化 |
+| `0x0E09` | `network.serviceEndpointStateChanged` | draft | 服务端点状态变化 |
 
 ### 5.16 storage 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x8F01` | `storage.sdCardStateChanged` | draft | SD 卡状态变化 |
-| `0x8F02` | `storage.diskStateChanged` | draft | 磁盘状态变化 |
-| `0x8F03` | `storage.volumeStateChanged` | draft | 卷状态变化 |
-| `0x8F04` | `storage.mediaChanged` | draft | 媒体资源变化 |
-| `0x8F05` | `storage.recordingChanged` | draft | 录制资源变化 |
-| `0x8F06` | `storage.indexStateChanged` | draft | 存储索引状态变化 |
+| `0x0F01` | `storage.sdCardStateChanged` | draft | SD 卡状态变化 |
+| `0x0F02` | `storage.diskStateChanged` | draft | 磁盘状态变化 |
+| `0x0F03` | `storage.volumeStateChanged` | draft | 卷状态变化 |
+| `0x0F04` | `storage.mediaChanged` | draft | 媒体资源变化 |
+| `0x0F05` | `storage.recordingChanged` | draft | 录制资源变化 |
+| `0x0F06` | `storage.indexStateChanged` | draft | 存储索引状态变化 |
 
-### 5.17 sensor 事件
-
-| eventId | eventName | 状态 | 说明 |
-|---:| --- |---| --- |
-| `0x9101` | `sensor.stateChanged` | draft | 传感器状态变化 |
-| `0x9102` | `sensor.sampleStreamStateChanged` | draft | 采样流状态变化 |
-| `0x9103` | `sensor.sampleReported` | draft | 低频采样上报 |
-
-### 5.18 auth 事件
+### 5.17 file 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x9201` | `auth.sessionStateChanged` | draft | 认证会话状态变化 |
-| `0x9202` | `auth.permissionStateChanged` | draft | 权限状态变化 |
-| `0x9203` | `auth.tokenStateChanged` | draft | token 状态变化 |
+| `0x1001` | `file.transferStateChanged` | draft | 文件传输状态变化 |
+| `0x1002` | `file.transferProgressReported` | draft | 文件传输进度上报 |
+| `0x1003` | `file.storageStateChanged` | draft | 文件存储状态变化 |
 
-### 5.19 privacy 事件
-
-| eventId | eventName | 状态 | 说明 |
-|---:| --- |---| --- |
-| `0x9301` | `privacy.coverStateChanged` | draft | 隐私盖状态变化 |
-| `0x9302` | `privacy.modeConfigChanged` | draft | 隐私模式配置变化 |
-| `0x9303` | `privacy.stateChanged` | draft | 隐私状态变化 |
-
-### 5.20 output 事件
+### 5.18 log 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x9401` | `output.sourceChanged` | draft | 输出源变化 |
-| `0x9402` | `output.routingChanged` | draft | 输出路由变化 |
-| `0x9403` | `output.layoutChanged` | draft | 输出布局变化 |
+| `0x1101` | `log.streamStateChanged` | draft | 实时日志流状态变化 |
+| `0x1102` | `log.exportStateChanged` | draft | 日志导出状态变化 |
+| `0x1103` | `log.exportProgressReported` | draft | 日志导出进度上报 |
+| `0x1104` | `log.filesChanged` | draft | 日志文件列表变化 |
 
-### 5.21 room 事件
-
-| eventId | eventName | 状态 | 说明 |
-|---:| --- |---| --- |
-| `0x9501` | `room.infoChanged` | draft | 会议室信息变化 |
-| `0x9502` | `room.scheduleChanged` | draft | 日程变化 |
-| `0x9503` | `room.sourceChanged` | draft | 会议室输入源变化 |
-| `0x9504` | `room.layoutChanged` | draft | 会议室布局变化 |
-| `0x9505` | `room.participantChanged` | draft | 参会者变化 |
-
-### 5.22 signage 事件
+### 5.19 diagnostic 事件
 
 | eventId | eventName | 状态 | 说明 |
 |---:| --- |---| --- |
-| `0x9601` | `signage.mediaChanged` | draft | 标牌媒体变化 |
-| `0x9602` | `signage.playlistChanged` | draft | 播放列表变化 |
-| `0x9603` | `signage.scheduleChanged` | draft | 播放计划变化 |
-| `0x9604` | `signage.playbackStateChanged` | draft | 播放状态变化 |
-| `0x9605` | `signage.osdChanged` | draft | OSD 配置变化 |
+| `0x1201` | `diagnostic.selfTestStateChanged` | draft | 自检状态变化 |
+| `0x1202` | `diagnostic.selfTestProgressReported` | draft | 自检进度上报 |
+| `0x1203` | `diagnostic.networkTestStateChanged` | draft | 网络测试状态变化 |
+| `0x1204` | `diagnostic.audioTestStateChanged` | draft | 音频测试状态变化 |
+| `0x1205` | `diagnostic.videoTestStateChanged` | draft | 视频测试状态变化 |
+| `0x1206` | `diagnostic.reportExportStateChanged` | draft | 诊断报告导出状态变化 |
+| `0x1207` | `diagnostic.reportExportProgressReported` | draft | 诊断报告导出进度上报 |
+
+### 5.20 sensor 事件
+
+| eventId | eventName | 状态 | 说明 |
+|---:| --- |---| --- |
+| `0x1301` | `sensor.stateChanged` | draft | 传感器状态变化 |
+| `0x1302` | `sensor.sampleStreamStateChanged` | draft | 采样流状态变化 |
+| `0x1303` | `sensor.sampleReported` | draft | 低频采样上报 |
+
+### 5.21 auth 事件
+
+| eventId | eventName | 状态 | 说明 |
+|---:| --- |---| --- |
+| `0x1401` | `auth.sessionStateChanged` | draft | 认证会话状态变化 |
+| `0x1402` | `auth.permissionStateChanged` | draft | 权限状态变化 |
+| `0x1403` | `auth.tokenStateChanged` | draft | token 状态变化 |
+
+### 5.22 privacy 事件
+
+| eventId | eventName | 状态 | 说明 |
+|---:| --- |---| --- |
+| `0x1501` | `privacy.coverStateChanged` | draft | 隐私盖状态变化 |
+| `0x1502` | `privacy.modeConfigChanged` | draft | 隐私模式配置变化 |
+| `0x1503` | `privacy.stateChanged` | draft | 隐私状态变化 |
 
 ---
 
@@ -332,20 +332,9 @@ MVP EventId 表以 `registry/event/event_registry.yaml` 与 `registry/domains/<d
 
 每个事件必须绑定一个事件数据 Schema，推荐使用 TLV Schema。
 
-### 6.1 通用事件字段
+事件数据 Schema 的 `fieldId` 是 schema-local 语义，不设置跨事件的公共固定字段。每个事件自己的字段从 `0x01` 开始连续分配；如果某个事件需要 `timestamp / reasonCode / errorCode / message` 等字段，也在该事件 Schema 内按普通字段编号声明。
 
-| fieldId | 字段名 | 类型 | 说明 |
-|---:| --- |---| --- |
-| `0x01` | `timestamp` | uint64 | 事件发生时间 |
-| `0x02` | `sequence` | uint32 | 事件序号 |
-| `0x03` | `source` | uint16 | 事件来源模块 |
-| `0x04` | `severity` | uint8 enum | 事件严重级别 |
-| `0x05` | `reasonCode` | uint16 | 原因码 |
-| `0x06` | `errorCode` | uint16 | 错误码 |
-| `0x07` | `message` | string | 可读消息 |
-| `0x7F` | `vendorData` | bytes | 厂商私有数据 |
-
-### 6.2 severity 枚举
+### 6.1 severity 枚举
 
 | 值 | 名称 | 说明 |
 |---:| --- |---|
@@ -362,10 +351,9 @@ MVP EventId 表以 `registry/event/event_registry.yaml` 与 `registry/domains/<d
 
 | fieldId | 字段名 | 类型 | 必填 | 说明 |
 |---:| --- |---| --- |---|
-| `0x01` | `timestamp` | uint64 | 否 | 时间戳 |
-| `0x20` | `oldStatus` | uint8 enum | 否 | 旧状态 |
-| `0x21` | `newStatus` | uint8 enum | 是 | 新状态 |
-| `0x22` | `reasonCode` | uint16 | 否 | 状态变化原因 |
+| `0x01` | `oldStatus` | uint8 enum | 否 | 旧状态 |
+| `0x02` | `newStatus` | uint8 enum | 是 | 新状态 |
+| `0x03` | `reasonCode` | uint16 | 否 | 状态变化原因 |
 
 状态枚举：`0x00=UNKNOWN / 0x01=IDLE / 0x02=BUSY / 0x03=UPDATING / 0x04=ERROR`
 
@@ -373,31 +361,28 @@ MVP EventId 表以 `registry/event/event_registry.yaml` 与 `registry/domains/<d
 
 | fieldId | 字段名 | 类型 | 必填 | 说明 |
 |---:| --- |---| --- |---|
-| `0x01` | `timestamp` | uint64 | 否 | 时间戳 |
-| `0x20` | `oldValue` | uint8 | 否 | 旧亮度 |
-| `0x21` | `newValue` | uint8 | 是 | 新亮度 |
-| `0x22` | `source` | uint8 enum | 否 | 来源（`0x01=RPC / 0x02=LOCAL_KEY / 0x03=AUTO / 0x04=SCHEDULE`） |
+| `0x01` | `oldValue` | uint8 | 否 | 旧亮度 |
+| `0x02` | `newValue` | uint8 | 是 | 新亮度 |
+| `0x03` | `source` | uint8 enum | 否 | 来源（`0x01=RPC / 0x02=LOCAL_KEY / 0x03=AUTO / 0x04=SCHEDULE`） |
 
 ### 7.3 firmware.otaProgressReported
 
 | fieldId | 字段名 | 类型 | 必填 | 说明 |
 |---:| --- |---| --- |---|
-| `0x01` | `timestamp` | uint64 | 否 | 时间戳 |
-| `0x20` | `transferId` | uint32 | 是 | OTA 传输 ID |
-| `0x21` | `receivedBytes` | uint64 | 是 | 已接收字节数 |
-| `0x22` | `totalBytes` | uint64 | 是 | 总字节数 |
-| `0x23` | `percent` | uint8 | 否 | 进度百分比 |
-| `0x24` | `stage` | uint8 enum | 否 | 当前阶段（`0x01=TRANSFER / 0x02=VERIFY / 0x03=INSTALL / 0x04=REBOOT`） |
+| `0x01` | `transferId` | uint32 | 是 | OTA 传输 ID |
+| `0x02` | `receivedBytes` | uint64 | 是 | 已接收字节数 |
+| `0x03` | `totalBytes` | uint64 | 是 | 总字节数 |
+| `0x04` | `percent` | uint8 | 否 | 进度百分比 |
+| `0x05` | `stage` | uint8 enum | 否 | 当前阶段（`0x01=TRANSFER / 0x02=VERIFY / 0x03=INSTALL / 0x04=REBOOT`） |
 
 ### 7.4 firmware.otaStateChanged
 
 | fieldId | 字段名 | 类型 | 必填 | 说明 |
 |---:| --- |---| --- |---|
-| `0x01` | `timestamp` | uint64 | 否 | 时间戳 |
-| `0x20` | `transferId` | uint32 | 是 | OTA 传输 ID |
-| `0x21` | `oldState` | uint8 enum | 否 | 旧 OTA 状态 |
-| `0x22` | `newState` | uint8 enum | 是 | 新 OTA 状态 |
-| `0x23` | `reasonCode` | uint16 | 否 | 状态变化原因 |
+| `0x01` | `transferId` | uint32 | 是 | OTA 传输 ID |
+| `0x02` | `oldState` | uint8 enum | 否 | 旧 OTA 状态 |
+| `0x03` | `newState` | uint8 enum | 是 | 新 OTA 状态 |
+| `0x04` | `reasonCode` | uint16 | 否 | 状态变化原因 |
 
 状态枚举：`0x00=UNKNOWN / 0x01=NEGOTIATING / 0x02=TRANSFERRING / 0x03=VERIFYING / 0x04=INSTALLING / 0x05=COMPLETED / 0x06=FAILED / 0x07=CANCELED`
 
@@ -405,13 +390,12 @@ MVP EventId 表以 `registry/event/event_registry.yaml` 与 `registry/domains/<d
 
 | fieldId | 字段名 | 类型 | 必填 | 说明 |
 |---:| --- |---| --- |---|
-| `0x01` | `timestamp` | uint64 | 否 | 时间戳 |
-| `0x20` | `transferId` | uint32 | 是 | OTA 传输 ID |
-| `0x21` | `result` | uint8 enum | 是 | OTA 结果（`0x01=SUCCESS / 0x02=FAILED / 0x03=ROLLED_BACK`） |
-| `0x22` | `newVersion` | string | 否 | 新固件版本 |
-| `0x23` | `rebootRequired` | bool | 否 | 是否需要重启 |
-| `0x24` | `errorCode` | uint16 | 否 | 失败错误码 |
-| `0x25` | `message` | string | 否 | 错误描述 |
+| `0x01` | `transferId` | uint32 | 是 | OTA 传输 ID |
+| `0x02` | `result` | uint8 enum | 是 | OTA 结果（`0x01=SUCCESS / 0x02=FAILED / 0x03=ROLLED_BACK`） |
+| `0x03` | `newVersion` | string | 否 | 新固件版本 |
+| `0x04` | `rebootRequired` | bool | 否 | 是否需要重启 |
+| `0x05` | `errorCode` | uint16 | 否 | 失败错误码 |
+| `0x06` | `message` | string | 否 | 错误描述 |
 
 ---
 

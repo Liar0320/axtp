@@ -136,12 +136,12 @@ int main() {
             const std::string result = R"({"model":"AXTP"})";
             return axtp::Bytes(result.begin(), result.end());
         });
-        broker.registerMethod(0x0502, [](const axtp::RpcPayload& request) {
+        broker.registerMethod(0x0602, [](const axtp::RpcPayload& request) {
             const std::string params(request.body.begin(), request.body.end());
             assert(params == R"({"value":80})");
             return axtp::Bytes{};
         });
-        broker.registerMethod(0x0501, [](const axtp::RpcPayload&) { return axtp::Bytes{0xB1}; });
+        broker.registerMethod(0x0601, [](const axtp::RpcPayload&) { return axtp::Bytes{0xB1}; });
 
         axtp::MockTransport transport;
         endpoint.attachTransport(transport);
@@ -209,7 +209,7 @@ int main() {
 
         axtp::RpcPayload event;
         event.op = axtp::RpcOp::Event;
-        event.methodOrEventId = 0x8507;
+        event.methodOrEventId = 0x0607;
         event.meta.sourceProtocol = axtp::SourceProtocol::JsonRpc;
         event.meta.jsonSid = sid;
         const std::string eventData = R"({"value":81})";

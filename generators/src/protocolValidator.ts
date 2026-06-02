@@ -95,7 +95,6 @@ function assertMethodReferences(methods: MethodDefinition[], typeNames: Set<stri
 function assertEventReferences(events: EventDefinition[], typeNames: Set<string>): void {
   for (const event of events) {
     assertDomainName(event.name, event.domain, "event");
-    if (event.eventId < 0x8000) fail(event.name, "eventId", `eventId must be >= ${hex(0x8000)}`);
     if (!typeNames.has(event.payload.type)) fail(event.name, "payload.type", `missing type: ${event.payload.type}`);
   }
 }
@@ -113,7 +112,7 @@ function assertDomainIdAlignment(methods: MethodDefinition[], events: EventDefin
   for (const event of events) {
     const methodDomainId = methodDomainIds.get(event.domain);
     if (methodDomainId === undefined) continue;
-    const expected = 0x80 | methodDomainId;
+    const expected = methodDomainId;
     const actual = event.eventId >> 8;
     if (actual !== expected) {
       fail(event.name, "eventId", `eventId high byte must align with domain ${event.domain}: expected ${hex(expected, 2)}`);
@@ -159,24 +158,44 @@ function assertEmptySchemaUsage(model: ProtocolModel): void {
   }
 }
 
-function expectedErrorCategory(code: number): string {
-  if (code <= 0x00ff) return "common";
-  if (code <= 0x01ff) return "frame";
-  if (code <= 0x02ff) return "control";
-  if (code <= 0x03ff) return "rpc";
-  if (code <= 0x04ff) return "stream";
-  if (code <= 0x6fff) return "business";
-  if (code <= 0x7eff) return "vendor";
-  if (code <= 0x7fff) return "legacy";
-  return "invalid";
+function allowedErrorCategories(code: number): string[] {
+  const domainByHighByte: Record<number, string> = {
+    0x01: "device",
+    0x02: "capability",
+    0x03: "system",
+    0x04: "firmware",
+    0x05: "stream",
+    0x06: "display",
+    0x07: "camera",
+    0x08: "video",
+    0x09: "audio",
+    0x0a: "input",
+    0x0b: "output",
+    0x0c: "room",
+    0x0d: "signage",
+    0x0e: "network",
+    0x0f: "storage",
+    0x10: "file",
+    0x11: "log",
+    0x12: "diagnostic",
+    0x13: "sensor",
+    0x14: "auth",
+    0x15: "privacy"
+  };
+  if (code <= 0x00ff) return ["common", "frame", "control", "rpc"];
+  const highByte = code >> 8;
+  if (domainByHighByte[highByte]) return [domainByHighByte[highByte]];
+  if (highByte >= 0x70 && highByte <= 0x7e) return ["vendor"];
+  if (highByte === 0x7f) return ["legacy"];
+  return [];
 }
 
 function assertErrorRanges(errors: ErrorDefinition[]): void {
   for (const error of errors) {
-    const expected = expectedErrorCategory(error.code);
-    if (expected === "invalid") fail(error.name, "code", `error code must be <= ${hex(0x7fff)}`);
-    if (error.category !== expected) {
-      fail(error.name, "category", `error category must be ${expected} for code ${hex(error.code)}`);
+    const allowed = allowedErrorCategories(error.code);
+    if (allowed.length === 0) fail(error.name, "code", `error code must be in a registered error range`);
+    if (!allowed.includes(error.category)) {
+      fail(error.name, "category", `error category must be ${allowed.join(" / ")} for code ${hex(error.code)}`);
     }
   }
 }

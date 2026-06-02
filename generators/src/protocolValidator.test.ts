@@ -120,8 +120,8 @@ describe("protocol definition validator", () => {
 
   it("rejects error categories outside their code range", async () => {
     const model = cloneModel(await loadCurrentProtocol());
-    model.errors.find((error) => error.name === "FW_VERIFY_FAILED")!.category = "firmware";
-    expect(() => validateProtocolDefinition(model)).toThrow(/category must be business/);
+    model.errors.find((error) => error.name === "FW_VERIFY_FAILED")!.category = "stream";
+    expect(() => validateProtocolDefinition(model)).toThrow(/category must be firmware/);
   });
 
   it("rejects profile capabilities not defined by profile meta spec", async () => {

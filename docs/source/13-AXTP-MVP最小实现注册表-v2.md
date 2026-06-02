@@ -203,17 +203,17 @@ Compact / HID-64 / BLE / UART 不作为当前 MVP 必选实现，进入 17《AXT
 | methodId | methodName | Domain | MVP | 说明 |
 |---:| --- |---| --- |---|
 | `0x0101` | `device.getInfo` | `device` | 必须 | 获取设备基础信息 |
-| `0x0301` | `capability.supportedMethods` | `capability` | 必须 | 获取当前会话可调用 methodId 集合 |
-| `0x0501` | `display.getBrightness` | `display` | 必须 | 获取亮度 |
-| `0x0502` | `display.setBrightness` | `display` | 必须 | 设置亮度 |
-| `0x0B02` | `firmware.beginOta` | `firmware` | 必须 | 开始 OTA |
-| `0x0B03` | `firmware.commitOtaBatch` | `firmware` | 必须 | 提交 OTA 数据批次 |
-| `0x0B04` | `firmware.verifyOtaFiles` | `firmware` | 必须 | 校验 OTA 文件 |
-| `0x0B05` | `firmware.installOta` | `firmware` | 必须 | 安装 OTA |
+| `0x0201` | `capability.supportedMethods` | `capability` | 必须 | 获取当前会话可调用 methodId 集合 |
+| `0x0402` | `firmware.begin` | `firmware` | 必须 | 开始 OTA |
+| `0x0403` | `firmware.end` | `firmware` | 必须 | 结束 OTA 数据发送 |
+| `0x0404` | `firmware.verify` | `firmware` | 必须 | 校验 OTA 文件 |
+| `0x0405` | `firmware.apply` | `firmware` | 必须 | 应用 OTA |
+| `0x0601` | `display.getBrightness` | `display` | 必须 | 获取亮度 |
+| `0x0602` | `display.setBrightness` | `display` | 必须 | 设置亮度 |
 
 ### 7.2 MVP 方法分级
 
-P0 必须实现：`device.getInfo / capability.supportedMethods / display.getBrightness / display.setBrightness / firmware.beginOta / firmware.commitOtaBatch / firmware.verifyOtaFiles / firmware.installOta`
+P0 必须实现：`device.getInfo / capability.supportedMethods / firmware.begin / firmware.end / firmware.verify / firmware.apply / display.getBrightness / display.setBrightness`
 
 P1 建议实现：`capability.getRegistry / capability.getDomainRegistry / display.getBrightnessCapabilities / stream.getFlowControlState / stream.updateWindow / firmware.getOtaCapabilities / firmware.cancelOta / firmware.rollbackOta / firmware.getOtaState`
 
@@ -229,10 +229,10 @@ P2 延后：`network.* / audio.* / camera.* / video.* / input.* / storage.* / fi
 
 | eventId | eventName | Domain | domainId | bitOffset | MVP | 说明 |
 | ---: | --- | --- | ---: | ---: | --- | --- |
-| `0x8507` | `display.brightnessChanged` | `display` | `0x85` | 0 | 必须 | 亮度变化 |
-| `0x8B02` | `firmware.otaProgressReported` | `firmware` | `0x8B` | 0 | 必须 | OTA 进度上报 |
-| `0x8B03` | `firmware.otaStateChanged` | `firmware` | `0x8B` | 1 | 必须 | OTA 状态变化 |
-| `0x8B04` | `firmware.otaResultReported` | `firmware` | `0x8B` | 2 | 必须 | OTA 结果上报 |
+| `0x0402` | `firmware.updateProgress` | `firmware` | `0x04` | 0 | 必须 | OTA 进度上报 |
+| `0x0403` | `firmware.updateCompleted` | `firmware` | `0x04` | 1 | 必须 | OTA 完成 |
+| `0x0404` | `firmware.updateFailed` | `firmware` | `0x04` | 2 | 必须 | OTA 失败 |
+| `0x0607` | `display.brightnessChanged` | `display` | `0x06` | 0 | 必须 | 亮度变化 |
 
 ---
 
@@ -245,43 +245,43 @@ P2 延后：`network.* / audio.* / camera.* / video.* / input.* / storage.* / fi
 | `0x0000` | `SUCCESS` | common | false | 成功 |
 | `0x0001` | `UNKNOWN_ERROR` | common | false | 未知错误 |
 | `0x0005` | `BUSY` | common | true | 设备或资源忙 |
-| `0x0102` | `FRAME_VERSION_UNSUPPORTED` | frame | false | Frame Version 不支持 |
-| `0x0106` | `FRAME_CRC_ERROR` | frame | true | Frame CRC 错误 |
-| `0x0108` | `FRAME_FRAGMENT_MISSING` | frame | true | 缺失 Frame 分片 |
-| `0x0201` | `CONTROL_OPCODE_INVALID` | control | false | Control Opcode 非法 |
-| `0x0202` | `CONTROL_PAYLOAD_INVALID` | control | false | Control Payload 非法 |
-| `0x0204` | `CONTROL_OPEN_REQUIRED` | control | false | 会话尚未完成 OPEN |
-| `0x0205` | `CONTROL_OPEN_REJECTED` | control | false | OPEN 被拒绝 |
-| `0x0206` | `RESERVED_CONTROL_PROFILE_UNSUPPORTED` | control | false | 历史 Header Profile 协商错误，v1 新实现不得产生 |
-| `0x0207` | `CONTROL_NEGOTIATION_FAILED` | control | false | 协商失败 |
-| `0x0208` | `CONTROL_SESSION_INVALID` | control | false | SessionId 无效 |
-| `0x020A` | `CONTROL_RESUME_FAILED` | control | false | 会话恢复失败 |
-| `0x020C` | `CONTROL_WINDOW_EXCEEDED` | control | true | 超出流控窗口 |
-| `0x0301` | `RPC_ENCODING_UNSUPPORTED` | rpc | false | RPC 编码不支持 |
-| `0x0306` | `RPC_METHOD_NOT_FOUND` | rpc | false | methodId 或 method name 不支持 |
-| `0x030B` | `RPC_PARAM_INVALID` | rpc | false | RPC 参数非法 |
-| `0x0401` | `STREAM_NOT_FOUND` | stream | false | Stream Context 不存在 |
-| `0x0402` | `STREAM_TIMEOUT` | stream | true | Stream 超时 |
-| `0x0403` | `STREAM_CRC_ERROR` | stream | true | Chunk CRC 错误 |
-| `0x060B` | `FW_VERIFY_FAILED` | firmware | false | 固件校验失败 |
+| `0x0012` | `FRAME_VERSION_UNSUPPORTED` | frame | false | Frame Version 不支持 |
+| `0x0016` | `FRAME_CRC_ERROR` | frame | true | Frame CRC 错误 |
+| `0x0018` | `FRAME_FRAGMENT_MISSING` | frame | true | 缺失 Frame 分片 |
+| `0x0021` | `CONTROL_OPCODE_INVALID` | control | false | Control Opcode 非法 |
+| `0x0022` | `CONTROL_PAYLOAD_INVALID` | control | false | Control Payload 非法 |
+| `0x0024` | `CONTROL_OPEN_REQUIRED` | control | false | 会话尚未完成 OPEN |
+| `0x0025` | `CONTROL_OPEN_REJECTED` | control | false | OPEN 被拒绝 |
+| `0x0026` | `RESERVED_CONTROL_PROFILE_UNSUPPORTED` | control | false | 历史 Header Profile 协商错误，v1 新实现不得产生 |
+| `0x0027` | `CONTROL_NEGOTIATION_FAILED` | control | false | 协商失败 |
+| `0x0028` | `CONTROL_SESSION_INVALID` | control | false | SessionId 无效 |
+| `0x002A` | `CONTROL_RESUME_FAILED` | control | false | 会话恢复失败 |
+| `0x002C` | `CONTROL_WINDOW_EXCEEDED` | control | true | 超出流控窗口 |
+| `0x0031` | `RPC_ENCODING_UNSUPPORTED` | rpc | false | RPC 编码不支持 |
+| `0x0036` | `RPC_METHOD_NOT_FOUND` | rpc | false | methodId 或 method name 不支持 |
+| `0x003B` | `RPC_PARAM_INVALID` | rpc | false | RPC 参数非法 |
+| `0x0501` | `STREAM_NOT_FOUND` | stream | false | Stream Context 不存在 |
+| `0x0502` | `STREAM_TIMEOUT` | stream | true | Stream 超时 |
+| `0x0503` | `STREAM_CRC_ERROR` | stream | true | Chunk CRC 错误 |
+| `0x040B` | `FW_VERIFY_FAILED` | firmware | false | 固件校验失败 |
 
 ---
 
 ## 10. MVP Capability Registry
 
-本节是 domain-feature 迁移后的 source 目标合同。当前 `registry/capability/capability_registry.yaml` 尚未完成迁移；旧字段级 capability 只作为兼容 alias 保留在迁移说明中。
+本节与 `registry/capability/capability_registry.yaml` 保持一致；旧字段级 capability 只作为兼容 alias 保留在迁移说明中。
 
 `bitOffset` 为该 capability 在其 Domain 内的掩码位偏移，用于 `capabilityMasks` 域级响应（见 08《Registry 总则》§23）。
 
 | capabilityId | capabilityName | domainId | bitOffset | Type | MVP |
 | ---: | --- | ---: | ---: | --- | --- |
-| `0x0001` | `protocol.payload.control` | `0x01` | 0 | `bool` | 必须 |
-| `0x0002` | `protocol.payload.rpc` | `0x01` | 1 | `bool` | 必须 |
-| `0x0003` | `protocol.payload.stream` | `0x01` | 2 | `bool` | 必须 |
-| `0x0101` | `device.info` | `0x01` | 3 | `bool` | 必须 |
-| `0x0301` | `capability.supportedMethods` | `0x03` | 0 | `bool` | 必须 |
-| `0x0601` | `display.brightness` | `0x05` | 0 | `object` | 必须 |
-| `0x0B01` | `firmware.ota` | `0x0B` | 0 | `object` | 必须 |
+| `0x0001` | `protocol.payload.control` | `0x00` | 0 | `bool` | 必须 |
+| `0x0002` | `protocol.payload.rpc` | `0x00` | 1 | `bool` | 必须 |
+| `0x0003` | `protocol.payload.stream` | `0x00` | 2 | `bool` | 必须 |
+| `0x0101` | `device.info` | `0x01` | 0 | `bool` | 必须 |
+| `0x0201` | `capability.supportedMethods` | `0x02` | 0 | `bool` | 必须 |
+| `0x0401` | `firmware.ota` | `0x04` | 0 | `object` | 必须 |
+| `0x0601` | `display.brightness` | `0x06` | 0 | `bool` | 必须 |
 
 `display.brightnessMin / display.brightnessMax / display.brightnessStep` 迁移为 `display.brightness` capability schema 字段。
 
@@ -295,11 +295,11 @@ Stream Profile 是可建流协议档案，不是 STREAM 数据包字段。Profil
 
 | profileId | Name | Domain | MVP | 默认 cursorUnit | 默认可靠性 |
 |---:| --- |---| --- |---| --- |
-| `0x0001` | `firmware.ota` | firmware | 必须 | `byteOffset` | reliable |
-| `0x0002` | `file.transfer` | file | 延后 | `byteOffset` | reliable |
-| `0x0401` | `log.stream` | log | 延后 | `timestampUs` | best_effort |
-| `0x1001` | `video.stream` | video | 延后 | `timestampUs` | best_effort |
-| `0x1002` | `audio.recording` | audio | 延后 | `timestampUs` | best_effort |
+| `0x0401` | `firmware.ota` | firmware | 必须 | `byteOffset` | reliable |
+| `0x1002` | `file.transfer` | file | 延后 | `byteOffset` | reliable |
+| `0x1101` | `log.stream` | log | 延后 | `timestampUs` | best_effort |
+| `0x0801` | `video.stream` | video | 延后 | `timestampUs` | best_effort |
+| `0x0902` | `audio.recording` | audio | 延后 | `timestampUs` | best_effort |
 
 ### 11.2 OTA Stream MVP Metadata
 
@@ -434,11 +434,11 @@ MVP 旧协议方法适配：
 | oldName | oldCmdValue | AXTP methodName | AXTP methodId | MVP |
 | --- |---:| --- |---:| --- |
 | `BetaDeviceInfo` | `0xB0002` | `device.getInfo` | `0x0101` 或保留旧值 | 必须 |
-| `CommonSetBrightness` | TBD | `display.setBrightness` | `0x0502` | 必须 |
-| `CommonGetBrightness` | TBD | `display.getBrightness` | `0x0501` | 必须 |
-| `AlphaUpgradeInfo` | `0xA0001` | `firmware.getOtaCapabilities` | `0x0B01` 或保留旧值 | 可选/P1 |
-| `AlphaUpgradeStart` | TBD | `firmware.beginOta` | `0x0B02` | 必须 |
-| `AlphaUpgradeEnd` | TBD | `firmware.commitOtaBatch` | `0x0B03` | 必须 |
-| `AlphaUpgradeVerify` | TBD | `firmware.verifyOtaFiles` | `0x0B04` | 必须 |
+| `CommonSetBrightness` | TBD | `display.setBrightness` | `0x0602` | 必须 |
+| `CommonGetBrightness` | TBD | `display.getBrightness` | `0x0601` | 必须 |
+| `AlphaUpgradeInfo` | `0xA0001` | `firmware.getOtaCapabilities` | `0x0401` 或保留旧值 | 可选/P1 |
+| `AlphaUpgradeStart` | TBD | `firmware.beginOta` | `0x0402` | 必须 |
+| `AlphaUpgradeEnd` | TBD | `firmware.commitOtaBatch` | `0x0403` | 必须 |
+| `AlphaUpgradeVerify` | TBD | `firmware.verifyOtaFiles` | `0x0404` | 必须 |
 
 AXTP `methodId` 固定为 uint16，旧 CmdValue 可能超过 uint16，不得直接作为 methodId。旧 CmdValue 必须保存在 legacyMapping 中，并唯一映射到 AXTP MethodId。

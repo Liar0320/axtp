@@ -103,7 +103,7 @@ Domain Block = [DomainId:1B] + [MaskLen:1B] + [MethodBitmask:N B Little-Endian]
 
 | 字段 | 说明 |
 |---|---|
-| `DomainId` | 与 methodId 高字节对齐，例如 `display.*` methodId `0x05xx` 使用 `0x05` |
+| `DomainId` | 与 methodId 高字节对齐，例如 `display.*` methodId `0x06xx` 使用 `0x06` |
 | `MaskLen` | bitmask 字节数，必须按最高有效 bit 截断，范围 `1-32` |
 | `MethodBitmask` | Little-Endian bitset，Bit N 对应 `methods[].bitOffset=N` |
 

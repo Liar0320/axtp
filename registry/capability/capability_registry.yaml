@@ -20,6 +20,13 @@ capabilities:
     type: bool
     description: Device supports STREAM payload.
 
+  - id: 0x0009
+    name: protocol.reservedRequestIdWidth
+    domain: protocol
+    status: reserved
+    type: reserved
+    description: Historical requestId width negotiation bit; AXTP v1 fixes requestId as uint32.
+
   - id: 0x0101
     name: device.info
     domain: device
@@ -27,12 +34,28 @@ capabilities:
     type: bool
     description: Device supports device.getInfo.
 
-  - id: 0x0301
+  - id: 0x0201
     name: capability.supportedMethods
     domain: capability
     status: mvp
     type: bool
     description: Device supports capability.supportedMethods.
+
+  - id: 0x0401
+    name: firmware.ota
+    domain: firmware
+    status: mvp
+    type: object
+    schema: FirmwareOtaCapability
+    description: Device supports firmware OTA over STREAM.
+
+  - id: 0x050A
+    name: stream.hidMedia
+    domain: stream
+    status: draft
+    type: object
+    schema: StreamHidMediaCapability
+    description: Device supports opening media.video and/or media.audio streams over AXTP-USB-HID.
 
   - id: 0x0601
     name: display.brightness
@@ -61,26 +84,3 @@ capabilities:
     status: mvp
     type: uint16
     description: Display brightness step.
-
-  - id: 0x0B01
-    name: firmware.ota
-    domain: firmware
-    status: mvp
-    type: object
-    schema: FirmwareOtaCapability
-    description: Device supports firmware OTA over STREAM.
-
-  - id: 0x040A
-    name: stream.hidMedia
-    domain: stream
-    status: draft
-    type: object
-    schema: StreamHidMediaCapability
-    description: Device supports opening media.video and/or media.audio streams over AXTP-USB-HID.
-
-  - id: 0x0309
-    name: reserved.requestIdWidth
-    domain: reserved
-    status: reserved
-    type: reserved
-    description: Historical requestId width negotiation bit; AXTP v1 fixes requestId as uint32.

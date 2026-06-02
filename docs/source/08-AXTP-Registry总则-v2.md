@@ -317,30 +317,34 @@ MVP 必须实现：`firmware.ota`。`file.transfer / log.stream` 可选或后续
 
 ## 9. Domain Registry 规则
 
-| Domain | 说明 | MVP |
-| --- |---|---:|
-| `device` | 设备基础信息与生命周期 | 是 |
-| `capability` | 能力查询与协商 | 是 |
-| `system` | 系统控制：重启、时间同步、重置、功耗 | 是 |
-| `firmware` | 固件升级控制面 | 是 |
-| `stream` | 公共流控、断点续传、可靠传输、低带宽链路优化与数据面承载；不按业务类型建流 | 是 |
-| `display` | 显示控制：亮度、分辨率、旋转、布局、输入源 | 是 |
-| `camera` | 摄像头：变焦、帧率、图像参数 | 否 |
-| `video` | 视频编码与输出控制，比如追踪、镜像、旋转等| 否 |
-| `audio` | 音频控制 | 否 |
-| `input` | 输入源管理、KVM、HID | 否 |
-| `output` | 输出源、输出接口、输出路由、输出布局；与 `input` 成对 | 否 |
-| `room` | 会议室/协作空间身份、日程、场景、参与设备 | 否 |
-| `signage` | 数字标牌播放列表、计划、媒体、外观、播放状态 | 否 |
-| `network` | 网络配置 | 否 |
-| `storage` | 存储管理 | 否 |
-| `file` | 文件传输控制面 | 否 |
-| `log` | 日志控制 | 否 |
-| `diagnostic` | 诊断 / 产测 | 否 |
-| `sensor` | 传感器 | 否 |
-| `auth` | 认证与访问控制 | 否 |
-| `privacy` | 隐私遮挡与隐私状态 | 否 |
-| `vendor` | 厂商私有扩展 | 否 |
+Domain Registry 是 MethodId、EventId、业务 ErrorCode、CapabilityId 与域级掩码 DomainId 的统一分配依据。除 `0x00` 公共/协议内部空间和 `0x70-0x7F` vendor 空间外，所有按业务域分配的 `uint16` ID 都必须使用下表的高字节和顺序。
+
+| DomainId | ID 范围 | Domain | 说明 | MVP |
+| ---: |---:| --- |---|---:|
+| `0x00` | `0x0000-0x00FF` | reserved/common | 公共值、协议内部错误与保留空间；不作为业务域 | 是 |
+| `0x01` | `0x0100-0x01FF` | `device` | 设备基础信息与生命周期 | 是 |
+| `0x02` | `0x0200-0x02FF` | `capability` | 能力查询与协商 | 是 |
+| `0x03` | `0x0300-0x03FF` | `system` | 系统控制：重启、时间同步、重置、功耗 | 是 |
+| `0x04` | `0x0400-0x04FF` | `firmware` | 固件升级控制面 | 是 |
+| `0x05` | `0x0500-0x05FF` | `stream` | 公共流控、断点续传、可靠传输、低带宽链路优化与数据面承载；不按业务类型建流 | 是 |
+| `0x06` | `0x0600-0x06FF` | `display` | 显示控制：亮度、分辨率、旋转、布局、输入源 | 是 |
+| `0x07` | `0x0700-0x07FF` | `camera` | 摄像头：变焦、帧率、图像参数 | 否 |
+| `0x08` | `0x0800-0x08FF` | `video` | 视频编码与输出控制，比如追踪、镜像、旋转等 | 否 |
+| `0x09` | `0x0900-0x09FF` | `audio` | 音频控制 | 否 |
+| `0x0A` | `0x0A00-0x0AFF` | `input` | 输入源管理、KVM、HID | 否 |
+| `0x0B` | `0x0B00-0x0BFF` | `output` | 输出源、输出接口、输出路由、输出布局；与 `input` 成对 | 否 |
+| `0x0C` | `0x0C00-0x0CFF` | `room` | 会议室/协作空间身份、日程、场景、参与设备 | 否 |
+| `0x0D` | `0x0D00-0x0DFF` | `signage` | 数字标牌播放列表、计划、媒体、外观、播放状态 | 否 |
+| `0x0E` | `0x0E00-0x0EFF` | `network` | 网络配置 | 否 |
+| `0x0F` | `0x0F00-0x0FFF` | `storage` | 存储管理 | 否 |
+| `0x10` | `0x1000-0x10FF` | `file` | 文件传输控制面 | 否 |
+| `0x11` | `0x1100-0x11FF` | `log` | 日志控制 | 否 |
+| `0x12` | `0x1200-0x12FF` | `diagnostic` | 诊断 / 产测 | 否 |
+| `0x13` | `0x1300-0x13FF` | `sensor` | 传感器 | 否 |
+| `0x14` | `0x1400-0x14FF` | `auth` | 认证与访问控制 | 否 |
+| `0x15` | `0x1500-0x15FF` | `privacy` | 隐私遮挡与隐私状态 | 否 |
+| `0x70-0x7F` | `0x7000-0x7FFF` | `vendor` | 厂商私有扩展 | 否 |
+| `0x80-0xFF` | `0x8000-0xFFFF` | reserved | 保留 | 否 |
 
 说明：`brightness` 不作为独立域，亮度控制方法、事件和能力归入 `display.brightness`。`boot / factory / screen / usb / bluetooth / misc` 等旧 HID 域只可映射到 `diagnostic.*` 或 `vendor.*`。`meeting / rooms` 归入 `room.*`，`curtain / mirror / output source / output layout` 归入 `output.*`，`osd / ndi / overlay` 归入 `video.*`，数字标牌播放业务归入 `signage.*`。
 
@@ -348,41 +352,40 @@ MVP 必须实现：`firmware.ota`。`file.transfer / log.stream` 可选或后续
 
 ## 10. MethodId 分配规则
 
-MethodId 使用 `uint16`，按 domain 分段：
+MethodId 使用 `uint16`，按第 9 章 Domain Registry 的 `DomainId` 高字节分段：
 
 | 范围 | Domain |
 |---:| --- |
 | `0x0000-0x00FF` | reserved |
 | `0x0100-0x01FF` | `device.*` |
-| `0x0200-0x02FF` | `session.*`（协议层保留，暂缓） |
-| `0x0300-0x03FF` | `capability.*` |
-| `0x0400-0x04FF` | `system.*` |
-| `0x0500-0x05FF` | `display.*` |
-| `0x0600-0x06FF` | `camera.*` |
-| `0x0700-0x07FF` | `video.*` |
-| `0x0800-0x08FF` | `audio.*` |
-| `0x0900-0x09FF` | `stream.*` |
-| `0x0A00-0x0AFF` | `file.*` |
-| `0x0B00-0x0BFF` | `firmware.*` |
-| `0x0C00-0x0CFF` | `log.*` |
-| `0x0D00-0x0DFF` | `diagnostic.*` |
+| `0x0200-0x02FF` | `capability.*` |
+| `0x0300-0x03FF` | `system.*` |
+| `0x0400-0x04FF` | `firmware.*` |
+| `0x0500-0x05FF` | `stream.*` |
+| `0x0600-0x06FF` | `display.*` |
+| `0x0700-0x07FF` | `camera.*` |
+| `0x0800-0x08FF` | `video.*` |
+| `0x0900-0x09FF` | `audio.*` |
+| `0x0A00-0x0AFF` | `input.*` |
+| `0x0B00-0x0BFF` | `output.*` |
+| `0x0C00-0x0CFF` | `room.*` |
+| `0x0D00-0x0DFF` | `signage.*` |
 | `0x0E00-0x0EFF` | `network.*` |
 | `0x0F00-0x0FFF` | `storage.*` |
-| `0x1000-0x10FF` | `input.*` |
-| `0x1100-0x11FF` | `sensor.*` |
-| `0x1200-0x12FF` | `auth.*` |
-| `0x1300-0x13FF` | `privacy.*` |
-| `0x1400-0x14FF` | `output.*` |
-| `0x1500-0x15FF` | `room.*` |
-| `0x1600-0x16FF` | `signage.*` |
+| `0x1000-0x10FF` | `file.*` |
+| `0x1100-0x11FF` | `log.*` |
+| `0x1200-0x12FF` | `diagnostic.*` |
+| `0x1300-0x13FF` | `sensor.*` |
+| `0x1400-0x14FF` | `auth.*` |
+| `0x1500-0x15FF` | `privacy.*` |
 | `0x7000-0x7FFF` | `vendor.*` |
-| `0x8000-0xFFFF` | reserved（留给 eventId） |
+| `0x8000-0xFFFF` | reserved |
 
 Method 条目格式：
 
 ```yaml
 methods:
-  - id: 0x0502
+  - id: 0x0602
     name: display.setBrightness
     kind: method
     status: mvp
@@ -414,33 +417,34 @@ Method 规则：
 
 ## 11. EventId 分配规则
 
-EventId 使用 `uint16`，采用高位区间与 MethodId 分离：
+EventId 使用 `uint16`，按与 MethodId 相同的第 9 章 Domain Registry 分段分配。Method 与 Event 属于不同 RPC op 命名空间；线上通过 `rpcOp = REQUEST / RESPONSE / EVENT` 区分，因此同一 domain 的 MethodId 与 EventId 必须共享同一个高字节 DomainId。
 
 | 范围 | Domain |
 |---:| --- |
-| `0x8000-0x80FF` | reserved |
-| `0x8100-0x81FF` | `device.*` |
-| `0x8300-0x83FF` | `capability.*` |
-| `0x8400-0x84FF` | `system.*` |
-| `0x8500-0x85FF` | `display.*` |
-| `0x8600-0x86FF` | `camera.*` |
-| `0x8700-0x87FF` | `video.*` |
-| `0x8800-0x88FF` | `audio.*` |
-| `0x8900-0x89FF` | `stream.*` |
-| `0x8A00-0x8AFF` | `file.*` |
-| `0x8B00-0x8BFF` | `firmware.*` |
-| `0x8C00-0x8CFF` | `log.*` |
-| `0x8D00-0x8DFF` | `diagnostic.*` |
-| `0x8E00-0x8EFF` | `network.*` |
-| `0x8F00-0x8FFF` | `storage.*` |
-| `0x9000-0x90FF` | `input.*` |
-| `0x9100-0x91FF` | `sensor.*` |
-| `0x9200-0x92FF` | `auth.*` |
-| `0x9300-0x93FF` | `privacy.*` |
-| `0x9400-0x94FF` | `output.*` |
-| `0x9500-0x95FF` | `room.*` |
-| `0x9600-0x96FF` | `signage.*` |
-| `0xF000-0xFFFF` | vendor/reserved |
+| `0x0000-0x00FF` | reserved |
+| `0x0100-0x01FF` | `device.*` |
+| `0x0200-0x02FF` | `capability.*` |
+| `0x0300-0x03FF` | `system.*` |
+| `0x0400-0x04FF` | `firmware.*` |
+| `0x0500-0x05FF` | `stream.*` |
+| `0x0600-0x06FF` | `display.*` |
+| `0x0700-0x07FF` | `camera.*` |
+| `0x0800-0x08FF` | `video.*` |
+| `0x0900-0x09FF` | `audio.*` |
+| `0x0A00-0x0AFF` | `input.*` |
+| `0x0B00-0x0BFF` | `output.*` |
+| `0x0C00-0x0CFF` | `room.*` |
+| `0x0D00-0x0DFF` | `signage.*` |
+| `0x0E00-0x0EFF` | `network.*` |
+| `0x0F00-0x0FFF` | `storage.*` |
+| `0x1000-0x10FF` | `file.*` |
+| `0x1100-0x11FF` | `log.*` |
+| `0x1200-0x12FF` | `diagnostic.*` |
+| `0x1300-0x13FF` | `sensor.*` |
+| `0x1400-0x14FF` | `auth.*` |
+| `0x1500-0x15FF` | `privacy.*` |
+| `0x7000-0x7FFF` | `vendor.*` |
+| `0x8000-0xFFFF` | reserved |
 
 Event 规则：
 - Event 必须通过 `PayloadType = RPC` 且 `rpcOp = EVENT` 承载
@@ -448,27 +452,39 @@ Event 规则：
 - 高频二进制数据应走 STREAM，事件只上报状态变化或统计摘要
 - Event data 必须引用 schema
 - 每个 Event 必须在其 Domain 内分配唯一 `bitOffset`（0-255），由 Registry 自增分配，用于 `eventMasks` 域级订阅掩码
-- `domainId` 等于 EventId 高字节（如 `display.*` EventId 为 `0x85xx`，domainId = `0x85`）
+- `domainId` 等于 EventId 高字节，并与同 domain 的 MethodId 高字节一致（如 `display.*` MethodId/EventId 均为 `0x06xx`，domainId = `0x06`）
 
 ---
 
 ## 12. ErrorCode 分配规则
 
-ErrorCode 使用 `uint16`：
+ErrorCode 使用 `uint16`。业务 ErrorCode 必须按第 9 章 Domain Registry 的 `DomainId` 高字节分段；`0x0000-0x00FF` 仅用于 `common / frame / control / rpc` 等协议内部错误，不作为业务域。
 
 | 范围 | 分类 |
 |---:| --- |
-| `0x0000-0x00FF` | Common |
-| `0x0100-0x01FF` | Frame / Transport |
-| `0x0200-0x02FF` | Control |
-| `0x0300-0x03FF` | RPC |
-| `0x0400-0x04FF` | Stream |
-| `0x0500-0x05FF` | Capability |
-| `0x0600-0x06FF` | Firmware |
-| `0x0700-0x07FF` | File |
-| `0x0800-0x08FF` | Media |
-| `0x0900-0x09FF` | Security（暂缓） |
-| `0x7000-0x7FFF` | Vendor |
+| `0x0000-0x00FF` | Common / Frame / Control / RPC（协议内部错误） |
+| `0x0100-0x01FF` | `device.*` |
+| `0x0200-0x02FF` | `capability.*` |
+| `0x0300-0x03FF` | `system.*` |
+| `0x0400-0x04FF` | `firmware.*` |
+| `0x0500-0x05FF` | `stream.*` |
+| `0x0600-0x06FF` | `display.*` |
+| `0x0700-0x07FF` | `camera.*` |
+| `0x0800-0x08FF` | `video.*` |
+| `0x0900-0x09FF` | `audio.*` |
+| `0x0A00-0x0AFF` | `input.*` |
+| `0x0B00-0x0BFF` | `output.*` |
+| `0x0C00-0x0CFF` | `room.*` |
+| `0x0D00-0x0DFF` | `signage.*` |
+| `0x0E00-0x0EFF` | `network.*` |
+| `0x0F00-0x0FFF` | `storage.*` |
+| `0x1000-0x10FF` | `file.*` |
+| `0x1100-0x11FF` | `log.*` |
+| `0x1200-0x12FF` | `diagnostic.*` |
+| `0x1300-0x13FF` | `sensor.*` |
+| `0x1400-0x14FF` | `auth.*` |
+| `0x1500-0x15FF` | `privacy.*` |
+| `0x7000-0x7FFF` | `vendor.*` / legacy adapter |
 | `0x8000-0xFFFF` | Reserved |
 
 ErrorCode 规则：
@@ -480,14 +496,33 @@ ErrorCode 规则：
 
 ## 13. CapabilityId 分配规则
 
+CapabilityId 使用 `uint16`，同样按第 9 章 Domain Registry 的 `DomainId` 高字节分段。少量影响 Parser 工作方式的协议级 capability 可保留在 `0x0000-0x00FF`，业务 capability 必须进入对应 domain。
+
 | 范围 | 分类 |
 |---:| --- |
-| `0x0000-0x00FF` | reserved |
-| `0x0100-0x01FF` | protocol |
-| `0x0200-0x02FF` | rpc |
-| `0x0300-0x03FF` | stream |
-| `0x1000-0x1FFF` | business |
-| `0x7000-0x7FFF` | vendor |
+| `0x0000-0x00FF` | protocol/common capability |
+| `0x0100-0x01FF` | `device.*` |
+| `0x0200-0x02FF` | `capability.*` |
+| `0x0300-0x03FF` | `system.*` |
+| `0x0400-0x04FF` | `firmware.*` |
+| `0x0500-0x05FF` | `stream.*` |
+| `0x0600-0x06FF` | `display.*` |
+| `0x0700-0x07FF` | `camera.*` |
+| `0x0800-0x08FF` | `video.*` |
+| `0x0900-0x09FF` | `audio.*` |
+| `0x0A00-0x0AFF` | `input.*` |
+| `0x0B00-0x0BFF` | `output.*` |
+| `0x0C00-0x0CFF` | `room.*` |
+| `0x0D00-0x0DFF` | `signage.*` |
+| `0x0E00-0x0EFF` | `network.*` |
+| `0x0F00-0x0FFF` | `storage.*` |
+| `0x1000-0x10FF` | `file.*` |
+| `0x1100-0x11FF` | `log.*` |
+| `0x1200-0x12FF` | `diagnostic.*` |
+| `0x1300-0x13FF` | `sensor.*` |
+| `0x1400-0x14FF` | `auth.*` |
+| `0x1500-0x15FF` | `privacy.*` |
+| `0x7000-0x7FFF` | `vendor.*` |
 | `0x8000-0xFFFF` | reserved |
 
 Capability 规则：
@@ -495,7 +530,7 @@ Capability 规则：
 - v1 Core 业务方法能力必须通过 RPC 查询（`capability.supportedMethods`）；完整 `capability.getRegistry` 属于 v2/P1
 - Capability 不等于 Method；Method 是否可调用由 Capability 与 Method Registry 共同判断
 - 每个 Capability 必须在其 Domain 内分配唯一 `bitOffset`（0-255），由 Registry 自增分配，用于 `capabilityMasks` 域级掩码响应
-- `domainId` 与 MethodId 高字节对齐（如 `display.*` MethodId 为 `0x05xx`，domainId = `0x05`）
+- `domainId` 与 MethodId 高字节对齐（如 `display.*` MethodId 为 `0x06xx`，domainId = `0x06`）
 
 ---
 
@@ -716,27 +751,27 @@ Domain Block = [DomainId: 1B] + [MaskLen: 1B] + [Bitmask: N B (Little-Endian)]
 
 | DomainId | MethodId/EventId 范围 | 域名 |
 | --- | --- | --- |
-| `0x01` | `0x0100-0x01FF` / `0x8100-0x81FF` | `device.*` |
-| `0x03` | `0x0300-0x03FF` / `0x8300-0x83FF` | `capability.*` |
-| `0x04` | `0x0400-0x04FF` / `0x8400-0x84FF` | `system.*` |
-| `0x05` | `0x0500-0x05FF` / `0x8500-0x85FF` | `display.*` |
-| `0x06` | `0x0600-0x06FF` / `0x8600-0x86FF` | `camera.*` |
-| `0x07` | `0x0700-0x07FF` / `0x8700-0x87FF` | `video.*` |
-| `0x08` | `0x0800-0x08FF` / `0x8800-0x88FF` | `audio.*` |
-| `0x09` | `0x0900-0x09FF` / `0x8900-0x89FF` | `stream.*` |
-| `0x0A` | `0x0A00-0x0AFF` / `0x8A00-0x8AFF` | `file.*` |
-| `0x0B` | `0x0B00-0x0BFF` / `0x8B00-0x8BFF` | `firmware.*` |
-| `0x0C` | `0x0C00-0x0CFF` / `0x8C00-0x8CFF` | `log.*` |
-| `0x0D` | `0x0D00-0x0DFF` / `0x8D00-0x8DFF` | `diagnostic.*` |
-| `0x0E` | `0x0E00-0x0EFF` / `0x8E00-0x8EFF` | `network.*` |
-| `0x0F` | `0x0F00-0x0FFF` / `0x8F00-0x8FFF` | `storage.*` |
-| `0x10` | `0x1000-0x10FF` / `0x9000-0x90FF` | `input.*` |
-| `0x11` | `0x1100-0x11FF` / `0x9100-0x91FF` | `sensor.*` |
-| `0x12` | `0x1200-0x12FF` / `0x9200-0x92FF` | `auth.*` |
-| `0x13` | `0x1300-0x13FF` / `0x9300-0x93FF` | `privacy.*` |
-| `0x14` | `0x1400-0x14FF` / `0x9400-0x94FF` | `output.*` |
-| `0x15` | `0x1500-0x15FF` / `0x9500-0x95FF` | `room.*` |
-| `0x16` | `0x1600-0x16FF` / `0x9600-0x96FF` | `signage.*` |
+| `0x01` | `0x0100-0x01FF` | `device.*` |
+| `0x02` | `0x0200-0x02FF` | `capability.*` |
+| `0x03` | `0x0300-0x03FF` | `system.*` |
+| `0x04` | `0x0400-0x04FF` | `firmware.*` |
+| `0x05` | `0x0500-0x05FF` | `stream.*` |
+| `0x06` | `0x0600-0x06FF` | `display.*` |
+| `0x07` | `0x0700-0x07FF` | `camera.*` |
+| `0x08` | `0x0800-0x08FF` | `video.*` |
+| `0x09` | `0x0900-0x09FF` | `audio.*` |
+| `0x0A` | `0x0A00-0x0AFF` | `input.*` |
+| `0x0B` | `0x0B00-0x0BFF` | `output.*` |
+| `0x0C` | `0x0C00-0x0CFF` | `room.*` |
+| `0x0D` | `0x0D00-0x0DFF` | `signage.*` |
+| `0x0E` | `0x0E00-0x0EFF` | `network.*` |
+| `0x0F` | `0x0F00-0x0FFF` | `storage.*` |
+| `0x10` | `0x1000-0x10FF` | `file.*` |
+| `0x11` | `0x1100-0x11FF` | `log.*` |
+| `0x12` | `0x1200-0x12FF` | `diagnostic.*` |
+| `0x13` | `0x1300-0x13FF` | `sensor.*` |
+| `0x14` | `0x1400-0x14FF` | `auth.*` |
+| `0x15` | `0x1500-0x15FF` | `privacy.*` |
 | `0x70-0x7F` | vendor | `vendor.*` |
 
 ### 23.4 JSON 编码

@@ -960,11 +960,11 @@ STREAM NACK reasonCode
 | `0` | `0x0000 SUCCESS` | 成功 |
 | `1` | `0x0001 UNKNOWN_ERROR` | 通用失败 |
 | `2` | `0x0005 BUSY` | 设备忙 |
-| `3` | `0x030B RPC_PARAM_INVALID` | 参数错误 |
+| `3` | `0x003B RPC_PARAM_INVALID` | 参数错误 |
 | `4` | `0x0006 TIMEOUT` | 超时 |
-| `5` | `0x0306 RPC_METHOD_NOT_FOUND` | 命令不支持 |
-| `6` | `0x0408 STREAM_SEQ_INVALID` | 分块序号错误 |
-| `7` | `0x060B FW_VERIFY_FAILED` | 固件校验失败 |
+| `5` | `0x0036 RPC_METHOD_NOT_FOUND` | 命令不支持 |
+| `6` | `0x0508 STREAM_SEQ_INVALID` | 分块序号错误 |
+| `7` | `0x040B FW_VERIFY_FAILED` | 固件校验失败 |
 | `>= 0x80` | `0x7000+ VENDOR_ERROR` | 厂商私有 |
 
 ### 14.3 保留旧错误详情
@@ -973,7 +973,7 @@ STREAM NACK reasonCode
 
 ```yaml
 error:
-  code: 0x030B
+  code: 0x003B
   name: RPC_PARAM_INVALID
   legacy:
     status: 3

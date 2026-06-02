@@ -32,7 +32,7 @@
       "idHex": "0x0101"
     },
     {
-      "id": 769,
+      "id": 513,
       "bitOffset": 0,
       "name": "capability.supportedMethods",
       "domain": "capability",
@@ -54,68 +54,121 @@
         "SUCCESS",
         "RPC_METHOD_NOT_FOUND"
       ],
-      "idHex": "0x0301"
+      "idHex": "0x0201"
     },
     {
-      "id": 1281,
+      "id": 1026,
       "bitOffset": 0,
-      "name": "display.getBrightness",
-      "domain": "display",
+      "name": "firmware.begin",
+      "domain": "firmware",
       "status": "mvp",
-      "description": "Read the current display brightness percentage.",
+      "description": "Begin a firmware OTA transfer and allocate the STREAM context.",
       "deprecated": false,
       "rpcOp": "request_response",
-      "requestSchema": "DisplayGetBrightnessRequest",
-      "responseSchema": "DisplayGetBrightnessResponse",
+      "requestSchema": "FirmwareBeginRequest",
+      "responseSchema": "FirmwareBeginResponse",
       "recommendedEncoding": [
         "json",
         "tlv"
       ],
       "capabilities": [
-        "display.brightness"
-      ],
-      "events": [],
-      "errors": [
-        "SUCCESS",
-        "RPC_METHOD_NOT_FOUND"
-      ],
-      "idHex": "0x0501"
-    },
-    {
-      "id": 1282,
-      "bitOffset": 1,
-      "name": "display.setBrightness",
-      "domain": "display",
-      "status": "mvp",
-      "description": "Set the display brightness and optionally request a transition duration.",
-      "deprecated": false,
-      "rpcOp": "request_response",
-      "requestSchema": "DisplaySetBrightnessRequest",
-      "responseSchema": "CommonEmptyResponse",
-      "recommendedEncoding": [
-        "json",
-        "tlv"
-      ],
-      "capabilities": [
-        "display.brightness"
+        "firmware.ota"
       ],
       "events": [
-        "display.brightnessChanged"
+        "firmware.updateProgress"
       ],
       "errors": [
         "SUCCESS",
         "RPC_PARAM_INVALID",
         "BUSY"
       ],
-      "legacy": {
-        "cmdValue": 720962,
-        "name": "BetaBrightnessSet",
-        "payloadFormat": "fixed_struct"
-      },
-      "idHex": "0x0502"
+      "idHex": "0x0402"
     },
     {
-      "id": 2305,
+      "id": 1027,
+      "bitOffset": 1,
+      "name": "firmware.end",
+      "domain": "firmware",
+      "status": "mvp",
+      "description": "Finish sending firmware data for the active OTA stream.",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "FirmwareEndRequest",
+      "responseSchema": "FirmwareEndResponse",
+      "recommendedEncoding": [
+        "json",
+        "tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "STREAM_NOT_FOUND",
+        "BUSY"
+      ],
+      "idHex": "0x0403"
+    },
+    {
+      "id": 1028,
+      "bitOffset": 2,
+      "name": "firmware.verify",
+      "domain": "firmware",
+      "status": "mvp",
+      "description": "Verify the transferred firmware object before applying it.",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "FirmwareVerifyRequest",
+      "responseSchema": "FirmwareVerifyResponse",
+      "recommendedEncoding": [
+        "json",
+        "tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [
+        "firmware.updateCompleted",
+        "firmware.updateFailed"
+      ],
+      "errors": [
+        "SUCCESS",
+        "STREAM_CRC_ERROR",
+        "BUSY"
+      ],
+      "idHex": "0x0404"
+    },
+    {
+      "id": 1029,
+      "bitOffset": 3,
+      "name": "firmware.apply",
+      "domain": "firmware",
+      "status": "mvp",
+      "description": "Apply a verified firmware image.",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "FirmwareApplyRequest",
+      "responseSchema": "FirmwareApplyResponse",
+      "recommendedEncoding": [
+        "json",
+        "tlv"
+      ],
+      "capabilities": [
+        "firmware.ota"
+      ],
+      "events": [
+        "firmware.updateCompleted",
+        "firmware.updateFailed"
+      ],
+      "errors": [
+        "SUCCESS",
+        "BUSY"
+      ],
+      "idHex": "0x0405"
+    },
+    {
+      "id": 1281,
       "bitOffset": 0,
       "name": "stream.open",
       "domain": "stream",
@@ -148,118 +201,65 @@
         "MEDIA_FRAMERATE_UNSUPPORTED",
         "MEDIA_STREAM_START_FAILED"
       ],
-      "idHex": "0x0901"
+      "idHex": "0x0501"
     },
     {
-      "id": 2818,
+      "id": 1537,
       "bitOffset": 0,
-      "name": "firmware.begin",
-      "domain": "firmware",
+      "name": "display.getBrightness",
+      "domain": "display",
       "status": "mvp",
-      "description": "Begin a firmware OTA transfer and allocate the STREAM context.",
+      "description": "Read the current display brightness percentage.",
       "deprecated": false,
       "rpcOp": "request_response",
-      "requestSchema": "FirmwareBeginRequest",
-      "responseSchema": "FirmwareBeginResponse",
+      "requestSchema": "DisplayGetBrightnessRequest",
+      "responseSchema": "DisplayGetBrightnessResponse",
       "recommendedEncoding": [
         "json",
         "tlv"
       ],
       "capabilities": [
-        "firmware.ota"
+        "display.brightness"
+      ],
+      "events": [],
+      "errors": [
+        "SUCCESS",
+        "RPC_METHOD_NOT_FOUND"
+      ],
+      "idHex": "0x0601"
+    },
+    {
+      "id": 1538,
+      "bitOffset": 1,
+      "name": "display.setBrightness",
+      "domain": "display",
+      "status": "mvp",
+      "description": "Set the display brightness and optionally request a transition duration.",
+      "deprecated": false,
+      "rpcOp": "request_response",
+      "requestSchema": "DisplaySetBrightnessRequest",
+      "responseSchema": "CommonEmptyResponse",
+      "recommendedEncoding": [
+        "json",
+        "tlv"
+      ],
+      "capabilities": [
+        "display.brightness"
       ],
       "events": [
-        "firmware.updateProgress"
+        "display.brightnessChanged"
       ],
       "errors": [
         "SUCCESS",
         "RPC_PARAM_INVALID",
         "BUSY"
       ],
-      "idHex": "0x0B02"
-    },
-    {
-      "id": 2819,
-      "bitOffset": 1,
-      "name": "firmware.end",
-      "domain": "firmware",
-      "status": "mvp",
-      "description": "Finish sending firmware data for the active OTA stream.",
-      "deprecated": false,
-      "rpcOp": "request_response",
-      "requestSchema": "FirmwareEndRequest",
-      "responseSchema": "FirmwareEndResponse",
-      "recommendedEncoding": [
-        "json",
-        "tlv"
-      ],
-      "capabilities": [
-        "firmware.ota"
-      ],
-      "events": [],
-      "errors": [
-        "SUCCESS",
-        "STREAM_NOT_FOUND",
-        "BUSY"
-      ],
-      "idHex": "0x0B03"
-    },
-    {
-      "id": 2820,
-      "bitOffset": 2,
-      "name": "firmware.verify",
-      "domain": "firmware",
-      "status": "mvp",
-      "description": "Verify the transferred firmware object before applying it.",
-      "deprecated": false,
-      "rpcOp": "request_response",
-      "requestSchema": "FirmwareVerifyRequest",
-      "responseSchema": "FirmwareVerifyResponse",
-      "recommendedEncoding": [
-        "json",
-        "tlv"
-      ],
-      "capabilities": [
-        "firmware.ota"
-      ],
-      "events": [
-        "firmware.updateCompleted",
-        "firmware.updateFailed"
-      ],
-      "errors": [
-        "SUCCESS",
-        "STREAM_CRC_ERROR",
-        "BUSY"
-      ],
-      "idHex": "0x0B04"
-    },
-    {
-      "id": 2821,
-      "bitOffset": 3,
-      "name": "firmware.apply",
-      "domain": "firmware",
-      "status": "mvp",
-      "description": "Apply a verified firmware image.",
-      "deprecated": false,
-      "rpcOp": "request_response",
-      "requestSchema": "FirmwareApplyRequest",
-      "responseSchema": "FirmwareApplyResponse",
-      "recommendedEncoding": [
-        "json",
-        "tlv"
-      ],
-      "capabilities": [
-        "firmware.ota"
-      ],
-      "events": [
-        "firmware.updateCompleted",
-        "firmware.updateFailed"
-      ],
-      "errors": [
-        "SUCCESS",
-        "BUSY"
-      ],
-      "idHex": "0x0B05"
+      "legacy": {
+        "cmdValue": 720962,
+        "name": "BetaBrightnessSet",
+        "payloadFormat": "fixed_struct"
+      },
+      "idHex": "0x0602"
     },
     {
       "id": 3591,

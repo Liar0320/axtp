@@ -52,7 +52,7 @@ MVP 默认使用 1B Type + 1B Length：
 +---------+---------+------------------------+----------------------+
 ```
 
-示例：`20 FF 2C 01 <300 bytes>` → fieldId=0x20, extendedLength=300
+示例：`01 FF 2C 01 <300 bytes>` → fieldId=0x01, extendedLength=300
 
  | 编码形式 | 最大 Value 长度 |
  |---|---|
@@ -72,16 +72,10 @@ MVP 默认使用 1B Type + 1B Length：
  | 范围 | 用途 |
  |---:|---|
  | `0x00` | 禁止使用 |
- | `0x01-0x1F` | 通用字段或高频字段 |
- | `0x20-0x5F` | 当前 schema 私有字段 |
- | `0x60-0x6F` | 扩展字段 |
- | `0x70-0x7E` | 实验字段 |
- | `0x7F` | vendorData 或 escape |
- | `0x80-0xEF` | 业务域扩展字段 |
- | `0xF0-0xFE` | 厂商私有字段 |
- | `0xFF` | 保留，禁止作为普通字段使用 |
+ | `0x01-0xFE` | 当前 schema 的本地字段编号，推荐从 `0x01` 连续分配 |
+ | `0xFF` | 扩展长度标志，禁止作为普通字段使用 |
 
-同一 schema 内 fieldId 不得重复；不同 schema 之间可复用。废弃字段不得立即复用，应标记 `deprecated: true`。
+同一 schema 内 fieldId 不得重复；不同 schema 之间可复用。AXTP 不设置跨 schema 的公共固定字段，`timestamp / reasonCode / errorCode / message` 等字段如需出现，也必须在各自 schema 内按普通字段编号声明。废弃字段不得立即复用，应标记 `deprecated: true`。
 
 ---
 
@@ -102,7 +96,7 @@ MVP 默认使用 1B Type + 1B Length：
  | `bytes` | N | 原始字节 |
  | `fixed_bytes` | 固定 N | 必须等于 schema length |
 
-bool 接收端遇到非 `00/01` 值时报 `ERR_INVALID_BOOL`。string 非法 UTF-8 在 strict mode 下报 `ERR_INVALID_UTF8`。
+bool 接收端遇到非 `00/01` 值时报 `RPC_PARAM_INVALID`。string 非法 UTF-8 报 `RPC_BODY_DECODE_FAILED` 或 `RPC_PARAM_INVALID`，由接收端按“解码失败/字段值非法”语义选择。
 
 ---
 
@@ -147,7 +141,7 @@ Schema 声明：`encoding: packed`。Packed Array 要求所有元素为固定长
   03 01 1E      // fps = 30
 ```
 
-MVP 建议最大嵌套深度 4，超过时报 `ERR_TLV_NESTING_TOO_DEEP`。
+MVP 建议最大嵌套深度 4，超过时报 `RPC_BODY_DECODE_FAILED`。
 
 字段顺序默认不敏感，但 Generator 生成测试向量时应按 fieldId 升序排列（Canonical Encoding）。
 
@@ -246,25 +240,20 @@ schemas:
  | `object` | 必须是合法 TLV sequence |
  | `array packed` | 必须是 item size 的整数倍 |
 
-Range 校验：值超出 `min/max` 时报 `ERR_VALUE_OUT_OF_RANGE`。Required 校验在所有字段解析完成后进行（允许字段乱序）。
+Range 校验：值超出 `min/max` 时报 `RPC_PARAM_OUT_OF_RANGE`。Required 校验在所有字段解析完成后进行（允许字段乱序），缺少必填字段时报 `RPC_PARAM_MISSING`。
 
 ---
 
-## 13. TLV 解析错误码
+## 13. TLV 解析错误映射
 
- | 错误码 | 名称 | 说明 |
- |---|---|---|
- | `0x0301` | `ERR_TLV_TRUNCATED` | TLV 数据被截断 |
- | `0x0302` | `ERR_TLV_INVALID_LENGTH` | 长度非法 |
- | `0x0303` | `ERR_TLV_UNKNOWN_SCHEMA` | 找不到 schema |
- | `0x0304` | `ERR_TLV_REQUIRED_FIELD_MISSING` | 必填字段缺失 |
- | `0x0305` | `ERR_TLV_DUPLICATE_FIELD` | 重复字段非法 |
- | `0x0306` | `ERR_TLV_TYPE_MISMATCH` | 类型不匹配 |
- | `0x0307` | `ERR_TLV_VALUE_OUT_OF_RANGE` | 值越界 |
- | `0x0308` | `ERR_TLV_INVALID_UTF8` | 非法 UTF-8 |
- | `0x0309` | `ERR_TLV_NESTING_TOO_DEEP` | 嵌套过深 |
- | `0x030A` | `ERR_TLV_UNSUPPORTED_ENCODING` | 不支持的编码 |
- | `0x030B` | `ERR_TLV_INVALID_BOOL` | bool 值非法 |
+TLV 不单独分配 `0x03xx` 私有错误码；解析失败统一映射到 11《AXTP ErrorCode 注册表》的 RPC 内部错误码。
+
+ | ErrorCode | 名称 | 适用场景 |
+ |---:|---|---|
+ | `0x0035` | `RPC_BODY_DECODE_FAILED` | TLV 截断、长度非法、未知 schema、嵌套过深、非法 UTF-8 等无法完成解码的错误 |
+ | `0x003A` | `RPC_PARAM_MISSING` | 必填字段缺失 |
+ | `0x003B` | `RPC_PARAM_INVALID` | 字段重复、类型不匹配、bool 值非法、编码不支持等字段语义错误 |
+ | `0x003C` | `RPC_PARAM_OUT_OF_RANGE` | 字段值超出 schema 的 `min/max` 或枚举范围 |
 
 ---
 

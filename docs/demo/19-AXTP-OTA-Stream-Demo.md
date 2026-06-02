@@ -276,15 +276,15 @@ OTA Demo 使用以下 MVP 方法。
 | methodId | methodName | 作用 |
 |---:|---|---|
 | `0x0101` | `device.getInfo` | 获取设备基础信息 |
-| `0x0301` | `capability.supportedMethods` | 获取当前会话可调用 methodId 集合 |
-| `0x0B01` | `firmware.getInfo` | 获取当前固件信息 |
-| `0x0B02` | `firmware.begin` | 开始 OTA |
-| `0x0B03` | `firmware.end` | 结束 OTA chunk 传输 |
-| `0x0B04` | `firmware.verify` | 校验固件 |
-| `0x0B05` | `firmware.apply` | 应用固件 |
-| `0x0B06` | `firmware.abort` | 中止升级 |
-| `0x0B07` | `firmware.resume` | 恢复升级 |
-| `0x0B08` | `firmware.getProgress` | 查询升级进度 |
+| `0x0201` | `capability.supportedMethods` | 获取当前会话可调用 methodId 集合 |
+| `0x0401` | `firmware.getInfo` | 获取当前固件信息 |
+| `0x0402` | `firmware.begin` | 开始 OTA |
+| `0x0403` | `firmware.end` | 结束 OTA chunk 传输 |
+| `0x0404` | `firmware.verify` | 校验固件 |
+| `0x0405` | `firmware.apply` | 应用固件 |
+| `0x0406` | `firmware.abort` | 中止升级 |
+| `0x0407` | `firmware.resume` | 恢复升级 |
+| `0x0408` | `firmware.getProgress` | 查询升级进度 |
 
 > `firmware.writeChunk` 仅作为兼容方法保留，不作为 OTA Stream Demo 的主路径。
 
@@ -294,15 +294,15 @@ OTA Demo 使用以下 MVP 方法。
 
 | eventId | eventName | 说明 |
 |---:|---|---|
-| `0x8B01` | `firmware.updateStarted` | 升级开始 |
-| `0x8B02` | `firmware.updateProgress` | 升级进度 |
-| `0x8B03` | `firmware.updateCompleted` | 升级完成 |
-| `0x8B04` | `firmware.updateFailed` | 升级失败 |
-| `0x8B05` | `firmware.verifyStarted` | 校验开始 |
-| `0x8B06` | `firmware.verifyCompleted` | 校验完成 |
-| `0x8B07` | `firmware.rebootRequired` | 需要重启 |
-| `0x8B08` | `firmware.rollbackStarted` | 回滚开始 |
-| `0x8B09` | `firmware.rollbackCompleted` | 回滚完成 |
+| `0x0401` | `firmware.updateStarted` | 升级开始 |
+| `0x0402` | `firmware.updateProgress` | 升级进度 |
+| `0x0403` | `firmware.updateCompleted` | 升级完成 |
+| `0x0404` | `firmware.updateFailed` | 升级失败 |
+| `0x0405` | `firmware.verifyStarted` | 校验开始 |
+| `0x0406` | `firmware.verifyCompleted` | 校验完成 |
+| `0x0407` | `firmware.rebootRequired` | 需要重启 |
+| `0x0408` | `firmware.rollbackStarted` | 回滚开始 |
+| `0x0409` | `firmware.rollbackCompleted` | 回滚完成 |
 
 ---
 
@@ -323,7 +323,7 @@ STREAM packet:
 
 | profileId | 名称 | 说明 |
 |---:|---|---|
-| `0x0101` | `firmware.ota` | 固件升级数据流 |
+| `0x0401` | `firmware.ota` | 固件升级数据流 |
 
 ---
 
@@ -337,7 +337,7 @@ STREAM packet:
 
 ```text
 methodName = firmware.begin
-methodId   = 0x0B02
+methodId   = 0x0402
 ```
 
 设备返回：
@@ -537,7 +537,7 @@ NACK Body TLV：
 | `0x0603` | `FIRMWARE_OFFSET_MISMATCH` |
 | `0x0604` | `FIRMWARE_TRANSFER_TIMEOUT` |
 | `0x0605` | `FIRMWARE_IMAGE_TOO_LARGE` |
-| `0x0401` | `STREAM_INVALID_SEQ` |
+| `0x0508` | `STREAM_INVALID_SEQ` |
 
 ---
 
@@ -969,12 +969,12 @@ CONTROL RESUME
 | `0x0603` | `FIRMWARE_OFFSET_MISMATCH` | offset 不匹配 |
 | `0x0604` | `FIRMWARE_TRANSFER_TIMEOUT` | 传输超时 |
 | `0x0605` | `FIRMWARE_IMAGE_TOO_LARGE` | 固件过大 |
-| `0x060B` | `FW_VERIFY_FAILED` | 固件校验失败 |
+| `0x040B` | `FW_VERIFY_FAILED` | 固件校验失败 |
 | `0x060C` | `FW_APPLY_FAILED` | 应用失败 |
-| `0x0602` | `FW_IMAGE_TYPE_UNSUPPORTED` | 不支持的镜像 |
-| `0x0603` | `FW_VERSION_UNSUPPORTED` | 版本被拒绝 |
+| `0x0402` | `FW_IMAGE_TYPE_UNSUPPORTED` | 不支持的镜像 |
+| `0x0403` | `FW_VERSION_UNSUPPORTED` | 版本被拒绝 |
 | `0x060F` | `FW_DEVICE_NOT_READY` | 设备不满足升级条件 |
-| `0x040F` | `STREAM_RESUME_FAILED` | 恢复失败 |
+| `0x050F` | `STREAM_RESUME_FAILED` | 恢复失败 |
 
 ---
 
@@ -1105,10 +1105,10 @@ C++ 头文件示例：
 ```cpp
 enum class MethodId : uint16_t {
     FirmwareGetInfo = 0x0B01,
-    FirmwareBegin = 0x0B02,
-    FirmwareEnd = 0x0B03,
-    FirmwareVerify = 0x0B04,
-    FirmwareApply = 0x0B05,
+    FirmwareBegin = 0x0402,
+    FirmwareEnd = 0x0403,
+    FirmwareVerify = 0x0404,
+    FirmwareApply = 0x0405,
     FirmwareAbort = 0x0B06,
     FirmwareResume = 0x0B07,
     FirmwareGetProgress = 0x0B08,
@@ -1119,9 +1119,9 @@ enum class StreamProfile : uint16_t {
 };
 
 enum class FirmwareErrorCode : uint16_t {
-    ChunkCrcMismatch = 0x0602,
-    OffsetMismatch = 0x0603,
-    VerifyFailed = 0x0606,
+    ChunkCrcMismatch = 0x0408,
+    OffsetMismatch = 0x050B,
+    VerifyFailed = 0x040B,
 };
 ```
 

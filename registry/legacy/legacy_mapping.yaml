@@ -15,7 +15,7 @@ legacy_mappings:
   - legacyProtocol: axdp_hid
     legacyCmdValue: 0x000B0042
     legacyName: BetaBrightnessSet
-    axtpMethodId: 0x0502
+    axtpMethodId: 0x0602
     axtpMethodName: display.setBrightness
     direction: request_response
     request_adapter: BetaBrightnessSetRequestAdapter

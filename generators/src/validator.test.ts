@@ -20,7 +20,7 @@ function baseSpec(): SpecModel {
     rpcOps: [{ id: 7, value: 7, name: "REQUEST", domain: "rpc", status: "mvp" }],
     streamProfiles: [{ id: 1, value: 1, name: "firmware.ota", domain: "firmware", status: "mvp" }],
     methods: [{
-      id: 0x0502,
+      id: 0x0602,
       name: "display.setBrightness",
       domain: "display",
       status: "mvp",
@@ -34,7 +34,7 @@ function baseSpec(): SpecModel {
       errors: ["SUCCESS"]
     }],
     events: [{
-      id: 0x8507,
+      id: 0x0607,
       name: "display.brightnessChanged",
       domain: "display",
       status: "mvp",
@@ -51,7 +51,7 @@ function baseSpec(): SpecModel {
       legacyProtocol: "axdp_hid",
       legacyCmdValue: 0x42,
       legacyName: "BetaDisplaySetBrightness",
-      axtpMethodId: 0x0502,
+      axtpMethodId: 0x0602,
       axtpMethodName: "display.setBrightness",
       direction: "request_response",
       statusMapping: { "0x00": "SUCCESS" }
@@ -80,8 +80,8 @@ function baseSpec(): SpecModel {
 
 describe("normalizeId", () => {
   it("normalizes decimal and hex ids", () => {
-    expect(normalizeId("0x0502", "test")).toBe(0x0502);
-    expect(normalizeId(1282, "test")).toBe(0x0502);
+    expect(normalizeId("0x0602", "test")).toBe(0x0602);
+    expect(normalizeId(1538, "test")).toBe(0x0602);
   });
 });
 
@@ -106,6 +106,12 @@ describe("validateSpec", () => {
     const spec = baseSpec();
     spec.methods[0].requestSchema = "MissingSchema";
     expect(() => validateSpec(spec)).toThrow(/missing schema/);
+  });
+
+  it("rejects ids outside the Domain Registry range", () => {
+    const spec = baseSpec();
+    spec.capabilities[0].id = 0x0301;
+    expect(() => validateSpec(spec)).toThrow(/Domain Registry/);
   });
 
   it("rejects reserved references", () => {

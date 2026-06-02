@@ -436,8 +436,8 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 方法名和事件名与 Binary 中的 uint16 ID 一一对应，由 Registry 统一管理：
 
 ```text
-"display.setBrightness"      ↔ methodId = 0x0502
-"display.brightnessChanged"  ↔ eventId  = 0x8507
+"display.setBrightness"      ↔ methodId = 0x0602
+"display.brightnessChanged"  ↔ eventId  = 0x0607
 ```
 
 ---
@@ -510,26 +510,27 @@ Domain Block = [DomainId: 1B] + [MaskLen: 1B] + [Bitmask: N B (Little-Endian)]
 
 | DomainId | 对应 EventId 范围 | 域名 |
 | --- | --- | --- |
-| `0x81` | `0x8100-0x81FF` | `device.*` |
-| `0x83` | `0x8300-0x83FF` | `capability.*` |
-| `0x84` | `0x8400-0x84FF` | `system.*` |
-| `0x85` | `0x8500-0x85FF` | `display.*` |
-| `0x8B` | `0x8B00-0x8BFF` | `firmware.*` |
-| `0x90` | `0x9000-0x90FF` | `input.*` |
-| `0x94` | `0x9400-0x94FF` | `output.*` |
-| `0x95` | `0x9500-0x95FF` | `room.*` |
-| `0x96` | `0x9600-0x96FF` | `signage.*` |
+| `0x01` | `0x0100-0x01FF` | `device.*` |
+| `0x02` | `0x0200-0x02FF` | `capability.*` |
+| `0x03` | `0x0300-0x03FF` | `system.*` |
+| `0x04` | `0x0400-0x04FF` | `firmware.*` |
+| `0x05` | `0x0500-0x05FF` | `stream.*` |
+| `0x06` | `0x0600-0x06FF` | `display.*` |
+| `0x0A` | `0x0A00-0x0AFF` | `input.*` |
+| `0x0B` | `0x0B00-0x0BFF` | `output.*` |
+| `0x0C` | `0x0C00-0x0CFF` | `room.*` |
+| `0x0D` | `0x0D00-0x0DFF` | `signage.*` |
 
 **高水位截断规则**：如果某域只用到 Bit 3，`MaskLen` 必须为 1，不得发送多余字节。
 
 **示例**：订阅 `display.*` 域的 Bit 0（brightnessChanged）和 `firmware.*` 域的 Bit 0/1（updateProgress/updateCompleted）：
 
 ```text
-eventMasks = "850101 8B0103"（去掉空格后为 "8501018B0103"）
+eventMasks = "060101 040103"（去掉空格后为 "060101040103"）
 
 解析：
-  DomainId=0x85, MaskLen=1, Bitmask=0x01  → display.brightnessChanged (Bit 0)
-  DomainId=0x8B, MaskLen=1, Bitmask=0x03  → firmware.updateProgress (Bit 0) + firmware.updateCompleted (Bit 1)
+  DomainId=0x06, MaskLen=1, Bitmask=0x01  → display.brightnessChanged (Bit 0)
+  DomainId=0x04, MaskLen=1, Bitmask=0x03  → firmware.updateProgress (Bit 0) + firmware.updateCompleted (Bit 1)
 ```
 
 **设备端过滤（O(1) 判定）**：
@@ -549,7 +550,7 @@ MVP 阶段设备可采用"全量广播模式"：忽略 `eventMasks`，只要 App
 
 初始订阅在 Identify（op=2）的 `eventMasks` 字段声明。运行时修改订阅使用 Reidentify（op=4）。
 
-事件掩码的 DomainId 与 EventId 高字节对齐，例如 `display.*` 事件 `0x85xx` 使用 DomainId `0x85`。这与 `capability.supportedMethods` 的 method bitmap 不同，后者与 methodId 高字节对齐，例如 `display.*` method `0x05xx` 使用 DomainId `0x05`。两种掩码格式相同，但 DomainId 空间不同，生成器必须分别从 `events[].bitOffset` 和 `methods[].bitOffset` 派生。
+事件掩码的 DomainId 与 EventId 高字节对齐，并与同 domain 的 MethodId 高字节一致。例如 `display.*` method/event 均使用 `0x06xx`，DomainId 均为 `0x06`。方法能力掩码和事件订阅掩码格式相同、DomainId 空间相同，但 bitOffset 来源不同：生成器必须分别从 `methods[].bitOffset` 和 `events[].bitOffset` 派生。
 
 ---
 
@@ -750,12 +751,12 @@ Response 失败：
 ```text
 Request:
 02 07 01 00 00 00 02 06 00 00 01 01 01 50
-rpcEncoding=BINARY(2), rpcOp=Request(7), requestId=1, methodId=0x0502, statusCode=SUCCESS, bodyEncoding=TLV8
+rpcEncoding=BINARY(2), rpcOp=Request(7), requestId=1, methodId=0x0602, statusCode=SUCCESS, bodyEncoding=TLV8
 body: fieldId=1, len=1, value=80
 
 Response 成功:
 02 08 01 00 00 00 02 06 00 00 01 01 01 50
-rpcEncoding=BINARY(2), rpcOp=RequestResponse(8), requestId=1, methodId=0x0502, statusCode=SUCCESS, bodyEncoding=TLV8
+rpcEncoding=BINARY(2), rpcOp=RequestResponse(8), requestId=1, methodId=0x0602, statusCode=SUCCESS, bodyEncoding=TLV8
 body: fieldId=1, len=1, value=80
 ```
 
@@ -887,7 +888,7 @@ MCP → AXTP:
 ```yaml
 legacyMappings:
   - legacyCmdValue: 0xC0021
-    axtpMethodId: 0x0B02
+    axtpMethodId: 0x0402
     axtpMethodName: SetVideoMode
     bodyEncoding: RAW_BYTES
 ```
@@ -991,7 +992,7 @@ MessagePack / CBOR
 | 06《AXTP Stream Spec》 | STREAM 数据面，RPC 只负责控制面 |
 | 14《AXTP Type System》 | wire 类型定义（uint8/string/bitmap/array/object） |
 | 15《AXTP TLV Schema Encoding》 | body 字段 TLV 编码格式、扩展长度、canonical encoding |
-| 16《AXTP Schema Field Numbering》 | fieldId 范围分配、公共字段表、废弃规则 |
+| 16《AXTP Schema Field Numbering》 | schema-local fieldId 分配、废弃规则 |
 | MethodId/EventId/ErrorCode/Capability 注册表 | 业务语义单一事实源 |
 | 老协议适配规范 | CmdValue/legacy payload 到 RPC 的映射 |
 | Generator v1 实现规范 | 从 registry 生成 C++ 和 Markdown |
