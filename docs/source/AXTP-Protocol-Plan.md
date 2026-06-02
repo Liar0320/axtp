@@ -39,6 +39,7 @@ The stable normative layer defines rules and constraints:
 | `11-AXTP-Errors-Registry-Spec.md` | `errors:` entry model and error mapping rules. |
 | `12-AXTP-Types-and-Capability-Spec.md` | `types:` model, fieldId rules and v1 `capability.supportedMethods` scope. |
 | `13-AXTP-Profiles-Registry-Spec.md` | `profiles:` model and implementation profile rules. |
+| `21-AXTP-Capability-Naming-and-Feature-Taxonomy.md` | `domain.feature` capability naming and feature taxonomy governance. |
 
 These files must not contain full business request/event/error tables.
 
@@ -54,6 +55,8 @@ Generated `protocol/axtp.protocol.yaml` contains:
 - types, methods, events, errors and profiles
 
 New protocol content must be added to `registry/**/*.yaml` or `registry/domains/<domain>/domain.yaml` first. Generated documentation, schemas, SDK enums, bitmaps and conformance tests must be derived from the generated Protocol IR.
+
+Business capability names must first normalize to the `domain.feature` taxonomy before adding methods, events or capability facts.
 
 ## 5. Generation Targets
 

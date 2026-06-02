@@ -72,6 +72,7 @@ events:
 8. `eventMasks` 中的 `bitOffset` 必须与 `bitOffset` 一致，由 `axtpc` 从 `events[].bitOffset` 自动派生。
 9. v1 Core 不强制完整 event capability discovery；事件能力可在 v2 Capability Model 中描述。
 10. eventId 必须从 `0x8000` 以上分配，event mask DomainId 与 eventId 高字节对齐。
+11. 事件 domain 必须来自已治理的 domain 词表；`output`、`room`、`signage` 事件分别描述输出边界变化、会议室/协作空间变化和数字标牌业务变化。
 
 ---
 

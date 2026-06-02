@@ -111,6 +111,25 @@ Domain Block = [DomainId:1B] + [MaskLen:1B] + [MethodBitmask:N B Little-Endian]
 
 ---
 
+### 6.1 Feature 级能力命名
+
+新增业务能力建议按 `domain.feature` 聚合，而不是直接按旧协议命令逐条展开。配置类 feature 优先采用 `getXCapabilities / getXConfig / setXConfig / resetXConfig / xConfigChanged` 形态；动作或数据面 feature 可单独定义 `start / stop / open / close / apply` 等方法。
+
+示例：
+
+| Domain.Feature | 说明 |
+|---|---|
+| `input.source` | 进入设备或场景的输入源 |
+| `output.source` | 离开设备或场景的输出源 |
+| `output.routing` | 输入到输出的路由关系 |
+| `output.layout` | 幕墙、拼接、画中画等输出布局 |
+| `room.scene` | 会议室/协作空间场景 |
+| `room.schedule` | 会议室日程或计划 |
+| `signage.playlist` | 数字标牌播放列表 |
+| `signage.schedule` | 数字标牌播放计划 |
+
+---
+
 ## 7. v2 Capability Model
 
 以下内容保留到 v2/P1，不作为 v1 Core 强制项：

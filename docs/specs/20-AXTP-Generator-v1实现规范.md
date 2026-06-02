@@ -244,6 +244,8 @@ Domain YAML 表示“业务域事实”。它同样会进入最终 `protocol/axt
 
 例如 `stream.open` 当前属于 `stream` domain 的 HID media profile 业务事实，应放在 `registry/domains/stream/domain.yaml`。如果未来它被定义为所有 AXTP v1 Core 实现必须支持的建流方法，再按晋升流程迁入 `registry/method/`、`registry/schema/`、`registry/capability/` 等核心文件。
 
+Generator v1 必须接受已治理的业务域词表，包括 `input`、`output`、`room` 和 `signage`。`output` 与 `input` 成对表达信号边界，`room` 使用单数形式，`signage` 专用于数字标牌业务。未在词表中的新 domain 必须先补充 Domain Registry 和 ID 分配，再进入 domain YAML。
+
 推荐结构：
 
 ```yaml
@@ -624,6 +626,7 @@ node dist/cli.js generate-registry --spec ..
 ```text
 1. 读取 docs/specs/08-13 和 docs/source/09-13
 2. 确认 domain、ID range、method/event/error/capability 候选
+   - 迁移类业务先参考 `docs/migration/AXTP_Legacy_Migration_Matrix.xlsx` 的 `93_Feature分类参考` 和对应聚合视图，确认 `domain.feature` 边界
 3. 检查 registry/**/*.yaml 和 registry/domains/**/*.yaml 是否已有等价条目
 4. 默认写入 registry/domains/<domain>/domain.yaml；只有 Core/MVP 晋升或共享基础事实才写入 registry/
 5. 填写 method/event/type/error/capability/profile 表单

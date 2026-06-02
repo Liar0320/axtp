@@ -58,6 +58,27 @@
 | MVP type/TLV subset | `12` and future type-system work |
 | Legacy compatibility MVP | `07` and `docs/source/AXTP-Legacy-Compatibility-Reference.md` |
 
-## 5. Execution Notes
+## 5. Domain-Feature Migration Notes
+
+Legacy commands and source planning tables must be normalized through the `domain.feature` taxonomy before mapping to method/event/schema adapters:
+
+```text
+legacy command -> domain.feature -> method/event -> schema adapter
+```
+
+| Old source name | Target source name | Reason |
+|---|---|---|
+| `firmware.begin` | `firmware.beginOta` | Bind method explicitly to `firmware.ota`. |
+| `firmware.end` | `firmware.commitOtaBatch` | Express OTA batch commit instead of generic end. |
+| `firmware.verify` | `firmware.verifyOtaFiles` | Express OTA file verification. |
+| `firmware.apply` | `firmware.installOta` | Express install action under OTA feature. |
+| `firmware.updateProgress` | `firmware.otaProgressReported` | Use progress reported event template. |
+| `firmware.updateCompleted` | `firmware.otaStateChanged` | Completion is represented as OTA state transition. |
+| `firmware.updateFailed` | `firmware.otaResultReported` | Failure is represented as OTA result report. |
+| `stream.open` | Business-domain open stream method | `stream` domain no longer performs generic business stream creation. |
+| `stream.hidMedia` | `video.stream` / `audio.recording` / `stream.flowControl` | HID is transport, media is business classification. |
+| `display.brightnessMin/Max/Step` | `display.brightness` schema fields | Brightness range is feature metadata, not separate capability. |
+
+## 6. Execution Notes
 
 The source files under `docs/source/` are retained as evidence, planning and migration reference. They are not normative unless their facts have been promoted into `registry/**/*.yaml` or `registry/domains/**/*.yaml`.

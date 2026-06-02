@@ -97,6 +97,8 @@ docs/generated/protocol.md + protocol.json + SDK/bitmap/test-vector
 - `registry/core/protocol_meta.yaml` 保存 overview、frameProfiles、transports、payloadTypes、control、stream、compatibility 等非业务 IR 输入。
 - `protocol/axtp.protocol.yaml` 不得手写修改；任何变更必须回到 `registry/` 或 `registry/domains/`。
 
+当前治理中的业务域词表包括 `device / capability / system / network / audio / camera / video / input / output / display / stream / firmware / storage / file / log / diagnostic / auth / privacy / sensor / room / signage / vendor`。其中 `output` 与 `input` 成对表达出入设备或场景的信号边界，`room` 使用单数形式表达会议室/协作空间业务，`signage` 表达数字标牌播放列表、计划、媒体和播放状态。
+
 ---
 
 ## 3. JSON-RPC 到 Binary-RPC 映射

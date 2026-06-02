@@ -28,7 +28,7 @@ docs/source/
 | Legacy payload format | `methods[].legacy.payloadFormat` or `bodyEncoding=RAW_BYTES` |
 | Legacy status | `errors[].code` through a legacy error mapping |
 | Legacy event | `events[]` plus adapter metadata |
-| Legacy capability / feature bit | v1 `capability.supportedMethods` or future Capability Model |
+| Legacy capability / feature bit | Normalize to `domain.feature`, then expose through v1 `capability.supportedMethods` or future Capability Model |
 | Legacy stream bytes | RPC stream setup plus `PayloadType=STREAM` |
 
 ## 3. Current Preserved Mappings
@@ -57,7 +57,24 @@ legacyErrorMappings:
 
 Unmapped legacy status values should use a future legacy adapter error, not a frame/control error.
 
-## 5. Promotion Rule
+## 5. Domain-Feature Normalization
+
+Legacy compatibility must use the new source planning names as primary names. Existing registry YAML aliases remain pending migration.
+
+| Legacy / old AXTP name | Target source name |
+|---|---|
+| `firmware.begin` | `firmware.beginOta` |
+| `firmware.end` | `firmware.commitOtaBatch` |
+| `firmware.verify` | `firmware.verifyOtaFiles` |
+| `firmware.apply` | `firmware.installOta` |
+| `firmware.updateProgress` | `firmware.otaProgressReported` |
+| `firmware.updateCompleted` | `firmware.otaStateChanged` |
+| `firmware.updateFailed` | `firmware.otaResultReported` |
+| `network.softAp` | `network.ap` |
+| `stream.hidMedia` | `video.stream` / `audio.recording` / `stream.flowControl` |
+| `display.brightnessMin / display.brightnessMax / display.brightnessStep` | `display.brightness` capability fields |
+
+## 6. Promotion Rule
 
 Legacy material is only promoted to `registry/**/*.yaml` or `registry/domains/**/*.yaml` after it has:
 

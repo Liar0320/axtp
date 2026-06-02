@@ -12,6 +12,8 @@ registry/**/*.yaml
 registry/domains/**/*.yaml
 ```
 
+This source reference uses the target domain-feature names from 21《AXTP Capability Naming and Feature Taxonomy》. Some registry YAML entries still use the pre-migration names until the registry migration is executed.
+
 The source/planning registry documents are retained at:
 
 ```text
@@ -26,19 +28,19 @@ docs/source/
 | `0x0301` | `capability.supportedMethods` | `capability` | `CapabilitySupportedMethodsRequest` | `CapabilitySupportedMethodsResponse` | stable |
 | `0x0501` | `display.getBrightness` | `display` | `DisplayGetBrightnessRequest` | `DisplayGetBrightnessResponse` | stable |
 | `0x0502` | `display.setBrightness` | `display` | `DisplaySetBrightnessRequest` | `CommonEmptyResponse` | stable |
-| `0x0B02` | `firmware.begin` | `firmware` | `FirmwareBeginRequest` | `FirmwareBeginResponse` | stable |
-| `0x0B03` | `firmware.end` | `firmware` | `FirmwareEndRequest` | `CommonEmptyResponse` | stable |
-| `0x0B04` | `firmware.verify` | `firmware` | `FirmwareVerifyRequest` | `CommonEmptyResponse` | stable |
-| `0x0B05` | `firmware.apply` | `firmware` | `FirmwareApplyRequest` | `CommonEmptyResponse` | stable |
+| `0x0B02` | `firmware.beginOta` | `firmware` | `FirmwareBeginRequest` | `FirmwareBeginResponse` | stable |
+| `0x0B03` | `firmware.commitOtaBatch` | `firmware` | `FirmwareEndRequest` | `CommonEmptyResponse` | stable |
+| `0x0B04` | `firmware.verifyOtaFiles` | `firmware` | `FirmwareVerifyRequest` | `CommonEmptyResponse` | stable |
+| `0x0B05` | `firmware.installOta` | `firmware` | `FirmwareApplyRequest` | `CommonEmptyResponse` | stable |
 
 ## 3. Current v1 MVP Events
 
 | eventId | name | domain | payload | severity |
 |---|---|---|---|---|
 | `0x8507` | `display.brightnessChanged` | `display` | `DisplayBrightnessChangedEvent` | info |
-| `0x8B02` | `firmware.updateProgress` | `firmware` | `FirmwareUpdateProgressEvent` | info |
-| `0x8B03` | `firmware.updateCompleted` | `firmware` | `FirmwareUpdateCompletedEvent` | info |
-| `0x8B04` | `firmware.updateFailed` | `firmware` | `FirmwareUpdateFailedEvent` | error |
+| `0x8B02` | `firmware.otaProgressReported` | `firmware` | `FirmwareUpdateProgressEvent` | info |
+| `0x8B03` | `firmware.otaStateChanged` | `firmware` | `FirmwareUpdateCompletedEvent` | info |
+| `0x8B04` | `firmware.otaResultReported` | `firmware` | `FirmwareUpdateFailedEvent` | error |
 
 ## 4. Current Error Set
 
@@ -88,9 +90,9 @@ The v1 type set includes:
 | `FirmwareEndRequest` | End transfer for a stream. |
 | `FirmwareVerifyRequest` | Verify transferred firmware for a stream. |
 | `FirmwareApplyRequest` | Apply verified firmware for a stream. |
-| `FirmwareUpdateProgressEvent` | OTA progress event. |
-| `FirmwareUpdateCompletedEvent` | OTA completion event. |
-| `FirmwareUpdateFailedEvent` | OTA failure event. |
+| `FirmwareUpdateProgressEvent` | OTA progress reported event payload. |
+| `FirmwareUpdateCompletedEvent` | OTA state changed event payload. |
+| `FirmwareUpdateFailedEvent` | OTA result reported event payload. |
 | `FirmwareOtaCapability` | Reserved object shape for future full capability modeling. |
 
 ## 6. v1 Profile
@@ -101,8 +103,8 @@ The `AXTP-MVP` profile requires:
 - `device.getInfo`.
 - `capability.supportedMethods`.
 - display brightness get/set.
-- firmware OTA begin/end/verify/apply.
-- display brightness and firmware update events.
+- firmware OTA begin/commit/verify/install.
+- display brightness and firmware OTA events.
 - method bitmap discovery derived from `methods[].bitOffset`.
 
 Transport bindings are defined in Source YAML and emitted into the generated `protocol/axtp.protocol.yaml`.
@@ -115,5 +117,17 @@ The current v1 protocol preserves known legacy command mappings as request metad
 |---|---|---|---|
 | `device.getInfo` | `0x000B0002` | `BetaDeviceInfo` | fixed_struct |
 | `display.setBrightness` | `0x000B0042` | `BetaBrightnessSet` | fixed_struct |
+
+Deprecated registry aliases pending migration:
+
+| old name | target source name |
+|---|---|
+| `firmware.begin` | `firmware.beginOta` |
+| `firmware.end` | `firmware.commitOtaBatch` |
+| `firmware.verify` | `firmware.verifyOtaFiles` |
+| `firmware.apply` | `firmware.installOta` |
+| `firmware.updateProgress` | `firmware.otaProgressReported` |
+| `firmware.updateCompleted` | `firmware.otaStateChanged` |
+| `firmware.updateFailed` | `firmware.otaResultReported` |
 
 Additional legacy material must be summarized in `docs/source/AXTP-Legacy-Compatibility-Reference.md` before it is promoted into `registry/**/*.yaml` or `registry/domains/**/*.yaml`.

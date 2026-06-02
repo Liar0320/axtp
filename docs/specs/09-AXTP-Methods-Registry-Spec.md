@@ -71,6 +71,7 @@ methods:
 8. methodId 和 bitOffset 范围由 Protocol Plan 分配；具体业务分配只写入 `registry/` 或 `registry/domains/` YAML。
 9. `capability.supportedMethods` bitmap 按 domain 分段，每个 domain 内第 N bit 对应该 domain 下 `bitOffset=N` 的 method。
 10. methodId 的高字节定义 method DomainId；`capability.supportedMethods` 的 Domain Block 必须使用该高字节。
+11. 业务域必须来自已治理的 domain 词表；`output`、`room`、`signage` 是正式业务域，分别用于输出源/接口/路由/布局、会议室/协作空间业务、数字标牌业务。
 
 ---
 

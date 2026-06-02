@@ -17,13 +17,10 @@ The complete capability model described here is not required for v1 interoperabi
 
 | Method | Purpose |
 |---|---|
-| `capability.getAll` | Return a complete capability summary. |
-| `capability.getDomain` | Return capability data for one domain. |
+| `capability.getRegistry` | Return a complete capability summary. |
+| `capability.getDomainRegistry` | Return capability data for one domain. |
 | `capability.hasMethod` | Test whether a method is currently callable. |
 | `capability.getLimits` | Return protocol and transport limits. |
-| `capability.hasEvent` | Test whether an event can be emitted. |
-| `capability.getStreams` | Return stream profile support. |
-| `capability.getFirmware` | Return firmware update capability. |
 | `capability.negotiate` | Negotiate optional business capability parameters. |
 
 ## 3. Domain Mask Form
@@ -55,7 +52,7 @@ For v2 capability masks, `DomainId` uses the capability domain namespace. This m
     "bodyEncodings": ["TLV8"]
   },
   "stream": {
-    "profiles": ["firmware.ota"],
+    "profile": ["firmware.ota"],
     "resume": true,
     "chunkCrc32": true
   },

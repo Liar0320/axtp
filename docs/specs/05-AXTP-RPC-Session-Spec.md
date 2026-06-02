@@ -515,6 +515,10 @@ Domain Block = [DomainId: 1B] + [MaskLen: 1B] + [Bitmask: N B (Little-Endian)]
 | `0x84` | `0x8400-0x84FF` | `system.*` |
 | `0x85` | `0x8500-0x85FF` | `display.*` |
 | `0x8B` | `0x8B00-0x8BFF` | `firmware.*` |
+| `0x90` | `0x9000-0x90FF` | `input.*` |
+| `0x94` | `0x9400-0x94FF` | `output.*` |
+| `0x95` | `0x9500-0x95FF` | `room.*` |
+| `0x96` | `0x9600-0x96FF` | `signage.*` |
 
 **高水位截断规则**：如果某域只用到 Bit 3，`MaskLen` 必须为 1，不得发送多余字节。
 

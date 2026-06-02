@@ -440,8 +440,12 @@ legacy:
 | Alpha Upgrade | `firmware.*` | 升级、镜像、校验、回滚 |
 | Beta Device | `device.*` | 设备信息、版本、状态 |
 | Common Video | `video.*` | 视频模式、分辨率、帧率、编码 |
-| Common Display | `display.*` | 屏幕、电源、输入源、布局 |
+| Common Display | `display.*` | 显示器自身能力，如屏幕、电源、亮度、分辨率 |
 | Common Brightness | `display.*` | 亮度、自动亮度、范围 |
+| Input Source / HID / GPIO | `input.*` | 输入源、按键、GPIO、KVM/HID；低频走 RPC，高频可走 STREAM |
+| Output Source / Routing / Layout | `output.*` | 输出源、输出接口、输入到输出的路由、幕墙/拼接/画中画布局 |
+| Meeting / Rooms | `room.*` | 会议室身份、日程、场景和参与设备；AXTP domain 使用单数 `room` |
+| Digital Signage | `signage.*` | 数字标牌播放列表、播放计划、媒体、外观、播放状态 |
 | Factory / Production Test | `diagnostic.*` | 产测、自检、报告、指标 |
 | HID Raw / KVM | `input.*` + `profile=control.hid_raw` | 低频走 RPC，高频走 STREAM |
 | OTA Chunk | `firmware.*` + `profile=firmware.ota` | 控制面 RPC，数据面 STREAM |
