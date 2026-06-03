@@ -9,7 +9,7 @@
 ```text
 业务需求或旧协议材料
         ↓
-docs/protocol/<domain>/*.md 评审与归类
+docs/protocol/<domain>/<domain.feature>.md 评审与归类
         ↓
 registry/domains/<domain>/domain.yaml
         ↓
@@ -38,9 +38,23 @@ docs/generated/*、tooling/*、runtimes/*/generated/*
 
 ## 协议审核标记
 
-`docs/protocol/<domain>/*.md` 直接使用以下标记进行人工审核：
+`docs/protocol/<domain>/<domain.feature>.md` 直接使用以下标记进行人工审核：
 
 - `[REVIEW-OK]`：命名、归属和接口方向符合 08/09，可进入人工确认或 registry 草案。
 - `[REVIEW-FIX]`：进入 registry 前必须修正文档、方法清单、错误策略、schema 或生成路径描述。
 - `[REVIEW-ASK]`：需要产品、设备实现或 legacy 行为确认后才能写入 `legacyRefs` 或 YAML。
 - `[REVIEW-BLOCKER]`：当前文档定位会误导新协议生成，必须先重写或拆分。
+
+
+## 优先实现的协议文档
+
+video/video.framing.md
+video/video.stream.md
+video/video.ndi.md
+video/video.rtsp.md
+network/network.wifi.md
+network/network.ap.md
+network/network.ip.md
+firmware/firmware.ota.md
+camera/camera.focus.md
+audio/audio.recording.md

@@ -4,7 +4,7 @@
 
 | Source | File | Line | Type | Legacy Wire | Command ID | Class | Method | Event | Config Name | Capability | AXTP Method | AXTP Event | Protocol Doc | Confidence | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 9 | method | DeviceDiscovery |  |  | DeviceDiscovery |  |  | network.serviceEndpoint | network.setServiceEndpointConfig |  | docs/protocol/network/network.config.md | high | 设备发现返回地址和协议入口，归 network.serviceEndpoint；设备身份字段进入 response schema。 |
+| rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 9 | method | DeviceDiscovery |  |  | DeviceDiscovery |  |  | network.serviceEndpoint | network.setServiceEndpointConfig |  | docs/protocol/network/network.serviceEndpoint.md | high | 设备发现返回地址和协议入口，归 network.serviceEndpoint；设备身份字段进入 response schema。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 569 | method | KeepAlive |  |  | KeepAlive |  |  | system.lifecycle | system.setLifecycleConfig |  |  | medium | 系统生命周期状态归 system.lifecycle。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 604 | method | CreateInputSource |  |  | CreateInputSource |  |  | room.source | room.setSourceConfig |  |  | high | 会议室输入源管理归 room.source。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 664 | method | GetInputSource |  |  | GetInputSource |  |  | room.source | room.getSourceConfig |  |  | high | 会议室输入源管理归 room.source。 |
@@ -89,8 +89,8 @@
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4472 | method | GetAMX100Ip |  |  | GetAMX100Ip |  |  | device.childDevice | device.getChildDeviceState |  |  | medium | AMX100/子设备连接与信息归 device.childDevice，联动算法另归 audio.algorithm。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4510 | method | SetLineOutVolume |  |  | SetLineOutVolume |  |  | audio.volume | audio.setVolumeConfig |  |  | high | 音量、增益、静音归 audio.volume。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4543 | method | GetLineOutVolume |  |  | GetLineOutVolume |  |  | audio.volume | audio.getVolumeState |  |  | high | 音量、增益、静音归 audio.volume。 |
-| rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4579 | method | WifiConnect |  |  | WifiConnect |  |  | network.wifi | network.connectWifi |  | docs/protocol/network/network.config.md | high | Wi-Fi 配置、扫描、连接和状态统一归 network.wifi。 |
-| rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4624 | method | GetWifiSignalStrength |  |  | GetWifiSignalStrength |  |  | network.wifi | network.getWifiState |  | docs/protocol/network/network.config.md | high | Wi-Fi 配置、扫描、连接和状态统一归 network.wifi。 |
+| rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4579 | method | WifiConnect |  |  | WifiConnect |  |  | network.wifi | network.connectWifi |  | docs/protocol/network/network.wifi.md | high | Wi-Fi 配置、扫描、连接和状态统一归 network.wifi。 |
+| rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4624 | method | GetWifiSignalStrength |  |  | GetWifiSignalStrength |  |  | network.wifi | network.getWifiState |  | docs/protocol/network/network.wifi.md | high | Wi-Fi 配置、扫描、连接和状态统一归 network.wifi。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4657 | method | VideoPlay |  |  | VideoPlay |  |  | diagnostic.videoTest | diagnostic.runVideoTest |  |  | high | VideoPlay 出现在产测/解码测试上下文，归 diagnostic.videoTest。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4685 | method | AudioPlay |  |  | AudioPlay |  |  | diagnostic.audioTest | diagnostic.runAudioTest |  |  | high | AudioPlay 出现在产测/播放测试上下文，归 diagnostic.audioTest。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4713 | method | CheckLineStatus |  |  | CheckLineStatus |  |  | device.state | device.getState |  |  | medium | 泛设备状态查询归 device.state，后续可按字段拆细。 |
@@ -98,7 +98,7 @@
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4807 | method | TestUsb |  |  | TestUsb |  |  | diagnostic.inputTest | diagnostic.runInputTest |  |  | high | 按键/USB/输入产测归 diagnostic.inputTest。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4852 | method | SetSn |  |  | SetSn |  |  | diagnostic.manufacturing | diagnostic.setManufacturingData |  |  | high | SN/MAC/HWID/加密信息写入归 diagnostic.manufacturing。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4896 | method | GetSn |  |  | GetSn |  |  | device.identity | device.getIdentity |  |  | high | 设备型号、SN、UID、HWID 等归 device.identity。 |
-| rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4944 | method | SetMacAddr |  |  | SetMacAddr |  |  | network.interface | network.setInterfaceConfig |  | docs/protocol/network/network.config.md | medium | MAC 地址属于 network.interface 标识字段。 |
-| rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4988 | method | GetMacAddr |  |  | GetMacAddr |  |  | network.interface | network.getInterfaceInfo |  | docs/protocol/network/network.config.md | medium | MAC 地址属于 network.interface 标识字段。 |
+| rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4944 | method | SetMacAddr |  |  | SetMacAddr |  |  | network.interface | network.setInterfaceConfig |  | docs/protocol/network/network.interface.md | medium | MAC 地址属于 network.interface 标识字段。 |
+| rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 4988 | method | GetMacAddr |  |  | GetMacAddr |  |  | network.interface | network.getInterfaceInfo |  | docs/protocol/network/network.interface.md | medium | MAC 地址属于 network.interface 标识字段。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 5036 | method | ResetButton |  |  | ResetButton |  |  | diagnostic.inputTest | diagnostic.runInputTest |  |  | high | 按键/USB/输入产测归 diagnostic.inputTest。 |
 | rooms_ws_json | docs/legacy-protocols/Rooms协议文档.md | 5079 | method | SetHwid |  |  | SetHwid |  |  | diagnostic.manufacturing | diagnostic.setManufacturingData |  |  | high | SN/MAC/HWID/加密信息写入归 diagnostic.manufacturing。 |

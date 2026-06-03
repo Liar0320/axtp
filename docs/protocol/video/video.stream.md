@@ -3,7 +3,7 @@
 状态：Protocol Review Draft
 归属域：`video.stream`
 适用范围：通过 AXTP `PayloadType = STREAM` 承载的设备视频预览、编码视频输出、MJPEG/Raw 调试流和 legacy 视频流迁移。
-依赖文档：`docs/specs/06-AXTP-Stream-Spec.md`、`docs/protocol/stream/stream.flowcontrol.md`、`docs/protocol/video/video.ndi.md`、`docs/protocol/video/video.framing.md`
+依赖文档：`docs/specs/06-AXTP-Stream-Spec.md`、`docs/protocol/stream/stream.flowControl.md`、`docs/protocol/video/video.ndi.md`、`docs/protocol/video/video.framing.md`
 
 本文是 `docs/protocol` 评审输入，不是最终生成事实源。采纳后需要同步到 `registry/domains/video/domain.yaml`、`registry/core/stream_profile.yaml`、method/event/capability/schema/error registry，并运行 generator。
 

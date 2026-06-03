@@ -10,6 +10,32 @@
 
 ---
 
+## 0. 速读：命名治理只管“归属和粒度”
+
+08 用来回答：一个业务能力应该放在哪个 domain、feature 该多粗、method/event 应该叫什么。它不分配 methodId / eventId / errorCode / capabilityId，具体编号和机器事实仍由 09-14 与 registry YAML 负责。
+
+命名决策顺序：
+
+```text
+1. 先选 domain：device / display / firmware / network / stream / ...
+2. 再选 feature：domain.feature，表达能力块，不表达字段名。
+3. 再定义 method/event：method 表达动作，event 表达状态变化。
+4. 最后进入 registry：普通业务事实默认写入 registry/domains/<domain>/domain.yaml。
+```
+
+`docs/protocol/<domain>/<domain.feature>.md` 中的每个协议方案草案，都必须先按本文件反向确认 domain、feature 粒度、method/event 命名模板和 stream 边界；确认通过后才能进入 09-13 的 ID、schema 和 registry 固化流程。
+
+关键边界：
+
+| 不要这样 | 应该这样 |
+|---|---|
+| `stream.fileTransfer` 表达业务类型 | `file.*` method 建流，STREAM 只承载 streamId/seqId/cursor/data |
+| `network.wifiConfig` 作为 feature | `network.wifi` feature，config 是字段或方法 |
+| 把旧 CmdValue 逐条变成 capability | 按 domain.feature 聚合能力 |
+| 把 transport 名称写进业务 feature | transport/profile 由 03/14/18 表达 |
+
+---
+
 ## 1. 文档定位
 
 本文档定义 AXTP 能力分类中的 `domain.feature` 体系，用于统一能力块粒度、Capability ID 命名、RPC 方法命名、事件命名和 legacy 迁移归类。
@@ -357,6 +383,8 @@ network.getApConfig
 
 本清单用于新增业务协议、legacy 迁移和 capability registry 整理。未列出的 feature 必须先按本规范判断粒度，再进入 registry。
 
+本节只列 capability feature。Method、event、schema 字段和历史分类说明必须放入对应 `docs/protocol/<domain>/<domain.feature>.md`、registry 草案或 archive 说明中。
+
 ### 5.1 Audio
 
 ```text
@@ -372,17 +400,6 @@ audio.playback
 audio.uac
 audio.dante
 ```
-
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `audio.source` | `audio.routing` / `audio.input` | 输入源选择归 input，输入输出关系归 routing。 |
-| `audio.lineIn` | `audio.input` | line-in 是输入类型，不是独立 feature。 |
-| `audio.backgroundMusic` | `audio.playback` | 避免使用业务定制名。 |
-| `audio.algorithm` | `audio.algorithm` | 保留，用于 noise suppression / echo cancellation / auto gain control 等算法配置。 |
-| `audio.eq` | `audio.eq` | 保留，EQ 结构复杂，独立于 algorithm。 |
-| `audio.recording` | `audio.recording` | 用于音频录制、抓音、stream/file 输出。 |
 
 ### 5.2 Video
 
@@ -401,19 +418,6 @@ video.rtsp
 video.ndi
 ```
 
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `video.framingMode` | `video.framing` | mode 是字段或状态。 |
-| `video.framingConfig` | `video.framing` | config 是方法或 schema。 |
-| `video.wallLayout` | `video.layout` | 使用通用布局能力块。 |
-| `video.presentationScene` | `video.scene` | 使用通用场景能力块。 |
-| `video.liveStream` | `video.stream` | 直播属于视频流能力。 |
-| `video.mjpeg` | `video.stream` / `video.encoder` | codec 不作为独立 feature。 |
-| `video.rtsp` | `video.rtsp` | 保留，用于 RTSP 服务配置。 |
-| `video.ndi` | `video.ndi` | 保留，用于 NDI 服务配置。 |
-
 ### 5.3 Camera
 
 ```text
@@ -426,12 +430,6 @@ camera.ptz
 camera.calibration
 ```
 
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `camera.focusZoom` | `camera.focus` / `camera.zoom` / `camera.ptz` | focus、zoom、ptz 是不同能力块。 |
-
 ### 5.4 Display
 
 ```text
@@ -443,14 +441,6 @@ display.input
 display.output
 ```
 
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `display.brightnessMin` | `display.brightness` | min 是 brightness capabilities/config schema 字段。 |
-| `display.brightnessMax` | `display.brightness` | max 是 brightness capabilities/config schema 字段。 |
-| `display.brightnessStep` | `display.brightness` | step 是 brightness capabilities/config schema 字段。 |
-
 ### 5.5 Network
 
 ```text
@@ -460,55 +450,6 @@ network.wifi
 network.ap
 network.bluetooth
 network.serviceEndpoint
-```
-
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `network.interfaces` | `network.interface` | feature 使用单数。 |
-| `network.ipConfig` | `network.ip` | config 是方法或 schema。 |
-| `network.dnsConfig` | `network.ip` | DNS 是 IP 配置字段组。 |
-| `network.defaultRoute` | `network.ip` | route 是 IP 配置字段组。 |
-| `network.wifiConfig` | `network.wifi` | Wi-Fi 不只包含配置，还包含扫描、连接和状态。 |
-| `network.wifiScan` | `network.wifi` | scan 是动作方法。 |
-| `network.wifiConnection` | `network.wifi` | connection 是状态或动作结果。 |
-| `network.apConfig` | `network.ap` | config 是方法或 schema。 |
-| `network.apState` | `network.ap` | state 是状态方法或事件。 |
-| `network.softAp` | `network.ap` | SoftAP 是 AP 工作模式，不作为单独 feature。 |
-| `network.bluetooth` | `network.bluetooth` | 保留。 |
-| `network.serviceEndpoint` | `network.serviceEndpoint` | 保留，用于服务端点发现或控制服务入口信息。 |
-
-`network.wifi` 下可包含方法：
-
-```text
-network.getWifiCapabilities
-network.getWifiConfig
-network.setWifiConfig
-network.resetWifiConfig
-network.scanWifi
-network.connectWifi
-network.disconnectWifi
-network.getWifiState
-network.wifiConfigChanged
-network.wifiStateChanged
-network.wifiScanResultReported
-```
-
-`network.ap` 下可包含方法：
-
-```text
-network.getApCapabilities
-network.getApConfig
-network.setApConfig
-network.resetApConfig
-network.startAp
-network.stopAp
-network.getApState
-network.getApClients
-network.apConfigChanged
-network.apStateChanged
-network.apClientChanged
 ```
 
 RTSP / NDI / Dante / VISCA 等具体服务配置仍归各自业务域，不归 `network.serviceEndpoint`。
@@ -523,14 +464,6 @@ storage.media
 storage.recording
 storage.index
 ```
-
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `storage.mediaFiles` | `storage.media` | files 是资源集合，不作为 feature 后缀。 |
-| `storage.recordingFiles` | `storage.recording` | recording 是能力块，文件列表是方法或 schema。 |
-| `storage.fileIndex` | `storage.index` | index 是存储索引能力块。 |
 
 ### 5.7 Stream / File
 
@@ -553,17 +486,6 @@ file.transfer
 file.storage
 ```
 
-必须删除或迁移以下分类：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `stream.fileTransfer` | `file.transfer` | 文件传输是 file 业务域能力。 |
-| `stream.firmwareTransfer` | `firmware.ota` | 固件传输是 OTA 业务流。 |
-| `stream.mediaTransfer` | `video.stream` / `audio.recording` | 媒体流由媒体业务域创建。 |
-| `stream.logTransfer` | `log.stream` / `log.export` | 日志实时流和导出任务归 log 域。 |
-| `stream.previewStream` | `video.stream` | preview 是视频流用途，不是 stream feature。 |
-| `stream.hidMedia` | `video.stream` / `audio.recording` / `stream.flowControl` | HID 是 transport，media 是业务分类。 |
-
 ### 5.8 Firmware
 
 ```text
@@ -571,33 +493,6 @@ firmware.info
 firmware.ota
 firmware.updatePolicy
 ```
-
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `firmware.version` | `firmware.info` | version 是固件信息字段。 |
-| `firmware.updateState` | `firmware.ota` | state 是 OTA 状态方法或事件。 |
-| `firmware.updatePolicy` | `firmware.updatePolicy` | 保留，可选。 |
-
-`firmware.ota` 下可包含方法：
-
-```text
-firmware.getOtaCapabilities
-firmware.beginOta
-firmware.getOtaState
-firmware.getOtaTransferState
-firmware.commitOtaBatch
-firmware.verifyOtaFiles
-firmware.installOta
-firmware.confirmOta
-firmware.rollbackOta
-firmware.cancelOta
-firmware.otaStateChanged
-firmware.otaProgressReported
-```
-
-已 stable 的 `firmware.begin` / `firmware.end` / `firmware.verify` / `firmware.apply` 可以作为 v1 兼容方法保留；新增 OTA 方法优先使用带 `Ota` 的明确命名。
 
 ### 5.9 Device
 
@@ -612,14 +507,6 @@ device.inventory
 device.childDevice
 ```
 
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `device.status` | `device.state` | 统一使用 state 表达状态查询和变化。 |
-| `device.capability` | `capability.registry` | capability 是独立域或注册表能力。 |
-| `device.childDevices` | `device.childDevice` | feature 使用单数。 |
-
 ### 5.10 System
 
 ```text
@@ -629,14 +516,6 @@ system.reset
 system.initialization
 system.license
 ```
-
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `system.timezone` | `system.time` | timezone 是 time 配置字段。 |
-| `system.rebootPolicy` | `system.lifecycle` | 除非存在复杂策略，否则归生命周期能力。 |
-| `system.license` | `system.license` | 仅用于系统级 license。 |
 
 算法模块 license、产测写入、工厂授权更建议归 `diagnostic.*` 或 `vendor.*`。
 
@@ -650,14 +529,6 @@ input.kvm
 input.gpio
 ```
 
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `ioinput.source` | `input.source` | 修正 domain 拼写。 |
-| `input.gp` | `input.gpio` | 使用标准 GPIO 术语。 |
-| 接听/挂断键、组合键、HID 上报开关 | `input.hid` / `input.key` | 按是否属于 HID 上报或本地按键能力归类。 |
-
 ### 5.12 Room / Collaboration
 
 ```text
@@ -668,14 +539,6 @@ room.layout
 room.participant
 ```
 
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `room.identity` | `room.info` | identity 是 room info 字段组。 |
-| `room.inputSource` | `room.source` | source 已能表达输入源。 |
-| `room.participantDevice` | `room.participant` | participant 是能力块，device 是字段或关系。 |
-
 ### 5.13 Signage
 
 ```text
@@ -685,12 +548,6 @@ signage.schedule
 signage.playback
 signage.osd
 ```
-
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `signage.playbacksignage.osd` | `signage.playback` / `signage.osd` | 拼接错误，必须拆分。 |
 
 ### 5.14 Log
 
@@ -708,7 +565,7 @@ log.files
 | `log.export` | 日志导出任务。 |
 | `log.files` | 日志文件列表、日志文件元信息、删除。 |
 
-日志文件下载仍然使用 `file.download` 或 `file.transfer` 下的方法，不在 `log.files` 中承载二进制数据面。
+日志文件下载仍然使用 `file.transfer` 下的方法，不在 `log.files` 中承载二进制数据面。
 
 ### 5.15 Diagnostic / Manufacturing
 
@@ -724,13 +581,6 @@ diagnostic.calibration
 diagnostic.manufacturing
 diagnostic.report
 ```
-
-迁移说明：
-
-| 旧分类 | 新分类 | 说明 |
-|---|---|---|
-| `diagnostic.buttonTest` | `diagnostic.inputTest` | 按键测试属于输入测试。 |
-| `diagnostic.manufacturingIdentity` | `diagnostic.manufacturing` | identity 是产测信息字段。 |
 
 产测、校准、license 写入、工厂参数写入建议归 `diagnostic.*` 或厂商私有 `vendor.*`。
 

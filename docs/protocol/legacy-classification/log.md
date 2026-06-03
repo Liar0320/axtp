@@ -4,6 +4,6 @@
 
 | Source | File | Line | Type | Legacy Wire | Command ID | Class | Method | Event | Config Name | Capability | AXTP Method | AXTP Event | Protocol Doc | Confidence | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 185 | command | CommonGetLogData | 0xC013E / 0x013E -> 0x01BE |  | CommonGetLogData |  |  | log.export | log.getExportState |  | docs/protocol/log/log.transfer.md | high | 日志打包、上传、导出结果归 log.export。 |
-| signage_sdk | docs/legacy-protocols/NearHub-Launcher数字标牌设备管理通用管理命令.md | 756 | method | RequestLogUpload |  |  | RequestLogUpload |  |  | log.export | log.createExport |  | docs/protocol/log/log.transfer.md | high | 日志打包、上传、导出结果归 log.export。 |
-| signage_sdk | docs/legacy-protocols/NearHub-Launcher数字标牌设备管理通用管理命令.md | 767 | method | NotifyLogUploadResult |  |  | NotifyLogUploadResult |  |  | log.export |  | log.exportStateChanged | docs/protocol/log/log.transfer.md | high | 日志打包、上传、导出结果归 log.export。 |
+| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 185 | command | CommonGetLogData | 0xC013E / 0x013E -> 0x01BE |  | CommonGetLogData |  |  | log.export | log.getExportState |  | docs/protocol/log/log.export.md | high | 日志打包、上传、导出结果归 log.export。 |
+| signage_sdk | docs/legacy-protocols/NearHub-Launcher数字标牌设备管理通用管理命令.md | 756 | method | RequestLogUpload |  |  | RequestLogUpload |  |  | log.export | log.createExport |  | docs/protocol/log/log.export.md | high | 日志打包、上传、导出结果归 log.export。 |
+| signage_sdk | docs/legacy-protocols/NearHub-Launcher数字标牌设备管理通用管理命令.md | 767 | method | NotifyLogUploadResult |  |  | NotifyLogUploadResult |  |  | log.export |  | log.exportStateChanged | docs/protocol/log/log.export.md | high | 日志打包、上传、导出结果归 log.export。 |
