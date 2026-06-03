@@ -10,6 +10,34 @@
 
 ---
 
+## 0. 速读：新增 Method 怎么做
+
+Method 是 RPC 控制面的业务入口。线上 JSON 使用 method name，Binary 使用 `methodId:uint16`；二者必须指向同一 registry 事实。
+
+新增 method 的默认流程：
+
+```text
+1. 从 docs/protocol/<domain>/<domain.feature>.md 收集候选 method。
+2. 按 08 判断 domain.feature 和 method 命名。
+3. 确认协议草案后，反向确认本文件中的 methodId、bitOffset、schema 绑定和规划表是否需要更新。
+4. 在 registry/domains/<domain>/domain.yaml 增加 method。
+5. 分配 domain 内稳定 bitOffset，用于 capability.supportedMethods。
+6. 绑定 requestSchema / responseSchema / errors / events。
+7. 需要晋升 Core/MVP 时，再迁入 registry/method/method_registry.yaml。
+8. 重新生成 protocol IR 和 generated docs。
+```
+
+| 决策点 | 默认选择 | 例外 |
+|---|---|---|
+| 写入位置 | domain YAML | Core/MVP 采纳后写入 `registry/method/` |
+| ID 稳定性 | stable methodId 不复用 | draft 可按治理流程调整 |
+| 能力发现 | `capability.supportedMethods` domain bitmap | 完整 Capability Model 留到 v2/P1 |
+| 数据面 | method 只建流或控制 | 连续数据必须走 STREAM |
+
+不要为了业务类型新增 PayloadType；methodId 出现在 RPC Payload，不出现在 Frame Header。
+
+---
+
 ## 1. 文档定位
 
 本文档定义 method registry 的元模型、MethodId 分段和正式 MethodId 规划表。稳定 method 内容必须写入 `registry/method/` 或 `registry/domains/<domain>/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `methods:` 由 Generator 聚合生成。

@@ -24,15 +24,47 @@
 
 ---
 
+## 0. 速读：Generator 只从 YAML 事实源生成
+
+Generator v1 的最终机器输入仍是 `registry/**/*.yaml` 和 `registry/domains/**/*.yaml`。协议生成治理链路必须先把 `docs/protocol/<domain>/<domain.feature>.md` 作为协议方案输入：更新协议草案并人工确认后，反向确认 08-13，再固化到 YAML 并生成产物。实现者不得手写生成产物来修协议事实。
+
+```text
+docs/protocol/<domain>/<domain.feature>.md
+        -> protocol draft review / confirmation
+        -> reverse-confirm docs/specs/08-13
+        -> registry/**/*.yaml + registry/domains/**/*.yaml
+registry/**/*.yaml + registry/domains/**/*.yaml
+        -> protocol/axtp.protocol.yaml
+        -> docs/generated/protocol.md
+        -> docs/generated/protocol.json
+        -> runtime/tooling generated outputs
+```
+
+修改入口速查：
+
+| 目标 | 修改源 | Generator 输出 |
+|---|---|---|
+| 新增或更新业务协议方案 | `docs/protocol/<domain>/<domain.feature>.md` | 协议草案输入；确认后才进入 YAML |
+| 新增业务 method/event/type/profile | `registry/domains/<domain>/domain.yaml` | protocol IR、generated protocol docs、runtime metadata |
+| 新增 Core/MVP registry 事实 | 对应 `registry/` YAML | registry generated docs、protocol IR |
+| 调整 wire format 说明 | `docs/specs/02/04/05/06` | 不由 Generator 直接定义 |
+| 修 generated 内容 | 修 YAML 或 Generator 逻辑后重新生成 | 不直接编辑 generated 文件 |
+
+---
+
 ## 1. 文档目的
 
 本文定义 AXTP Generator v1 的当前实现规则和后续演进方向。
 
-Generator v1 的核心定位已经从早期的“Registry 表格生成器”升级为“Protocol Definition 文档编译器”。它以 `registry/**/*.yaml` 和 `registry/domains/**/*.yaml` 为机器事实源，生成 `protocol/axtp.protocol.yaml` 作为聚合后的 Protocol IR，再由 Protocol IR 生成面向用户阅读的协议文档和面向工具消费的 JSON。
+Generator v1 的核心定位已经从早期的“Registry 表格生成器”升级为“Protocol Definition 文档编译器”。治理流程先使用 `docs/protocol/<domain>/<domain.feature>.md` 作为协议方案输入；方案确认并回写 08-13 / registry YAML 后，Generator 以 `registry/**/*.yaml` 和 `registry/domains/**/*.yaml` 为机器事实源，生成 `protocol/axtp.protocol.yaml` 作为聚合后的 Protocol IR，再由 Protocol IR 生成面向用户阅读的协议文档和面向工具消费的 JSON。
 
 当前主流程：
 
 ```text
+docs/protocol/<domain>/<domain.feature>.md
+        ↓ review / confirm protocol draft
+docs/specs/08-13 reverse confirmation
+        ↓ update source facts
 registry/**/*.yaml + registry/domains/**/*.yaml
         ↓ validate-sources
 Source Model
@@ -67,6 +99,13 @@ registry/**/*.yaml
 registry/domains/**/*.yaml
 ```
 
+以下目录是协议方案输入，不是最终机器事实源：
+
+```text
+docs/protocol/<domain>/<domain.feature>.md
+docs/protocol/legacy-classification/**
+```
+
 以下文件和目录是生成产物，不得手写：
 
 ```text
@@ -83,13 +122,32 @@ generators/src/__snapshots__/*
 
 ### 2.2 三段式编译
 
-Generator v1 必须维持三段式边界：
+Generator v1 必须维持三段式边界，并在第一段纳入协议方案输入：
 
 | 阶段 | 输入 | 输出 | 责任 |
 | ---- | ---- | ---- | ---- |
-| 业务录入段 | 规范、规划材料、用户业务需求 | `registry/**/*.yaml` / `registry/domains/**/*.yaml` | 固化 ID、schema、error、event、capability、profile |
-| Protocol IR 段 | Source YAML | `protocol/axtp.protocol.yaml` | 聚合、标准化、关键事实校验 |
-| 成果物段 | Protocol IR | `docs/generated/protocol.md` / `protocol.json` 等 | 面向用户和工具输出稳定产物 |
+| 协议方案段 | `docs/protocol/<domain>/<domain.feature>.md`、legacy classification、08-13 规则 | 已确认协议草案、08-13 反向确认项、YAML 修改计划 | 确认 domain.feature、method/event/schema/error/capability/profile 是否成立 |
+| 事实源段 | 已确认草案 | `registry/**/*.yaml` / `registry/domains/**/*.yaml` | 固化 ID、schema、error、event、capability、profile |
+| 生成段 | Source YAML | `protocol/axtp.protocol.yaml`、`docs/generated/protocol.md/json` 等 | 聚合、校验并输出稳定产物 |
+
+规则：
+
+- 所有 `docs/protocol/<domain>/<domain.feature>.md` 草案都进入方案输入清单；`legacy-classification` 只作为迁移证据，不直接成为 registry 事实。
+- 协议草案确认后，必须反向确认 08-13：08 命名归属，09 ID/Domain/生成链路，10 method，11 event，12 error，13 schema/capability。
+- Source YAML 可以有多个输入文件，但 build 后必须合并为一个 Protocol IR。
+- Protocol IR 可以生成多个产物，但不得反向手写修改。
+- 修改 generated 文档发现的问题时，必须回到协议草案、Source YAML 或 00-19 spec，而不是直接改 generated 文件。
+
+### 2.2.1 Codex skill 边界
+
+Generator 流程外侧允许使用两个 Codex skill 辅助治理，但两个 skill 的写入边界不同：
+
+| Skill | 何时运行 | 必须检查 | 不允许做什么 |
+|---|---|---|---|
+| 添加业务协议 | 产品/架构师给出大白话需求、流程文档或旧协议线索时 | 遍历 `docs/protocol/<domain>/<domain.feature>.md`，检索可复用草案、待优化草案和需要新增的 domain.feature | 不写 registry YAML，不运行生成器产出正式协议 |
+| 协议采纳 | 内部评审确认草案后 | 反向确认 08-13、检查 YAML 冲突、写入 registry/domain YAML、运行 Generator | 不采纳 `[REVIEW-ASK]` / `[REVIEW-BLOCKER]`，不手写 generated |
+
+因此，`docs/protocol` 到 YAML 之间必须有人工评审门禁；Generator 只处理门禁之后的 YAML 事实。
 
 ### 2.3 Generator 不实现运行时
 
@@ -621,26 +679,36 @@ node dist/cli.js generate-registry --spec ..
 
 ## 9. 新增业务流程
 
-新增业务必须先执行证据链分析，再写 YAML。
+新增业务必须先执行协议方案审查和证据链分析，再写 YAML。
 
 推荐流程：
 
 ```text
-1. 读取 docs/specs/08 命名治理、docs/specs/09-14 registry/MVP 表格和 docs/specs/19 generator 规则
-2. 确认 domain、ID range、method/event/error/capability 候选
-   - 迁移类业务先参考 `docs/migration/AXTP_Legacy_Migration_Matrix.xlsx` 的 `93_Feature分类参考` 和对应聚合视图，确认 `domain.feature` 边界
-3. 检查 registry/**/*.yaml 和 registry/domains/**/*.yaml 是否已有等价条目
-4. 默认写入 registry/domains/<domain>/domain.yaml；只有 Core/MVP 晋升或共享基础事实才写入 registry/
-5. 填写 method/event/type/error/capability/profile 表单
-6. 运行 validate-sources
-7. 运行 build-protocol
-8. 运行 emit-protocol
-9. 检查 generated protocol 文档是否易读
-10. 更新或新增测试
+1. 产品/架构师提交业务流程描述、架构草案或旧协议线索。
+2. 运行“添加业务协议”skill，收集 docs/protocol/<domain>/<domain.feature>.md 中所有相关协议方案文件。
+3. 读取 docs/specs/08 命名治理、docs/specs/09-13 registry/MVP 表格和 docs/specs/19 generator 规则。
+4. 更新协议草案：判断复用现有协议、优化现有草案，或新增 domain.feature 草案；补齐候选 method/event/schema/error/capability/profile、legacyRefs 和待确认问题。
+5. 人工评审并确认协议草案；`[REVIEW-ASK]` / `[REVIEW-BLOCKER]` 不得直接进入 YAML。
+6. 运行“协议采纳”skill，反向确认 docs/specs/08-13：
+   - 08：domain.feature 归属、命名模板、feature 粒度
+   - 09：Domain/ID 规划、Protocol Definition 映射、生成链路
+   - 10：methodId、bitOffset、request/response schema
+   - 11：eventId、eventMasks bitOffset、event schema
+   - 12：errorCode 范围、RPC/CONTROL/STREAM 使用位置
+   - 13：schema fieldId、capabilityId、supportedMethods 关系
+7. 检查 registry/**/*.yaml 和 registry/domains/**/*.yaml 是否已有等价条目。
+8. 默认写入 registry/domains/<domain>/domain.yaml；只有 Core/MVP 晋升或共享基础事实才写入 registry/。
+9. 运行 validate-sources。
+10. 运行 build-protocol。
+11. 运行 emit-protocol。
+12. 检查 generated protocol 文档是否完整反映已确认草案。
+13. 研发根据 generated 产物开发和上架 feature。
+14. 更新或新增测试。
 ```
 
 约束：
 
+- 不得从 `docs/protocol` 直接生成最终 `protocol/axtp.protocol.yaml`；必须经过草案确认、08-13 反向确认和 YAML 固化。
 - 不得直接编辑 `protocol/axtp.protocol.yaml`。
 - 不得直接编辑 `docs/generated/protocol.md/json`。
 - 不得在 core registry 与 domain YAML 中重复定义同一协议事实。

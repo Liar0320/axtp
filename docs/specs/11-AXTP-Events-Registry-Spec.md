@@ -10,6 +10,32 @@
 
 ---
 
+## 0. 速读：新增 Event 怎么做
+
+Event 是 RPC 控制面的异步通知。低频状态变化走 RPC Event，高频连续数据走 STREAM。
+
+新增 event 的默认流程：
+
+```text
+1. 从 docs/protocol/<domain>/<domain.feature>.md 收集候选 event。
+2. 按 08 选择 domain 和过去式/状态变化事件名。
+3. 确认协议草案后，反向确认本文件中的 eventId、eventMasks bitOffset、event schema 和规划表是否需要更新。
+4. 在 registry/domains/<domain>/domain.yaml 增加 event。
+5. 分配 domain 内稳定 bitOffset，用于 Identify/Reidentify 的 eventMasks。
+6. 绑定 eventSchema、severity、trigger 和相关 capability。
+7. 需要晋升 Core/MVP 时，再迁入 registry/event/event_registry.yaml。
+8. 重新生成 protocol IR 和 generated docs。
+```
+
+| 决策点 | 默认选择 | 说明 |
+|---|---|---|
+| 承载方式 | `PayloadType=RPC, rpcOp=EVENT` | EventId 不进入 Frame Header |
+| 订阅方式 | domain-scoped `eventMasks` | MVP 可采用全量广播 |
+| 高频数据 | STREAM | video frame / audio frame / OTA chunk 不走 Event |
+| 响应关系 | Event 不替代 Response | Request 成败仍由 RPC Response 表达 |
+
+---
+
 ## 1. 文档定位
 
 本文档定义 event registry 的元模型、EventId 分段和正式 EventId 规划表。稳定 event 内容必须写入 `registry/event/` 或 `registry/domains/<domain>/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `events:` 由 Generator 聚合生成。

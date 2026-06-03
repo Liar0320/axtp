@@ -10,6 +10,30 @@
 
 ---
 
+## 0. 速读：新增 Profile 怎么做
+
+Profile 是一组实现要求的集合，用来声明某个设备、SDK 或测试目标必须支持哪些 method/event/type/error/transport。Profile 不改变 wire format，也不允许会话中动态切换 Frame Profile。
+
+新增 profile 的默认流程：
+
+```text
+1. 判断这是业务 domain profile、MVP/Core profile 还是低带宽降级 profile。
+2. 普通业务 profile 写入 registry/domains/<domain>/domain.yaml。
+3. Core/MVP 或共享 profile 写入 registry/capability/。
+4. 引用已存在的 method/event/type/error/transport。
+5. frameProfile 必须与 transportProfiles 的固定映射一致。
+6. 重新生成 protocol IR 和 generated docs。
+```
+
+| 场景 | Profile 约束 |
+|---|---|
+| Standard Framed | 可要求 CONTROL / RPC / STREAM，Frame Profile 固定为 `STANDARD_FRAME` |
+| WebSocket Unframed JSON | RPC-only，不得要求 CONTROL 或 STREAM |
+| 低带宽降级 | 必须进入 18 的降级边界，不冒充 v1 Core |
+| MVP 验收 | 使用最小闭环 method/event/type/error 集合 |
+
+---
+
 ## 1. 文档定位
 
 本文档定义 implementation profile 的元模型和 MVP 最小实现注册表。稳定 profile 内容必须写入 `registry/capability/` 或 `registry/domains/<domain>/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `profiles:` 由 Generator 聚合生成。

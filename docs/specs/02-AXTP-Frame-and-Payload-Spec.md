@@ -37,6 +37,24 @@ AXTP v1 定义两条正式接入路径：
 
 同一连接不得混用两种模式。WebSocket Unframed JSON 使用 05《RPC Session Spec》的 `sid` / `op` / `d` JSON Envelope，不承载 Frame Header、CONTROL Payload、STREAM Payload、CRC 或 ACK/NACK。
 
+### 2.1 两条路径的线上外形
+
+Standard Framed 路径在线上始终是：
+
+```text
+Standard Frame Header(12B) + Payload(N) + CRC16(2B)
+```
+
+Frame Header 只告诉接收方 Payload 属于 CONTROL / RPC / STREAM 哪一类。Payload 内部结构由对应 parser 继续解析。
+
+WebSocket Unframed JSON 路径在线上始终是：
+
+```text
+WebSocket message payload = JSON { "sid": "...", "op": N, "d": { ... } }
+```
+
+该路径没有 Frame Header、CONTROL Payload、STREAM Payload、CRC16、Binary RPC 11B Header，也不参与 CONTROL ACK/NACK / RESUME。
+
 ---
 
 ## 3. PayloadType
@@ -62,6 +80,12 @@ PayloadType 只选择一级 parser，不表达具体业务类型：
 ## 4. Standard Frame Header
 
 AXTP v1 Core 只要求实现 Standard Frame：
+
+```text
++-----------------------------+------------+-----------+
+| Standard Frame Header (12B) | Payload(N) | CRC16(2B) |
++-----------------------------+------------+-----------+
+```
 
 ```text
 Offset  0: Magic[0](1)  Magic[1](1)  Version(1)  PayloadType(1)
@@ -118,12 +142,44 @@ MessageId 标识一次完整逻辑 Message：
 
 Standard Frame Header 只负责承载 Payload，不解释 Payload 内部业务结构：
 
+```text
+CONTROL frame:
+  Standard Frame Header(payloadType=CONTROL)
+  + Control Payload = opcode(1) + controlId(2) + statusCode(2) + TLV body(N)
+  + CRC16
+
+RPC Binary frame:
+  Standard Frame Header(payloadType=RPC)
+  + RPC Binary Payload = rpcEncoding(1) + rpcOp(1) + requestId(4)
+                       + methodOrEventId(2) + statusCode(2) + bodyEncoding(1)
+                       + body(N)
+  + CRC16
+
+RPC JSON frame:
+  Standard Frame Header(payloadType=RPC)
+  + RPC JSON Payload = UTF-8 JSON { "sid": "...", "op": N, "d": { ... } }
+  + CRC16
+
+STREAM frame:
+  Standard Frame Header(payloadType=STREAM)
+  + STREAM Payload = streamId(4) + seqId(4) + cursor(8) + data(N)
+  + CRC16
+```
+
+对应关系：
+
 | PayloadType | Payload 内部结构 | 规范归属 |
 |---|---|---|
 | CONTROL | 5B 固定头 + TLV body | 04《Control Session Spec》 |
 | RPC / BINARY | 11B Binary RPC Header + body | 05《RPC Session Spec》 |
 | RPC / JSON | JSON `sid` / `op` / `d` envelope | 05《RPC Session Spec》 |
 | STREAM | 16B STREAM Header + data | 06《Stream Spec》 |
+
+WebSocket Unframed JSON 不包在 Standard Frame 中：
+
+```text
+WebSocket message payload = JSON { "sid": "...", "op": N, "d": { ... } }
+```
 
 STREAM Header 固定 16B：`streamId:uint32`、`seqId:uint32`、`cursor:uint64`。新增业务流类型只扩展 Stream Profile Registry，不改变 STREAM Header。
 

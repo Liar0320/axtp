@@ -10,9 +10,50 @@
 
 ---
 
+## 0. 速读：Protocol Definition 怎么改
+
+09-14 描述的是 registry 元模型和当前编号规划，真正的实现事实源在 YAML。`docs/protocol/<domain>/<domain.feature>.md` 是协议方案输入和草案评审区；草案确认后，必须反向确认 08-13 的命名、ID、method/event/error/schema/capability 规则，再固化到 YAML。`protocol/axtp.protocol.yaml`、`docs/generated/*` 是生成产物，不得手写。
+
+```text
+docs/protocol/<domain>/<domain.feature>.md
+        -> protocol draft review / confirmation
+        -> reverse-confirm docs/specs/08-13
+        -> registry/**/*.yaml
+registry/**/*.yaml
+registry/domains/**/*.yaml
+        -> protocol/axtp.protocol.yaml
+        -> docs/generated/protocol.md / protocol.json / runtime generated files
+```
+
+改协议事实时按这个顺序判断：
+
+| 你要做什么 | 修改位置 | 说明 |
+|---|---|---|
+| 新增或更新业务协议方案 | `docs/protocol/<domain>/<domain.feature>.md` | 作为草案输入，需人工确认后才能固化 |
+| 新增普通业务 method/event/type/error/profile | `registry/domains/<domain>/domain.yaml` | 默认路径，避免污染 core registry |
+| 晋升为 Core/MVP 或跨 domain 共享 | 对应 `registry/` 核心 YAML | 迁移后删除 domain 里的重复条目 |
+| 新增或调整旧协议映射 | `registry/legacy/legacy_mapping.yaml` | 长期迁移事实进入机器源 |
+| 调整 wire format | 02 / 04 / 05 / 06 | 不在 registry 文档里重定义 header |
+| 修改生成产物 | 运行 Generator | 不手写 `protocol/` 或 `docs/generated/` |
+
+禁止事项：从 `docs/protocol` 直接生成最终协议、跳过 08-13 反向确认、新增业务 PayloadType、把 video/audio/ota/file 放进 Frame Header、同一事实在 core 和 domain YAML 双写、复用 stable ID。
+
+Codex 交互应拆成两个 skill 阶段：
+
+| 阶段 | Skill 职责 | 允许修改 | 输出 |
+|---|---|---|---|
+| 协议草案阶段 | 根据产品/架构师的大白话或文档，遍历 `docs/protocol/<domain>/<domain.feature>.md`，判断是否已有协议可复用、需要优化旧草案，或需要新增 domain.feature 草案 | `docs/protocol/**` 草案与待确认问题 | 可评审的协议草案，带候选 method/event/schema/error/capability/profile 和 `[REVIEW-*]` 标记 |
+| 协议采纳阶段 | 在内部评审确认后，将草案反向确认到 08-13，补齐正式规范表和 registry YAML，再运行 Generator | `docs/specs/08-13`、`registry/**`、`registry/domains/**` | `protocol/axtp.protocol.yaml`、`docs/generated/*`、runtime/tooling 生成物 |
+
+草案阶段必须输出三类结论：已有协议可直接复用、现有草案需要优化、新建 domain.feature 草案。采纳阶段必须只处理已确认事实；带 `[REVIEW-ASK]` 或 `[REVIEW-BLOCKER]` 的内容不得进入 YAML。
+
+研发只消费采纳阶段后的生成物进行开发；新 feature 上架不得依赖未采纳的 `docs/protocol` 草案。
+
+---
+
 ## 1. 文档定位
 
-本文档定义 AXTP Protocol Definition 的元模型和三段式生成链路。08 文档定义 domain-feature 命名治理；09-14 文档在该治理下同时定义 Protocol Definition 元模型与当前正式 registry 规划表。Markdown 表格用于规范审查、编号规划和实现契约；稳定实现事实必须同步进入 registry YAML。
+本文档定义 AXTP Protocol Definition 的元模型和三段式生成链路。08 文档定义 domain-feature 命名治理；09-14 文档在该治理下同时定义 Protocol Definition 元模型与当前正式 registry 规划表。`docs/protocol/<domain>/<domain.feature>.md` 提供业务协议方案输入；方案更新并确认后，必须反向确认 08-13 是否需要同步修订，稳定实现事实再进入 registry YAML。
 
 具体协议内容必须进入机器事实源：
 
@@ -20,6 +61,15 @@
 registry/**/*.yaml
 registry/domains/**/*.yaml
 ```
+
+协议方案输入来自：
+
+```text
+docs/protocol/<domain>/<domain.feature>.md
+docs/protocol/legacy-classification/**
+```
+
+这些文件可以用于生成或整理协议草案，但采纳前不得视为当前协议合同。
 
 聚合后的 Protocol IR 由 Generator 输出到：
 
@@ -45,6 +95,7 @@ Protocol Definition 与 Core Specs 的职责边界如下：
 | Hello / Identify / RPC / EVENT | 05 |
 | STREAM Header / resume | 06 |
 | 旧协议兼容映射 | 07 与 `registry/legacy/legacy_mapping.yaml` |
+| 业务协议方案草案 | `docs/protocol/<domain>/<domain.feature>.md` |
 | 完整 Capability Model | `docs/archive/future/AXTP-Capability-Model-v2.md` |
 | method/event/error/type/profile entry 元模型 | 09-14 |
 | 具体业务 method/event/type/error/profile | `registry/` 与 `registry/domains/` YAML |
@@ -82,20 +133,32 @@ profiles: []
 ## 2.1 三段式输入输出关系
 
 ```text
-docs/specs/08 + docs/specs/09-14 + docs/specs/19 + 业务需求
+方案输入段：
+  docs/protocol/<domain>/<domain.feature>.md
+  docs/protocol/legacy-classification/**
+  docs/specs/08-13 反向确认规则
         ↓
+协议草案更新与人工确认
+        ↓
+事实源段：
 registry/**/*.yaml + registry/domains/**/*.yaml
         ↓
+Protocol IR 段：
 protocol/axtp.protocol.yaml
         ↓
+成果物段：
 docs/generated/protocol.md + protocol.json + SDK/bitmap/test-vector
 ```
 
+- `docs/protocol/<domain>/<domain.feature>.md` 是协议方案输入；所有符合该路径的 feature 草案都要纳入方案审查清单。
+- 协议草案确认后必须反向确认 08-13：08 检查 domain.feature 命名，09 检查 ID/Domain/生成链路，10-13 检查 method/event/error/schema/capability 是否需要进入规划表或规则。
+- Codex 的“添加业务协议”skill 只负责方案搜索、归类和草案补全；“协议采纳”skill 才能在评审通过后写 specs/YAML 并触发生成。
+- 反向确认不是把草案全文复制到 specs；只把会改变正式规范、编号规划、元模型约束或 registry 规则的内容同步到 08-13。
 - `registry/` 保存核心常量、公共 schema、MVP 已采纳条目和 legacy 映射。
 - `registry/domains/` 保存新增业务域的扩展 YAML，是新增业务的默认入口。
 - 新增业务事实不得同时写入 core registry 与 domain YAML；domain 业务晋升为 MVP/Core 时，必须迁移而不是复制。
 - `registry/core/protocol_meta.yaml` 保存 overview、frameProfiles、transports、payloadTypes、control、stream、compatibility 等非业务 IR 输入。
-- `protocol/axtp.protocol.yaml` 不得手写修改；任何变更必须回到 `registry/` 或 `registry/domains/`。
+- `protocol/axtp.protocol.yaml` 不得手写修改；任何最终协议事实必须回到 `registry/` 或 `registry/domains/`。
 
 当前治理中的业务域词表包括 `device / capability / system / network / audio / camera / video / input / output / display / stream / firmware / storage / file / log / diagnostic / auth / privacy / sensor / room / signage / vendor`。其中 `output` 与 `input` 成对表达出入设备或场景的信号边界，`room` 使用单数形式表达会议室/协作空间业务，`signage` 表达数字标牌播放列表、计划、媒体和播放状态。
 

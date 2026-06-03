@@ -10,6 +10,32 @@
 
 ---
 
+## 0. 速读：新增 Schema / Capability 怎么做
+
+Schema 描述 RPC/TLV/Capability 对象的字段结构；Capability 描述设备在当前固件、会话和鉴权状态下可用的能力。v1 Core 只强制 `capability.supportedMethods`，完整 Capability Model 留到 v2/P1。
+
+新增 schema 或 capability 的默认流程：
+
+```text
+1. 从 docs/protocol/<domain>/<domain.feature>.md 收集候选 schema、capability 和字段。
+2. 先按 08 判断 domain.feature 粒度。
+3. 确认协议草案后，反向确认本文件中的 schema fieldId、capabilityId、supportedMethods 关系和规划表是否需要更新。
+4. 普通业务 schema/capability 写入 registry/domains/<domain>/domain.yaml。
+5. 跨 domain 公共 schema 或 Core/MVP capability 才写入 registry/schema/ 或 registry/capability/。
+6. object 字段必须分配 schema-local fieldId；stable 后不得复用。
+7. capability 只描述能力，不改变 Frame/Payload Header。
+8. 重新生成 protocol IR 和 generated docs。
+```
+
+| 你要表达 | 推荐位置 | 注意 |
+|---|---|---|
+| method params/result/event data | schema | fieldId 由 17 约束，TLV 编码由 16 约束 |
+| 当前会话可调用 method 集合 | `capability.supportedMethods` | v1 Core 必选 |
+| 设备业务能力块 | `domain.feature` capability | 不要按旧 CmdValue 逐条膨胀 |
+| 协议运行参数 | CONTROL OPEN / ACCEPT | 不放入业务 capability |
+
+---
+
 ## 1. 文档定位
 
 本文档定义 schema / capability 元模型、CapabilityId 分段和正式 Capability 规划表。稳定类型与能力内容必须写入 `registry/schema/`、`registry/capability/` 或 `registry/domains/<domain>/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `schemas:` 由 Generator 聚合生成。
@@ -132,7 +158,7 @@ Domain Block = [DomainId:1B] + [MaskLen:1B] + [MethodBitmask:N B Little-Endian]
 
 ### 6.2 Domain-Feature Capability Index
 
-下表列出当前已进入正式生成路径的 feature。`docs/business` 中的评审内容只有写入 `registry/` 或 `registry/domains/` 后，才进入本索引。
+下表列出当前已进入正式生成路径的 feature。`docs/protocol/<domain>/<domain.feature>.md` 中的评审内容只有写入 `registry/` 或 `registry/domains/` 后，才进入本索引。
 
 | Domain | Feature / Capability | Methods | Events | 范围 |
 |---|---|---|---|---|

@@ -13,6 +13,49 @@
 
 ---
 
+## 0. 速读：RPC 有 JSON 和 Binary 两种线上形态
+
+RPC 是业务控制面，承载 Hello / Identify / Request / Response / Event。它可以直接跑在 WebSocket Unframed JSON 上，也可以作为 `PayloadType=RPC` 放进 Standard Frame。
+
+| 路径 | 线上结构 | session 表达 | 典型用途 |
+|---|---|---|---|
+| WebSocket Unframed JSON | `WebSocket message payload = JSON { sid, op, d }` | `sid` 在 JSON Envelope 中 | 浏览器、云端、轻量 RPC |
+| Standard Framed + RPC JSON | `Frame Header(payloadType=RPC) + UTF-8 JSON { sid, op, d } + CRC16` | `sid` 在 JSON Payload 中 | 调试、诊断、实现便利 |
+| Standard Framed + RPC Binary | `Frame Header(payloadType=RPC) + Binary RPC Header(11B) + body + CRC16` | Link session 由 CONTROL 管理，Payload 不携带 `sid` | 嵌入式、高吞吐路径 |
+
+Binary RPC 11B 固定头：
+
+```text
+rpcEncoding(1) + rpcOp(1) + requestId(4)
+  + methodOrEventId(2) + statusCode(2) + bodyEncoding(1)
+```
+
+三个 ID 的边界：
+
+| 字段 | 所在层 | 作用 |
+|---|---|---|
+| `sid` | RPC JSON Envelope | JSON/TextCodec 的 session 路由与恢复；Binary Payload 不携带 |
+| `requestId` | RPC Payload | 匹配 Request / Response；不用于 Frame 分片 |
+| `messageId` | Frame Header | 标识完整 Frame Message 及其分片；不匹配 RPC Response |
+
+最小 JSON 调用：
+
+```json
+{ "sid": "28378462323", "op": 7, "d": { "id": 1, "method": "device.getInfo" } }
+```
+
+最小 Binary 调用：
+
+```text
+Frame(payloadType=RPC)
+  RPC Binary Header:
+    rpcEncoding=BINARY, rpcOp=REQUEST, requestId=1,
+    methodOrEventId=device.getInfo, statusCode=SUCCESS, bodyEncoding=TLV8
+  body: TLV params
+```
+
+---
+
 ## 1. 文档目的
 
 本文档定义 `PayloadType = RPC` 时的业务控制协议。RPC 负责业务控制面（设备查询、参数设置、能力查询、事件上报等），不负责协议运行时控制（属于 CONTROL）和连续数据传输（属于 STREAM）。

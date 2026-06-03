@@ -7,6 +7,56 @@
 
 ---
 
+## 0. 速读：fieldId 怎么分配和演进
+
+fieldId 是 schema-local 的字段编号。线上 TLV 不传字段名，所以同一个 schema 内 fieldId 一旦发布就不能复用；不同 schema 可以复用相同 fieldId。
+
+新增 schema 时从 `0x01` 开始连续分配：
+
+```yaml
+schema: display.setBrightness.params
+fields:
+  - fieldId: 0x01
+    name: value
+    type: uint8
+    required: true
+  - fieldId: 0x02
+    name: transitionMs
+    type: uint16
+    required: false
+```
+
+后续演进示例：
+
+```yaml
+fields:
+  - fieldId: 0x01
+    name: value
+    type: uint8
+    required: true
+  - fieldId: 0x02
+    name: transitionMs
+    type: uint16
+    required: false
+    deprecated: true
+  - fieldId: 0x03
+    name: easing
+    type: enum8
+    required: false
+```
+
+规则速查：
+
+| 操作 | 做法 |
+|---|---|
+| 新增字段 | 使用当前 schema 内未用过的新 fieldId，默认 optional |
+| 废弃字段 | 标记 deprecated，保留 fieldId 占位 |
+| 删除 stable required 字段 | 不允许；只能兼容保留或版本化 |
+| 预留字段 | 标记 reserved，不得临时复用 |
+| 厂商私有字段 | 使用 vendor 范围或 `0x7F` escape，必须限定作用域 |
+
+---
+
 ## 1. 文档目的
 
 本文档定义 AXTP 协议中 Schema 字段编号（fieldId）的分配、复用、废弃、保留和兼容规则。

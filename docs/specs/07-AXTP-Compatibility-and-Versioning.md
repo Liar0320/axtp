@@ -11,6 +11,33 @@
 
 ---
 
+## 速读：兼容与迁移先看这里
+
+本文件解决两个问题：哪些 AXTP 线格式已经冻结，以及旧协议怎么迁移到 AXTP。迁移时优先保持 AXTP Core 干净，不把旧业务类型塞进 Frame Header，也不新增 PayloadType。
+
+迁移模式快速决策：
+
+| 模式 | 何时使用 | 做法 | 不做的事 |
+|---|---|---|---|
+| Native AXTP | 新固件、新 App 或可同步升级的链路 | 直接使用 AXTP method/event/error/schema/stream profile | 不保留旧 wire envelope |
+| Adapter | 旧设备或旧 App 仍需共存 | 在边界层解析旧 CmdValue / Payload，再映射到 AXTP RPC / STREAM | 不污染 AXTP Frame Header，不复用业务类型为 PayloadType |
+| Tunnel | 短期无法拆解的私有数据或诊断链路 | 用 RAW_BYTES 或 vendor/profile 明确标注透传 | 不作为长期主协议设计 |
+
+迁移检查清单：
+
+```text
+1. 判断入口：旧协议 sniffing、独立端口、URL path 或 transport profile。
+2. 映射控制面：旧 CmdValue / JSON method -> AXTP methodId。
+3. 映射数据面：OTA / file / media chunk -> RPC 建流 + STREAM data。
+4. 映射状态：旧 status/error -> AXTP ErrorCode 或 RPC Response status。
+5. 映射能力：旧 capability bits -> domain.feature capability 或 supportedMethods bitmap。
+6. 固化事实：长期事实进入 registry YAML，临时兼容进入 legacy_mapping.yaml。
+```
+
+任何迁移都必须遵守 v1 冻结事实：Standard Frame Header 12B、CONTROL 5B、RPC Binary 11B、STREAM 16B、PayloadType 仅 CONTROL / RPC / STREAM。
+
+---
+
 ## 0. Wire Format Freeze Rules
 
 本节定义 AXTP v1 Core 的线格式冻结规则。所有实现必须遵守，所有后续扩展必须在此约束内进行。

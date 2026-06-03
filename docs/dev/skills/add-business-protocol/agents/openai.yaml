@@ -1,0 +1,4 @@
+interface:
+  display_name: "Add Business Protocol"
+  short_description: "Draft AXTP business protocol proposals from rough requirements"
+  default_prompt: "Add an AXTP business protocol draft from this product or architecture requirement."

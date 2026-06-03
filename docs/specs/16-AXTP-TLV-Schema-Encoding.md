@@ -7,6 +7,58 @@
 
 ---
 
+## 0. 速读：TLV 编码长什么样
+
+TLV 在线上只传 fieldId、length 和 value；字段名、类型、required/default 规则来自 schema。
+
+```text
+Basic TLV:          fieldId(1) + length(1) + value(N)
+Extended Length:    fieldId(1) + FF + extendedLength(2, LE) + value(N)
+```
+
+常见例子：
+
+```text
+01 01 50
+# fieldId=0x01, length=1, value=0x50(uint8 80)
+
+02 02 2C 01
+# fieldId=0x02, length=2, value=0x012C(uint16 300, Little-Endian)
+
+10 FF 2C 01 <300 bytes>
+# fieldId=0x10, extended length=300
+```
+
+对象就是多个 TLV 字段顺序排列：
+
+```text
+display.setBrightness.params:
+  value:uint8=80          -> 01 01 50
+  transitionMs:uint16=300 -> 02 02 2C 01
+
+encoded body:
+  01 01 50 02 02 2C 01
+```
+
+数组在 MVP 中推荐用 repeated TLV：
+
+```text
+supportedMethodIds = [0x0101, 0x0201]
+  01 02 01 01
+  01 02 01 02
+```
+
+`firmware.begin params` 这类 RPC Binary body 会被放在 Binary RPC 11B Header 之后：
+
+```text
+Frame Header(payloadType=RPC)
+  + RPC Binary Header(11B, bodyEncoding=TLV8)
+  + TLV body(firmware.begin params)
+  + CRC16
+```
+
+---
+
 ## 1. 文档目的
 
 本文档定义 AXTP 协议中的 TLV Schema 编码规范，用于：

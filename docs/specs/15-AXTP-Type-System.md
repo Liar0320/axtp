@@ -6,6 +6,38 @@
 
 ---
 
+## 0. 速读：基础类型如何变成 bytes
+
+AXTP v1 所有多字节整数都是 Little-Endian；TLV、Control、RPC Binary、STREAM 都复用这条规则。
+
+| 线上类型 | 值 | bytes |
+|---|---:|---|
+| `uint8` | `0x7F` | `7F` |
+| `uint16` | `0x1234` | `34 12` |
+| `uint32` | `0x12345678` | `78 56 34 12` |
+| `uint64` | `0x0102030405060708` | `08 07 06 05 04 03 02 01` |
+| `bool` | `true` | `01` |
+| `bool` | `false` | `00` |
+| `enum8` | `BINARY=0x02` | `02` |
+| `bitmap8` | bit0 + bit2 | `05` |
+
+对象字段在线上不携带字段名。二进制对象通常由 TLV 表达：
+
+```text
+fieldId(1) + length(1) + value(length)
+```
+
+示例：`display.setBrightness.params { value: 80, transitionMs: 300 }`
+
+```text
+01 01 50        # fieldId=1, uint8 value=80
+02 02 2C 01     # fieldId=2, uint16 transitionMs=300
+```
+
+JSON 表达保留字段名，二进制 TLV 表达只保留 fieldId；字段含义必须依赖 schema。
+
+---
+
 ## 1. 文档目的
 
 本文档定义 AXTP 协议体系中所有子协议共享的基础类型系统，包括：

@@ -10,6 +10,26 @@
 
 ---
 
+## 0. 速读：降级只换外层，不换协议语义
+
+18 描述的是低带宽或小 MTU 场景的后续降级路径，不是 v1 Core 必选路径。降级 profile 可以改变外层 frame header、MTU、分片和确认策略，但不能改变 CONTROL / RPC / STREAM 的 Payload 语义。
+
+```text
+允许变化： outer frame header / MTU / fragmentation / retry policy
+不得变化： PayloadType / CONTROL 5B / RPC Binary 11B / STREAM 16B / methodId / eventId / errorCode
+```
+
+选择降级路径前先判断：
+
+| 场景 | 推荐 |
+|---|---|
+| USB HID 高速或 TCP | 继续使用 Standard Framed |
+| WebSocket JSON 集成 | 继续使用 WebSocket Unframed JSON，RPC-only |
+| BLE/UART/HID-64 小 MTU | 使用独立 low-bandwidth profile，不在同一 session 中切换 |
+| 需要视频/OTA/文件连续数据 | 优先使用 Standard Framed；降级必须证明 MTU 和窗口策略可行 |
+
+---
+
 ## 1. 定位
 
 AXTP v1 Core 当前只要求两条正式路径：

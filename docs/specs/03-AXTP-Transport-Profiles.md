@@ -82,15 +82,24 @@ Hello follows the logical service direction.
 
 适用于 `AXTP-USB-HID` 和 `AXTP-TCP`：
 
-```text
-1. Transport connected
-2. Physical Client -> Physical Server: CONTROL OPEN
-3. Physical Server -> Physical Client: CONTROL ACCEPT
-4. Logical Server -> Logical Client: RPC Hello
-5. Logical Client -> Logical Server: RPC Identify
-6. Logical Server -> Logical Client: RPC Identified
-7. Logical Client -> Logical Server: capability.supportedMethods
-8. RPC / STREAM business traffic
+```mermaid
+sequenceDiagram
+    participant PC as Physical Client
+    participant PS as Physical Server
+    participant LC as Logical Client
+    participant LS as Logical Server
+
+    Note over PC,PS: Transport connected
+    PC->>PS: CONTROL OPEN
+    PS-->>PC: CONTROL ACCEPT
+    Note over PC,PS: FRAMING_READY
+    LS-->>LC: RPC Hello
+    LC->>LS: RPC Identify
+    LS-->>LC: RPC Identified
+    Note over LC,LS: APP_READY
+    LC->>LS: RPC capability.supportedMethods
+    LC->>LS: RPC Request / STREAM data
+    LS-->>LC: RPC Response / Event / STREAM data
 ```
 
 Standard Framed 支持：
@@ -106,13 +115,19 @@ Standard Framed 支持：
 
 适用于 `AXTP-WS-JSON`：
 
-```text
-1. WebSocket connected
-2. Logical Server -> Logical Client: Hello (op=0)
-3. Logical Client -> Logical Server: Identify (op=2)
-4. Logical Server -> Logical Client: Identified (op=3)
-5. Logical Client -> Logical Server: Request capability.supportedMethods (op=7)
-6. Request / Response / Event over JSON sid/op/d envelope
+```mermaid
+sequenceDiagram
+    participant LC as Logical Client
+    participant LS as Logical Server
+
+    Note over LC,LS: WebSocket connected
+    LS-->>LC: Hello (op=0)
+    LC->>LS: Identify (op=2)
+    LS-->>LC: Identified (op=3)
+    Note over LC,LS: APP_READY
+    LC->>LS: Request capability.supportedMethods (op=7)
+    LC->>LS: Request over JSON {sid, op, d}
+    LS-->>LC: Response / Event over JSON {sid, op, d}
 ```
 
 WebSocket Unframed JSON 不使用：
@@ -131,14 +146,19 @@ WebSocket 断开即代表该 unframed RPC session 断开。恢复策略由应用
 
 适用于 `AXTP-WS-CLOUD-REVERSE`：
 
-```text
-1. Device -> Cloud: WebSocket connect
-2. Device -> Cloud: Hello (op=0)
-3. Cloud -> Device: Identify (op=2)
-4. Device -> Cloud: Identified (op=3)
-5. Cloud -> Device: Request capability.supportedMethods (op=7)
-6. Cloud -> Device: Business Requests
-7. Device -> Cloud: Responses / Events
+```mermaid
+sequenceDiagram
+    participant Device as Device (Physical Client, Logical Server)
+    participant Cloud as Cloud (Physical Server, Logical Client)
+
+    Device->>Cloud: WebSocket connect
+    Device-->>Cloud: Hello (op=0)
+    Cloud->>Device: Identify (op=2)
+    Device-->>Cloud: Identified (op=3)
+    Note over Device,Cloud: APP_READY
+    Cloud->>Device: Request capability.supportedMethods (op=7)
+    Cloud->>Device: Business Request
+    Device-->>Cloud: Response / Event
 ```
 
 这个场景中角色发生反转：

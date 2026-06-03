@@ -12,6 +12,40 @@
 
 ---
 
+## 0. 速读：STREAM 是固定 16B Header + data
+
+STREAM 只存在于 Standard Framed 路径，用来传连续数据。WebSocket Unframed JSON 是 RPC-only，不承载 STREAM。
+
+```text
+Standard Frame Header(payloadType=STREAM)
+  + STREAM Payload = streamId(4) + seqId(4) + cursor(8) + data(N)
+  + CRC16(2)
+```
+
+STREAM Header 固定 16B，不携带业务类型、codec、fileType、OTA 参数或视频参数。这些信息由 RPC 控制面建流时确定，并绑定到 `streamId`。
+
+```mermaid
+sequenceDiagram
+    participant Client as Logical Client
+    participant Server as Logical Server
+
+    Client->>Server: RPC open/begin method
+    Server-->>Client: RPC response(streamId, profile, cursorUnit, limits)
+    Client->>Server: STREAM frame(streamId, seqId, cursor, data)
+    Server-->>Client: CONTROL ACK/NACK (when negotiated)
+```
+
+三层 ID 不要混用：
+
+| 字段 | 所在层 | 作用 |
+|---|---|---|
+| `messageId` | Frame Header | Frame 分片与重组 |
+| `streamId` | STREAM Header | 已由 RPC 建流绑定的逻辑流 |
+| `seqId` | STREAM Header | stream 内数据包顺序 |
+| `cursor` | STREAM Header | 时间戳、字节偏移或采样序号，含义由 Stream Context 决定 |
+
+---
+
 ## 1. 设计目标
 
 AXTP STREAM 提供极简、固定的数据面，承载视频帧、音频帧、OTA 固件块、文件块、实时日志、KVM/HID Raw、传感器采样等高吞吐连续数据。

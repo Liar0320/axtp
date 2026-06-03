@@ -10,6 +10,34 @@
 
 ---
 
+## 0. 速读：新增 ErrorCode 怎么做
+
+ErrorCode 是 RPC Response、CONTROL statusCode/NACK 和 STREAM 错误映射的统一编号空间。业务失败优先通过 RPC Response 表达；Frame/Control/Stream 层错误才进入对应协议层错误范围。
+
+新增 error 的默认流程：
+
+```text
+1. 从 docs/protocol/<domain>/<domain.feature>.md 收集候选 error 和失败场景。
+2. 判断错误归属：common/frame/control/rpc/stream/business/vendor/legacy。
+3. 确认协议草案后，反向确认本文件中的 errorCode 范围、RPC/CONTROL/STREAM 使用位置和规划表是否需要更新。
+4. 普通业务错误写入 registry/domains/<domain>/domain.yaml。
+5. 跨 domain、Core/MVP 或协议层错误写入 registry/error/error_code.yaml。
+6. 分配对应范围内未使用 code；stable 后不得复用。
+7. 标注 retryable、severity、message 和 since/status。
+8. 重新生成 protocol IR 和 generated docs。
+```
+
+| 使用位置 | 应使用的错误 |
+|---|---|
+| RPC Response | 业务错误、参数错误、方法不可用等 RPC/Business ErrorCode |
+| CONTROL ACCEPT / NACK | frame/control/stream 类错误，或协商失败 |
+| STREAM 可靠性 | stream seq/resume/crc/window 类错误 |
+| Legacy Adapter | `0x7F00-0x7FFF` legacy 范围 |
+
+不要用 Frame Header 字段表达业务失败，也不要让 CONTROL NACK 替代业务 RPC Response。
+
+---
+
 ## 1. 文档定位
 
 本文档定义 error registry 的元模型、错误码分段和正式 ErrorCode 表。稳定 error 内容必须写入 `registry/error/` 或 `registry/domains/<domain>/domain.yaml`；`protocol/axtp.protocol.yaml` 中的 `errors:` 由 Generator 聚合生成。

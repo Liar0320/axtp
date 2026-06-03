@@ -13,6 +13,58 @@
 
 ---
 
+## 0. 速读：CONTROL 怎么在线上传
+
+CONTROL 只存在于 Standard Framed 路径，用来建立 AXTP Link Session、保活、确认、重传和关闭。业务命令不走 CONTROL，连续数据也不走 CONTROL。
+
+```text
+Standard Frame Header(payloadType=CONTROL)
+  + Control Payload = opcode(1) + controlId(2) + statusCode(2) + TLV body(N)
+  + CRC16(2)
+```
+
+Control Payload 固定头是 5B。`Frame.payloadLength` 包含这 5B 和后续 TLV body，因此：
+
+```text
+controlBodyLength = Frame.payloadLength - 5
+```
+
+OPEN / ACCEPT 建立的是传输方向上的 AXTP Link Session，不决定谁是 Logical Server。RPC Hello 仍由 Logical Server 发送。
+
+```mermaid
+sequenceDiagram
+    participant PC as Physical Client
+    participant PS as Physical Server
+    participant LC as Logical Client
+    participant LS as Logical Server
+
+    Note over PC,PS: Transport connected
+    PC->>PS: CONTROL OPEN (payloadType=CONTROL, opcode=0x01)
+    PS-->>PC: CONTROL ACCEPT (opcode=0x02, sessionId, selectedRpcEncoding)
+    Note over PC,PS: FRAMING_READY
+    LS-->>LC: RPC Hello
+    LC->>LS: RPC Identify
+    LS-->>LC: RPC Identified
+```
+
+ACK / NACK 也是 CONTROL Payload，不是 Frame Header 字段：
+
+```text
+ACK frame:
+  Frame(payloadType=CONTROL)
+  Control Payload(opcode=ACK, controlId, statusCode=SUCCESS)
+  TLV body: targetType + messageId + frameIndex
+
+NACK frame:
+  Frame(payloadType=CONTROL)
+  Control Payload(opcode=NACK, controlId, statusCode=<errorCode>)
+  TLV body: targetType + messageId + frameIndex + optional reason/detail
+```
+
+WebSocket Unframed JSON 没有 CONTROL OPEN / ACCEPT / ACK / NACK / CLOSE，也不参与 RESUME。
+
+---
+
 ## 1. 文档目的
 
 本文档定义 `PayloadType = CONTROL` 时的 Payload 内部结构、Opcode 语义、TLV 字段、会话状态机和 MVP 实现范围。
