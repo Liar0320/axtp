@@ -14,7 +14,7 @@ Use this structure when creating `docs/protocol/<domain>/<domain.feature>.md`. R
 
 ## 文档定位
 
-本文是 `docs/protocol` 评审输入，不是最终协议事实源。采纳后，稳定事实必须反向确认到 `docs/specs/08-13`，再写入 `registry/` 或 `registry/domains/<domain>/domain.yaml`，并由 `generate-axtp-protocol` 生成 `protocol/axtp.protocol.yaml` 和 `docs/generated/*`。
+本文是 `docs/protocol` 评审输入，不是最终协议事实源。采纳后，稳定事实必须反向确认到 `docs/specs/08-13`，涉及 profile/MVP 时同步确认 `docs/specs/14`，再写入 `registry/` 或 `registry/domains/<domain>/domain.yaml`，并由 `generate-axtp-protocol` 生成 `protocol/axtp.protocol.yaml` 和 `docs/generated/*`。
 
 ## 业务需求
 

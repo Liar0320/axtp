@@ -10,7 +10,7 @@ Run the deterministic AXTP generation stage after `adopt-protocol-draft` or `ame
 ## Boundaries
 
 - Input is `registry/**/*.yaml` and `registry/domains/**/*.yaml`.
-- Specs 08-13 are governance context, not the machine input for generation.
+- Specs 08-14 are governance context, not the machine input for generation.
 - Do not infer new protocol facts from `docs/protocol/**` or `docs/specs/**` during generation.
 - Do not hand-edit generated outputs.
 - If validation fails because source YAML or Generator logic is wrong, stop and report the source issue unless the user asked you to fix it.

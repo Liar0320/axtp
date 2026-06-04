@@ -1,16 +1,38 @@
 # AXTP Docs
 
-本文档区分为 active 文档、生成物和归档材料。
+`docs/` 里既有正式规范，也有草案、生成物、工程说明和历史材料。读文档时先判断它属于哪一类；不要把草案或归档材料当成当前实现合同。
 
-| 路径 | 角色 | 说明 |
-|---|---|---|
-| `docs/specs/` | 正式规范 | 协议框架、wire format、registry 规则、正式 registry 表格、Generator 规范和 capability 命名治理。 |
-| `docs/business/` | 业务 intake | 业务域协议评审材料；采纳后必须同步到 `registry/**/*.yaml` 或 `registry/domains/**/*.yaml`。 |
-| `docs/generated/` | 生成物 | 由 Generator 输出，不作为手写入口。 |
-| `docs/demo/` | Demo 说明 | 示例实现和场景说明。 |
-| `docs/dev/` | 工程说明 | SDK、runtime、研发流程、技能说明和唯一 kickoff 材料。 |
-| `docs/migration/` | 迁移工作区 | legacy migration 尚在进行中，本轮不清理、不移动。 |
-| `docs/legacy-protocols/` | legacy 原始资料 | AXDP、VM33、Rooms、NearHub 等原始输入资料。 |
-| `docs/archive/` | 归档 | 非 active 事实源，仅用于追溯旧草稿、source 迁移材料和未来草案。 |
+## 读者路径
 
-当前正式 specs 编号为 `00-19`。`08` 是后续 registry 与业务命名的 domain-feature 治理入口；原 source `08-13` 的正式表格已晋升到 `docs/specs/09-14`。
+| 目标 | 阅读顺序 |
+|---|---|
+| 先看懂 AXTP 是什么 | `specs/00-AXTP-Overview.md` -> `specs/README.md` |
+| 查当前实现合同 | `generated/protocol.md` 或 `generated/protocol.json` |
+| 新增业务协议 | `protocol/README.md` -> `protocol/<domain>/<domain.feature>.md` -> 对应 `dev/skills/**` |
+| 使用工具、SDK、runtime | `how-to-use/AXTP_How_To_Use.md` -> `dev/AXTP_*` -> `../runtimes/cpp-core/ARCHITECTURE.md` |
+| 追溯旧协议迁移 | `legacy-protocols/`、`migration/`、`protocol/legacy-classification/` |
+
+## 文档分区
+
+| 分组 | 路径 | 谁读 | 什么时候读 | 手写 |
+|---|---|---|---|---:|
+| Active specs | `docs/specs/` | 架构、协议维护者、runtime/SDK 研发 | 理解正式规则、wire format、命名治理、Generator 合同 | 是 |
+| Draft intake | `docs/protocol/` | 产品、架构、协议维护者、业务研发、测试 | 新业务起草、评审、legacy 分类和采纳前确认 | 是 |
+| Generated reference | `docs/generated/` | 研发、测试、工具、SDK | 实现和验收当前协议 | 否 |
+| How-to | `docs/how-to-use/` | 所有人 | 查命令、跑 Generator、用 CLI/SDK/runtime、看完整例子 | 是 |
+| Dev docs | `docs/dev/` | runtime/SDK/tool 研发、Codex/Claude 等自动化代理 | 工程设计、代码规范、协议 workflow skill | 是 |
+| Demo docs | `docs/demo/` | 研发、测试、评审 | 示例场景、历史 demo 和端到端验证思路 | 是 |
+| Migration workspace | `docs/migration/` | 协议维护者、legacy 适配研发 | 旧协议迁移工作区；不是最终事实源 | 部分 |
+| Legacy evidence | `docs/legacy-protocols/` | 协议维护者、legacy 适配研发 | AXDP、VM33、Rooms、NearHub 等原始输入资料 | 是 |
+| Archive | `docs/archive/` | 架构、维护者 | 追溯旧草稿、source 迁移材料和未来草案 | 否，除非归档新材料 |
+
+## 权威边界
+
+```text
+docs/protocol/**                         草案与评审输入
+registry/**/*.yaml + registry/domains/** 手写机器事实源
+protocol/axtp.protocol.yaml              Generator 输出的 Protocol IR
+docs/generated/**                        Generator 输出的人读/机器读参考
+```
+
+当前正式 specs 编号为 `00-19`。`08` 是 domain-feature 命名治理入口；`09-14` 是 registry、schema/capability、profile/MVP 治理入口。实现事实以 YAML 和 generated 产物为准；如果 specs 表格与 YAML/generated 冲突，应回修 specs，不维护第二套 active 事实源。

@@ -4,7 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Repo Is
 
-**AXTP (Auditoryworks Transport Protocol)** — a Registry-Driven Protocol Platform. The single source of truth is `registry/**/*.yaml`; everything under any `generated/` directory is machine-produced and must never be hand-edited.
+**AXTP (Auditoryworks Transport Protocol)** — a draft-reviewed, registry-driven protocol platform.
+
+The authoritative flow is:
+
+```text
+docs/protocol/<domain>/<domain.feature>.md     # draft and review input
+        ↓ adoption / amendment
+registry/**/*.yaml + registry/domains/**/*.yaml # hand-maintained machine facts
+        ↓ Generator
+protocol/axtp.protocol.yaml                     # generated Protocol IR
+        ↓ Generator
+docs/generated/** + tooling/** + runtime generated headers
+```
+
+Do not hand-edit generated files. Do not convert rough requirements directly into YAML; new business semantics normally start in `docs/protocol/**` and are adopted only after review.
 
 ## Generator Commands
 
@@ -37,7 +51,7 @@ pnpm --dir generators generate
 pnpm --dir generators validate:sources
 ```
 
-## Three-Stage Compilation Pipeline
+## Compilation Pipeline
 
 ```text
 registry/**/*.yaml + registry/domains/**/*.yaml
@@ -48,6 +62,8 @@ protocol/axtp.protocol.yaml          ← Protocol IR (generated, do not edit)
         ↓  emitRepositoryArtifacts
 docs/generated/          tooling/mcp/          runtimes/*/generated/
 ```
+
+This pipeline starts after YAML facts have already been adopted. `docs/protocol/**` and `docs/specs/**` are not Generator inputs for new facts.
 
 Key generator source files in `generators/src/`:
 
@@ -71,15 +87,17 @@ Business Layer   → device / display / firmware / media domains
 Registry Layer   → Method / Event / Error / Capability IDs
 Payload Layer    → CONTROL (0x01) / RPC (0x02) / STREAM (0x03)
 Frame Layer      → Header / Length / MessageId / Fragment / CRC
-Transport Layer  → BLE / HID / UART / TCP / WebSocket / USB Bulk
+Transport Layer  → USB HID / TCP / WebSocket JSON / future low-bandwidth profiles
 ```
 
 **Critical constraint**: `PayloadType` selects a parser only — it never encodes business semantics like VIDEO, OTA, FILE. Those belong in the Registry layer.
 
-Two header profiles:
+AXTP v1 has two active wire paths:
 
-- **Standard** (12B header + 2B CRC16 = 14B): TCP, WebSocket, USB Bulk
-- **Compact** (4B header + 1B CRC8 = 5B): BLE, USB HID, UART, MCU
+- **Standard Framed**: `AXTP-USB-HID` and `AXTP-TCP` use `Standard Frame Header(12B) + Payload(N) + CRC16(2B)` and support CONTROL / RPC / STREAM.
+- **WebSocket Unframed JSON**: `AXTP-WS-JSON` and `AXTP-WS-CLOUD-REVERSE` use WebSocket JSON messages and support RPC JSON only.
+
+Compact / HID-64 / BLE / UART behavior is low-bandwidth degradation or future profile work; do not present it as the AXTP v1 core wire path unless YAML/generated facts and specs explicitly adopt it.
 
 Three ID namespaces that must not be confused: `MessageId` (Frame) ≠ `requestId` (RPC) ≠ `streamId` (Stream).
 
@@ -100,11 +118,23 @@ registry/
     └── <domain>/domain.yaml
 ```
 
-## Adding New Content
+## Protocol Lifecycle
 
-**New business method/event/type** → `registry/domains/<domain>/domain.yaml`
+Classify protocol work before editing:
 
-Minimal domain YAML shape:
+| Request state | Correct path | Allowed edits |
+|---|---|---|
+| Rough product/business requirement | `docs/dev/skills/draft-business-protocol/SKILL.md` | `docs/protocol/**` |
+| Reviewed draft should become formal protocol | `docs/dev/skills/adopt-protocol-draft/SKILL.md` | adopted draft, specs 08-14 as needed, registry YAML |
+| Already-adopted/generated fact needs semantic change | `docs/dev/skills/amend-adopted-protocol/SKILL.md` | adopted proposal, specs/YAML, generated only via Generator |
+| YAML facts are ready and outputs need refresh | `docs/dev/skills/generate-axtp-protocol/SKILL.md` | generated outputs via Generator |
+| Runtime/SDK/tool implementation | normal code workflow | non-generated runtime/SDK/tool code |
+
+Direct registry edits are exceptional. Use core `registry/` files only for core constants, shared schemas, MVP/Core adopted entries, profile governance, and accepted legacy mappings. New ordinary business facts default to `registry/domains/<domain>/domain.yaml` after adoption.
+
+## YAML Fact Shape
+
+When adoption or amendment legitimately patches a domain YAML file, preserve existing local shape and ordering. Minimal example:
 
 ```yaml
 domain: sensor
@@ -159,6 +189,7 @@ Commit source YAML and generated artifacts together so they stay in sync.
 | `docs/specs/02-AXTP-Frame-and-Payload-Spec.md` | Wire format rules |
 | `docs/specs/05-AXTP-RPC-Session-Spec.md` | RPC session lifecycle |
 | `docs/specs/06-AXTP-Stream-Spec.md` | STREAM data plane and 16B stream header |
-| `docs/specs/08-AXTP-Protocol-Definition-Mapping-Spec.md` | Source YAML → IR → artifact mapping rules |
-| `docs/specs/20-AXTP-Generator-v1实现规范.md` | Generator implementation spec and governance |
+| `docs/specs/08-AXTP-Capability-Naming-and-Feature-Taxonomy.md` | Domain-feature and method/event naming governance |
+| `docs/specs/09-AXTP-Protocol-Definition-Mapping-Spec.md` | Source YAML → IR → artifact mapping rules |
+| `docs/specs/19-AXTP-Generator-v1实现规范.md` | Generator implementation spec and governance |
 | `docs/generated/protocol.md` | Human-readable full protocol reference (generated) |

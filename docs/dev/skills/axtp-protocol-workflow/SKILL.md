@@ -15,8 +15,8 @@ Classify the request before editing anything:
 |---|---|---|
 | Rough product/architecture/business requirement | Use `docs/dev/skills/draft-business-protocol/SKILL.md` | `docs/protocol/**` only |
 | Existing `docs/protocol/<domain>/<domain.feature>.md` draft needs review or refinement | Use `draft-business-protocol` | `docs/protocol/**` only |
-| Reviewed draft should become formal protocol | Use `docs/dev/skills/adopt-protocol-draft/SKILL.md` | `docs/protocol/**`, `docs/specs/08-13`, `registry/**`, `registry/domains/**` |
-| Already-adopted/generated protocol needs semantic correction, field removal, deprecation, rename, or extension | Use `docs/dev/skills/amend-adopted-protocol/SKILL.md` | `docs/protocol/**`, `docs/specs/08-13`, `registry/**`, `registry/domains/**`, generated artifacts via Generator |
+| Reviewed draft should become formal protocol | Use `docs/dev/skills/adopt-protocol-draft/SKILL.md` | `docs/protocol/**`, `docs/specs/08-14` as needed, `registry/**`, `registry/domains/**` |
+| Already-adopted/generated protocol needs semantic correction, field removal, deprecation, rename, or extension | Use `docs/dev/skills/amend-adopted-protocol/SKILL.md` | `docs/protocol/**`, `docs/specs/08-14` as needed, `registry/**`, `registry/domains/**`, generated artifacts via Generator |
 | YAML facts are ready and artifacts need refresh | Use `docs/dev/skills/generate-axtp-protocol/SKILL.md` | generated artifacts only, unless validation exposes a source bug |
 | Governance-confirmed registry maintenance without a draft | Use this skill directly only for narrow, non-design maintenance | Scoped YAML and then `generate-axtp-protocol` |
 | Runtime/SDK/tool implementation after protocol adoption | Use generated docs/headers and normal code-edit workflow | runtime/SDK/tool code only |
@@ -30,14 +30,14 @@ draft-business-protocol
   rough requirement -> docs/protocol/<domain>/<domain.feature>.md
 
 adopt-protocol-draft
-  reviewed draft -> specs 08-13 alignment
+  reviewed draft -> specs 08-13 alignment, plus 14 when profiles/MVP change
                  -> formalized docs/protocol proposal
                  -> registry/**/*.yaml + registry/domains/**/*.yaml
 
 amend-adopted-protocol
   adopted/generated protocol change
                  -> amendment note in docs/protocol proposal
-                 -> specs 08-13 alignment if needed
+                 -> specs 08-13/14 alignment if needed
                  -> patched registry/**/*.yaml + registry/domains/**/*.yaml
                  -> generated artifacts refreshed by Generator
 

@@ -1,11 +1,11 @@
 ---
 name: adopt-protocol-draft
-description: Adopt reviewed AXTP docs/protocol domain-feature drafts into formal protocol governance docs and registry/domain YAML. Use when the user asks to approve, formalize, adopt, activate, land, or convert an already-reviewed AXTP protocol draft into specs 08-13 alignment and registry YAML facts. This stage fixes the draft as the formal accepted proposal but does not manually edit generated artifacts.
+description: Adopt reviewed AXTP docs/protocol domain-feature drafts into formal protocol governance docs and registry/domain YAML. Use when the user asks to approve, formalize, adopt, activate, land, or convert an already-reviewed AXTP protocol draft into specs 08-13 alignment, plus spec 14 when profiles/MVP change, and registry YAML facts. This stage fixes the draft as the formal accepted proposal but does not manually edit generated artifacts.
 ---
 
 # Adopt Protocol Draft
 
-Convert a reviewed AXTP protocol draft into formal protocol facts. This is the second workflow stage after `draft-business-protocol`: align the accepted proposal with `docs/specs/08-13`, freeze the draft as the formal proposal, and write the confirmed facts into YAML.
+Convert a reviewed AXTP protocol draft into formal protocol facts. This is the second workflow stage after `draft-business-protocol`: align the accepted proposal with `docs/specs/08-13`, also `docs/specs/14` when profiles/MVP contracts change, freeze the draft as the formal proposal, and write the confirmed facts into YAML.
 
 ## Hard Boundaries
 
@@ -72,7 +72,7 @@ Extract only confirmed facts:
 - concrete legacy mappings
 - open questions that must remain out of specs/YAML
 
-### 3. Align Specs 08-13
+### 3. Align Specs 08-13/14
 
 Reverse-confirm the accepted proposal into specs where needed:
 
@@ -84,6 +84,8 @@ Reverse-confirm the accepted proposal into specs where needed:
 | 11 | event registry rules or accepted event table references if needed |
 | 12 | error code rules and domain-specific error placement |
 | 13 | schema/type/capability rules and capability placement |
+
+Use spec 14 as well if the proposal changes profile membership, MVP requirements, or profile registry semantics.
 
 Do not turn specs into the machine fact source. Specs are governance and normative explanation; YAML remains the machine input.
 
@@ -126,7 +128,7 @@ Never reuse deprecated or stable values for different semantics.
 
 ### 7. Edit YAML Sources
 
-Use `apply_patch`. Keep edits scoped to specs 08-13, the adopted draft, and chosen YAML sources.
+Use `apply_patch`. Keep edits scoped to specs 08-13, spec 14 when applicable, the adopted draft, and chosen YAML sources.
 
 Rules:
 
@@ -163,7 +165,7 @@ Do not manually edit generated outputs in this skill. The next step is `generate
 Report:
 
 - Draft adopted and eligibility decision.
-- Specs 08-13 files changed.
+- Specs 08-13/14 files changed, if any.
 - Draft file changes and adoption marker.
 - YAML source files changed.
 - Assigned IDs, `bit_offset`, and schema field IDs.

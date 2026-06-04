@@ -2,6 +2,8 @@
 
 `docs/specs/` 是 AXTP 的正式规范区。`00-07` 定义 core protocol，`08` 前置定义 domain-feature-method-event 命名治理，`09-14` 在该命名治理下定义 registry 元模型和正式 registry 规划表，`15-18` 定义类型、TLV、字段编号和低带宽降级，`19` 定义 Generator。
 
+这里的文档回答“AXTP 的规则是什么”。它们不替代 `registry/**/*.yaml` 与 `registry/domains/**/*.yaml` 的机器事实源角色，也不承载未评审业务草案。
+
 ## 先读哪几篇
 
 如果只想先看懂 AXTP 怎么连、线上怎么传，按下面顺序读：
@@ -23,6 +25,14 @@
 | 无 Frame Header | `AXTP-WS-JSON`、`AXTP-WS-CLOUD-REVERSE` | `WebSocket message payload = JSON { sid, op, d }` | RPC-only |
 
 无 Frame Header 路径没有 CONTROL、STREAM、CRC16、Binary RPC 11B Header，也不参与 CONTROL ACK/NACK / RESUME。
+
+## 两条阅读路径
+
+| 读者 | 推荐路径 |
+|---|---|
+| 新读者 / 实现者 | `00` -> `02` -> `03` -> `04` -> `05` -> `06` -> `07` |
+| 协议维护者 | `08` -> `09` -> `10` -> `11` -> `12` -> `13` -> `14` -> `15` -> `16` -> `17` -> `19` |
+| 低带宽或 HID/BLE 降级评审 | 先读 `18`，再回到 `02` / `03` / `04` / `06` 对齐 wire 边界 |
 
 ---
 
@@ -49,15 +59,16 @@
 | 18 | `18-AXTP-Low-Bandwidth-Degradation.md` | 低带宽降级 |
 | 19 | `19-AXTP-Generator-v1实现规范.md` | Generator v1 实现规范 |
 
+## 权威边界
+
 实现事实源仍为 `registry/**/*.yaml` 与 `registry/domains/**/*.yaml`。如果 specs 表格与 YAML/generated 发生冲突，以 YAML/generated 为实现事实源，并应回修 specs。
 
-新增业务协议先进入 `docs/protocol/<domain>/<domain.feature>.md` 作为草案输入；内部评审确认后，再反向确认 08-13、写入 YAML 并由 Generator 生成正式产物。未采纳草案不是研发实现合同。
-
-推荐实现阅读顺序：
+新增业务协议先进入 `docs/protocol/<domain>/<domain.feature>.md` 作为草案输入；内部评审确认后，再反向确认 08-13，涉及 profile/MVP 合同时同步确认 14，然后写入 YAML 并由 Generator 生成正式产物。未采纳草案不是研发实现合同。
 
 ```text
-00-08  协议框架、wire format、会话、兼容和命名治理
-15-17  基础类型、TLV 编码和 schema fieldId 规则
-09-14  Protocol Definition、registry 表格和 MVP 合同
-18-19  低带宽补充规范和 Generator 实现规范
+docs/protocol/**                         草案和评审输入
+docs/specs/**                            规则、治理和规范说明
+registry/**/*.yaml + registry/domains/** Generator 的手写机器输入
+protocol/axtp.protocol.yaml              Generator 输出的 Protocol IR
+docs/generated/**                        Generator 输出的协议参考
 ```

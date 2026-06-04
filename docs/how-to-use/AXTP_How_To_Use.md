@@ -2,29 +2,27 @@
 
 本文用具体例子说明当前仓库怎么查协议、怎么生成产物、怎么用 CLI/SDK/runtime、怎么把业务需求变成可评审草案，再采纳为正式协议。
 
-## 1. 先理解三类文件
+## 1. 先理解权威模型
 
-AXTP 仓库里最容易混淆的是“草案、事实源、生成物”：
+这个文件是实操手册：查当前协议、跑 Generator、用 CLI/SDK/runtime、把业务需求推进到可采纳协议。开始操作前先记住四类材料：
 
 ```text
 docs/protocol/<domain>/<domain.feature>.md
-  协议草案和评审输入
-  不是最终协议合同
+  业务草案和评审输入，不是最终实现合同
 
 registry/**/*.yaml + registry/domains/**/*.yaml
-  人工维护的协议事实源
-  是 Generator 的机器输入
+  人工维护的机器事实源，是 Generator 输入
 
-protocol/axtp.protocol.yaml + docs/generated/* + tooling/* + runtime generated headers
-  Generator 输出
-  不手写修改
+protocol/axtp.protocol.yaml
+  Generator 输出的 Protocol IR，不手写
+
+docs/generated/* + tooling/* + runtime generated headers
+  Generator 输出的人读/工具/runtime 产物，不手写
 ```
 
 ### 1.1 YAML 从哪里来
 
-`registry/**/*.yaml` 和 `registry/domains/**/*.yaml` 不是从 Markdown 自动生成的，也不是 Generator 的输出。它们是人工评审后写入的机器事实源，通常由协议维护者、架构师或协议采纳流程把已经确认的规范事实整理成 YAML。
-
-来源关系可以按四类理解：
+`registry/**/*.yaml` 和 `registry/domains/**/*.yaml` 不是从 Markdown 自动生成的，也不是 Generator 的输出。它们是人工评审后写入的机器事实源，通常由协议维护者、架构师或协议采纳流程把已经确认的规范事实整理成 YAML：
 
 | YAML 位置 | 事实来源 | 产生方式 | 和 specs / docs/protocol 的关系 |
 |---|---|---|---|
@@ -33,40 +31,24 @@ protocol/axtp.protocol.yaml + docs/generated/* + tooling/* + runtime generated h
 | `registry/domains/<domain>/domain.yaml` | 已评审通过的新业务域能力，例如 network、stream 等 domain 下的 method/event/schema/capability | 先在 `docs/protocol/<domain>/<domain.feature>.md` 写草案，评审通过后采纳到 domain YAML | `docs/protocol` 是草案和评审输入；domain YAML 才是采纳后的正式机器事实 |
 | `registry/legacy/legacy_mapping.yaml` | 已确认的旧协议命令、状态码、payload 到 AXTP method/event/stream 的映射 | 根据 `docs/legacy-protocols/**`、`docs/migration/**` 和人工确认结果写入 | 旧协议材料只是证据来源；没有证据的 TBD 映射不能写入 YAML |
 
-换句话说，三者的关系是：
-
-```text
-docs/specs/**
-  定义协议框架、命名规则、ID 规则、wire format、生成规则
-
-docs/protocol/**
-  承接具体业务需求和旧协议线索
-  形成可评审的候选 method/event/schema/error/capability
-  带 [REVIEW-*] 标记
-
-registry/**/*.yaml + registry/domains/**/*.yaml
-  只接收已经评审确认的协议事实
-  是 Generator 唯一可信的机器输入
-```
-
-因此：
+因此按下面规则操作：
 
 - 修改普通业务能力时，通常先改 `docs/protocol/**` 草案，评审后再改 `registry/domains/<domain>/domain.yaml`。
 - 修改命名、ID、schema、profile、兼容性等治理规则时，需要同步确认 `docs/specs/08-14`，再落 YAML。
 - 修改 Standard Frame、CONTROL/RPC/STREAM payload header、transport profile 等 Core 规则时，必须先确认 `docs/specs/00-06/18/19` 的规范变化，再改 `registry/core/**` 或 Generator 校验逻辑。
 - Generator 只读取 YAML、校验 YAML、聚合 Protocol IR、输出 generated 产物；它不负责把 `docs/protocol` 草案自动变成 YAML。
 
-这一步不应该靠人肉照着 Markdown 填 YAML。仓库用一个总控 skill 和四个阶段 skill 固化流程：
+### 1.2 协议生命周期
 
 | 层级 | Skill | 输入 | 输出 | 边界 |
 |---|---|---|---|---|
 | 总控路由 | `docs/dev/skills/axtp-protocol-workflow/SKILL.md` | 用户提出的“新增/修改/迁移/采纳/实现业务协议”任务 | 判断应该进入草案、采纳、修订、生成还是 runtime 实现 | 默认不直接写 YAML，先路由 |
 | 草案阶段 | `docs/dev/skills/draft-business-protocol/SKILL.md` | 大白话需求、旧协议线索、产品/架构想法 | `docs/protocol/<domain>/<domain.feature>.md` 草案 | 不写 registry，不生成正式协议 |
-| 采纳阶段 | `docs/dev/skills/adopt-protocol-draft/SKILL.md` | 已评审草案 MD | specs 08-13 对齐、草案 formalized、`registry/**/*.yaml` / `registry/domains/**/*.yaml` | 不采纳未确认 `[REVIEW-*]`，不手写 generated |
+| 采纳阶段 | `docs/dev/skills/adopt-protocol-draft/SKILL.md` | 已评审草案 MD | specs 08-13 对齐；涉及 profile/MVP 时同步 14；草案 formalized；写入 YAML | 不采纳未确认 `[REVIEW-*]`，不手写 generated |
 | 修订阶段 | `docs/dev/skills/amend-adopted-protocol/SKILL.md` | 已采纳或已生成协议的语义修正、字段删除、废弃、重命名或扩展 | amendment 记录、proposal/specs/YAML 修正、generated 重新生成 | 先判断 draft/experimental vs stable/MVP，不直接手写 generated |
 | 生成阶段 | `docs/dev/skills/generate-axtp-protocol/SKILL.md` | 已采纳 YAML 事实源 | Protocol IR、generated docs、tooling JSON、test vectors、runtime generated headers | 只从 YAML 生成，不从 Markdown 推断新事实 |
 
-每个阶段的责任分工：
+每个阶段的责任分工如下：
 
 | 阶段 | 主责角色 | 参与角色 | 主责做什么 | 参与角色确认什么 | 完成标准 |
 |---|---|---|---|---|---|
@@ -74,13 +56,13 @@ registry/**/*.yaml + registry/domains/**/*.yaml
 | 总控路由 | 协议维护者 / 架构 | 提需求的人 | 使用 `axtp-protocol-workflow` 判断走草案、采纳、生成还是 runtime 实现 | 确认当前阶段判断是否符合预期 | 明确下一步 skill 和允许修改范围 |
 | 草案阶段 | 协议维护者 / 架构 | 业务、固件、上位机、后台、测试 | 使用 `draft-business-protocol` 搜索复用项，起草或更新 `docs/protocol/**`，写候选 method/schema/event/error/capability | 业务确认语义，固件确认可实现性，上位机/后台确认调用方式，测试确认可测性 | 草案带 `[REVIEW-*]`，open questions 明确 |
 | 草案评审 | 架构 / 业务负责人 | 固件、上位机、后台、SDK/工具、测试 | 组织评审，逐项处理 `[REVIEW-*]` | 各端确认字段、错误码、事件、stream、legacy 映射和兼容边界 | 可采纳内容均为 `[REVIEW-OK]` 或等价确认 |
-| 采纳阶段 | 协议维护者 / 架构 | 业务、固件、上位机、测试 | 使用 `adopt-protocol-draft` 对齐 specs 08-13，固定草案状态，写入 YAML，分配 ID / `bit_offset` / fieldId | 确认没有未解决 review blocker 被写入 YAML | `validate:sources` 通过，YAML 只含已确认事实 |
+| 采纳阶段 | 协议维护者 / 架构 | 业务、固件、上位机、测试 | 使用 `adopt-protocol-draft` 对齐 specs 08-13/14，固定草案状态，写入 YAML，分配 ID / `bit_offset` / fieldId | 确认没有未解决 review blocker 被写入 YAML | `validate:sources` 通过，YAML 只含已确认事实 |
 | 修订阶段 | 协议维护者 / 架构 | 业务、固件、上位机、后台、测试 | 使用 `amend-adopted-protocol` 修正已采纳事实，记录 amendment，判断删除/废弃/版本化策略 | 确认 draft/experimental 可直接修正，stable/MVP 不静默破坏 wire 合同 | amendment 记录、YAML/source validation、generated diff |
 | 生成阶段 | 协议维护者 / SDK/工具 | 测试、研发 | 使用 `generate-axtp-protocol` 从 YAML 生成 Protocol IR、generated docs、tooling、test vectors、runtime generated headers | 确认 generated diff 符合本次协议变化 | `validate:protocol`、Generator tests、`git diff --check` 通过 |
 | PR 发布 | 协议维护者 / 研发负责人 | 业务、固件、上位机、后台、测试 | 提交草案、specs、YAML、generated diff，说明兼容影响和测试结果 | 评审 generated 文档是否能支撑实现和验收 | PR 合并 main，generated 协议成为研发/测试依据 |
 | 研发实现 | 固件 / 上位机 / 后台 / SDK | 测试、协议维护者 | 按 `docs/generated/protocol.md/json`、generated headers 和 test vectors 实现功能 | 测试确认正向、错误、event、stream、legacy 兼容用例 | 端到端联调和测试通过 |
 
-`adopt-protocol-draft` 做的是“受控转译”：读取草案、specs 和现有 YAML，检查 `[REVIEW-*]` 状态，反向确认 08-13，计算 ID / `bit_offset` / fieldId，固定草案状态，并写入 YAML。它不是简单的 Markdown parser，因为协议采纳必须处理冲突、编号、兼容性和未确认事实。
+`adopt-protocol-draft` 做的是“受控转译”：读取草案、specs 和现有 YAML，检查 `[REVIEW-*]` 状态，反向确认 08-13/14，计算 ID / `bit_offset` / fieldId，固定草案状态，并写入 YAML。它不是简单的 Markdown parser，因为协议采纳必须处理冲突、编号、兼容性和未确认事实。
 
 实际开发时：
 
@@ -696,7 +678,7 @@ candidate event: auth.screenCastPasswordChanged
 
 ```text
 Use docs/dev/skills/adopt-protocol-draft/SKILL.md
-docs/specs/08-13 reverse confirmation
+docs/specs/08-13 reverse confirmation, plus 14 when profiles/MVP change
 docs/protocol/auth/auth.screenCastPassword.md formal adoption note
 registry/domains/<domain>/domain.yaml
 ```

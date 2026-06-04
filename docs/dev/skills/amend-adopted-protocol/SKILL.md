@@ -97,7 +97,7 @@ Patch `docs/protocol/<domain>/<domain.feature>.md` first:
 - Keep unresolved or deferred facts as `[REVIEW-ASK]`; do not move them to YAML.
 - Preserve useful adoption history.
 
-### 5. Update Specs 08-13 Only Where Needed
+### 5. Update Specs 08-13/14 Only Where Needed
 
 Specs are governance, not the machine source. Update only when the amendment changes:
 
@@ -106,6 +106,7 @@ Specs are governance, not the machine source. Update only when the amendment cha
 - schema/type/capability rules
 - error placement or domain-specific error tables
 - field numbering/deprecation guidance
+- profile membership, MVP requirements, or profile registry semantics
 
 Do not copy full business prose into specs.
 
