@@ -1,7 +1,0 @@
-domain: network
-description: Network configuration and status methods.
-
-methods: []
-events: []
-types: {}
-capabilities: []

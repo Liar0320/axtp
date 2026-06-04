@@ -88,7 +88,7 @@ docs/generated/protocol.json
 docs/generated/*_registry.generated.md
 tooling/mcp/*.generated.json
 tooling/test-vectors/*
-runtimes/cpp-core/include/axtp/generated/*
+runtimes/cpp/core/include/axtp/generated/*
 generators/src/__snapshots__/*
 ```
 

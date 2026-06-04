@@ -8,7 +8,7 @@ AXTP C++ uses a Skia-like library discipline with AXTP-specific naming:
 - 4 spaces, 100 columns, K&R braces, no tabs
 - explicit ownership and ManualPoll-friendly runtime APIs
 - header-only core and header-only generated traits
-- no platform dependencies in cpp-core public headers
+- no platform dependencies in cpp/core public headers
 - concrete transports as optional runtime/tool adapters
 
 AXTP does not use Skia's `fMember` or `gGlobal` naming, and it does not require every type to carry an `Axtp` prefix. AXTP also does not use obs-websocket's tab/132-column/application-plugin style as core style.
@@ -21,7 +21,7 @@ Use these documents together when changing C++ runtime code:
 
 | Document | Scope |
 |---|---|
-| `runtimes/cpp-core/ARCHITECTURE.md` | Target layout, runtime layers, wire paths, test map |
+| `runtimes/cpp/core/ARCHITECTURE.md` | Target layout, runtime layers, wire paths, test map |
 | `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md` | Design patterns, extension recipes, anti-patterns |
 | `docs/dev/AXTP_CPP_EXECUTION_FLOW.md` | Runtime, SDK, CLI, HID, and direct-core execution flow |
 | `docs/dev/AXTP_CORE_API_DESIGN.md` | Core public API and boundaries |
@@ -167,7 +167,7 @@ Do not include old top-level pipeline paths:
 
 Core public headers may include standard C++ headers, AXTP public headers, generated headers, and Boost.JSON where required by the formal `WebSocketJsonRpc` core wire mode. They must not include `windows.h`, `unistd.h`, `sys/socket.h`, `hidapi.h`, Boost.Asio, Boost.Beast, websocket libraries, Qt headers, or pthread headers.
 
-Concrete transport targets and tools may include platform libraries, but those dependencies must not leak through cpp-core public headers.
+Concrete transport targets and tools may include platform libraries, but those dependencies must not leak through cpp/core public headers.
 
 ## 6. Runtime Layering And Ownership
 
@@ -212,4 +212,4 @@ scripts/format-cpp.sh
 scripts/check-format-cpp.sh
 ```
 
-The scripts scan `runtimes/cpp-core`, `runtimes/cpp-sdk`, `runtimes/cpp-json-rpc`, `runtimes/cpp-transports`, and `runtimes/cpp-tools`, excluding `build/`, `generated/`, and `thirdparty/`.
+The scripts scan `runtimes/cpp/core`, `runtimes/cpp/sdk`, `runtimes/cpp/json-rpc`, `runtimes/cpp/transports`, and `runtimes/cpp/tools`, excluding `build/`, `generated/`, and `thirdparty/`.

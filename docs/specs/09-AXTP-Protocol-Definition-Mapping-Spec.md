@@ -335,12 +335,7 @@ registry/
 │   ├── protocol_meta.yaml
 │   ├── rpc_encoding.yaml
 │   ├── rpc_body_encoding.yaml
-│   ├── rpc_op.yaml
-│   └── stream_profile.yaml
-├── method/
-│   └── method_registry.yaml
-├── event/
-│   └── event_registry.yaml
+│   └── rpc_op.yaml
 ├── error/
 │   └── error_code.yaml
 ├── capability/
@@ -352,19 +347,13 @@ registry/
 ├── schema/
 │   ├── common_fields.yaml
 │   ├── control_schema.yaml
-│   ├── device_schema.yaml
-│   ├── display_schema.yaml
 │   ├── event_schema.yaml
-│   ├── firmware_schema.yaml
-│   ├── session_schema.yaml
-│   └── stream_schema.yaml
-├── legacy/
-│   └── legacy_mapping.yaml
+│   └── session_schema.yaml
 └── vendor/
     └── .gitkeep
 ```
 
-`registry/` 是唯一机器事实源根目录。其中 `registry/method|event|error|capability|schema|legacy/` 保存核心/公共/已采纳事实，`registry/domains/<domain>/domain.yaml` 保存新增业务域事实。Generator v1 读取两类 Source YAML 后生成 `protocol/axtp.protocol.yaml`，不得手写 Protocol IR 或 generated 目录成果物。
+`registry/` 是唯一机器事实源根目录。其中 `registry/error|capability|schema/` 保存当前核心/公共/已采纳事实，`registry/domains/<domain>/domain.yaml` 保存新增业务域事实。`registry/method/`、`registry/event/`、`registry/legacy/` 和额外 shared schema 文件按采纳事实需要创建；空集合不保留占位文件。Generator v1 读取 Source YAML 后生成 `protocol/axtp.protocol.yaml`，不得手写 Protocol IR 或 generated 目录成果物。
 
 新增业务默认只写 `registry/domains/<domain>/domain.yaml`，不同时复制到 `registry/method/`、`registry/event/`、`registry/schema/` 等核心文件。只有当该业务被治理为 MVP/Core 公共能力时，才执行晋升：保持原有 ID、fieldId、bitOffset 和语义不变，将条目迁入核心 registry，并从 domain YAML 删除对应条目，避免双事实源。
 

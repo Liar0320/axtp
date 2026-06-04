@@ -1,8 +1,8 @@
 #pragma once
 
-#include "axtp_sdk/axtp_client.hpp"
-#include "axtp_sdk/capability_client.hpp"
-#include "axtp_sdk/generated/audio_client.h"
+#include "axtp_client.hpp"
+#include "capability_client.hpp"
+#include "generated/audio_client.h"
 
 namespace axtp::sdk {
 

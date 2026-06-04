@@ -41,7 +41,7 @@ if(AXTP_BUILD_JSON_RPC)
     add_library(axtp_json_rpc INTERFACE)
     target_include_directories(axtp_json_rpc
         INTERFACE
-            ${CMAKE_CURRENT_SOURCE_DIR}/../cpp-json-rpc/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/../json-rpc/include
     )
     target_link_libraries(axtp_json_rpc
         INTERFACE
@@ -54,7 +54,7 @@ if(AXTP_BUILD_OPTIONAL_TRANSPORTS)
     add_library(axtp_transport_tcp_boost INTERFACE)
     target_include_directories(axtp_transport_tcp_boost
         INTERFACE
-            ${CMAKE_CURRENT_SOURCE_DIR}/../cpp-transports/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/../transports/include
     )
     target_link_libraries(axtp_transport_tcp_boost
         INTERFACE
@@ -66,7 +66,7 @@ if(AXTP_BUILD_OPTIONAL_TRANSPORTS)
     add_library(axtp_transport_websocket_boost INTERFACE)
     target_include_directories(axtp_transport_websocket_boost
         INTERFACE
-            ${CMAKE_CURRENT_SOURCE_DIR}/../cpp-transports/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/../transports/include
     )
     target_link_libraries(axtp_transport_websocket_boost
         INTERFACE
@@ -137,11 +137,11 @@ if(AXTP_BUILD_OPTIONAL_TRANSPORTS)
     endif()
 
     add_library(axtp_transport_hidapi STATIC EXCLUDE_FROM_ALL
-        ${CMAKE_CURRENT_SOURCE_DIR}/../cpp-transports/src/hidapi/hid_transport.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../transports/src/hidapi/hid_transport.cpp
     )
     target_include_directories(axtp_transport_hidapi
         PUBLIC
-            ${CMAKE_CURRENT_SOURCE_DIR}/../cpp-transports/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/../transports/include
     )
     target_link_libraries(axtp_transport_hidapi
         PUBLIC

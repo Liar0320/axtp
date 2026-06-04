@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(NOT TARGET axtp_core)
     set(AXTP_CORE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../cpp-core ${CMAKE_CURRENT_BINARY_DIR}/cpp-core)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../core ${CMAKE_CURRENT_BINARY_DIR}/core)
 endif()
 
 find_package(Boost CONFIG REQUIRED COMPONENTS json)

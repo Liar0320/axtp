@@ -4,7 +4,7 @@
 
 #include "axtp/testing/mock_transport.hpp"
 
-#include "axtp_sdk/axtp_sdk_all.hpp"
+#include "axtp_sdk_all.hpp"
 
 int main() {
     axtp::sdk::AxtpClient client;

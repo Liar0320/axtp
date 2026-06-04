@@ -2,7 +2,7 @@
 
 ## Summary
 
-`runtimes/cpp-sdk` is the C++ application-facing layer built on top of `runtimes/cpp-core`. It hides Frame/Message/Payload internals and exposes client/server, endpoint, call, event, capability, and typed method helpers.
+`runtimes/cpp/sdk` is the C++ application-facing layer built on top of `runtimes/cpp/core`. It hides Frame/Message/Payload internals and exposes client/server, endpoint, call, event, capability, and typed method helpers.
 
 The SDK uses the runtime layering directly:
 
@@ -41,8 +41,8 @@ Related implementation documents:
 ## Package Layout
 
 ```text
-runtimes/cpp-sdk/
-  include/axtp_sdk/
+runtimes/cpp/sdk/
+  include/
     axtp_client.hpp
     axtp_server.hpp
     axtp_device.hpp
@@ -55,10 +55,7 @@ runtimes/cpp-sdk/
     sdk_error.hpp
     sdk_result.hpp
     generated/
-      capability_client.h
-      device_client.h
-      display_client.h
-      firmware_client.h
+      audio_client.h
     axtp_sdk_all.hpp
   tests/
 ```
@@ -149,7 +146,7 @@ Endpoints are value types:
 - `BleEndpoint { deviceId, serviceUuid, characteristicUuid }`
 - `UartEndpoint { path, baudRate }`
 
-P0 transport creation is intentionally limited because current cpp-core TCP/WebSocket classes are server-oriented test transports. Production client connectors will be added after the core transport abstraction grows a client connection API.
+P0 transport creation is intentionally limited because current cpp/core TCP/WebSocket classes are server-oriented test transports. Production client connectors will be added after the core transport abstraction grows a client connection API.
 
 ## Execution Flow
 

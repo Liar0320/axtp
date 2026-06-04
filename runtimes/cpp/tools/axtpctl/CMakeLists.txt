@@ -10,7 +10,7 @@ if(NOT TARGET axtp_sdk)
     set(AXTP_CORE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(AXTP_BUILD_JSON_RPC ON CACHE BOOL "" FORCE)
     set(AXTP_BUILD_OPTIONAL_TRANSPORTS ON CACHE BOOL "" FORCE)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../cpp-sdk ${CMAKE_CURRENT_BINARY_DIR}/cpp-sdk)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/../../sdk ${CMAKE_CURRENT_BINARY_DIR}/sdk)
 endif()
 
 add_executable(axtpctl

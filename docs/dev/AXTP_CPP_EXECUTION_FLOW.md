@@ -1,6 +1,6 @@
 # AXTP C++ Execution Flow
 
-本文档描述当前 C++ runtime、SDK 和 CLI 的端到端执行流程。代码架构见 `runtimes/cpp-core/ARCHITECTURE.md`，命名规范见 `docs/dev/AXTP_CPP_STYLE.md`，设计模式见 `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md`。
+本文档描述当前 C++ runtime、SDK 和 CLI 的端到端执行流程。代码架构见 `runtimes/cpp/core/ARCHITECTURE.md`，命名规范见 `docs/dev/AXTP_CPP_STYLE.md`，设计模式见 `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md`。
 
 ## Common Runtime Lifecycle
 

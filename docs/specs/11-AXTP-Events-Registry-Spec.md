@@ -216,7 +216,7 @@ EventId 使用 `uint16`，按与 MethodId 相同的 domain 分段分配。Event 
 
 ### 4. 当前生成 EventId 注册表
 
-EventId 表以 `registry/event/event_registry.yaml` 与 `registry/domains/<domain>/domain.yaml` 为事实源。当前 generated 只包含下列已采纳事件；其他事件即使出现在后续规划表中，也不得视为当前实现合同。
+EventId 表以 `registry/domains/<domain>/domain.yaml` 和按需存在的 `registry/event/event_registry.yaml` 为事实源。当前 generated 只包含下列已采纳事件；其他事件即使出现在后续规划表中，也不得视为当前实现合同。
 
 | eventId | eventName | Domain | bitOffset | 状态 | 说明 |
 | ---: | --- | --- | ---: | --- | --- |
@@ -228,7 +228,7 @@ EventId 表以 `registry/event/event_registry.yaml` 与 `registry/domains/<domai
 
 ### 5. 完整 EventId 规划
 
-以下表格是正式 EventId 规划表，用于保留编号空间和约束可采纳事件；当前实现状态以 `registry/event/event_registry.yaml`、`registry/domains/<domain>/domain.yaml` 及生成产物为准。
+以下表格是正式 EventId 规划表，用于保留编号空间和约束可采纳事件；当前实现状态以 `registry/domains/<domain>/domain.yaml`、按需存在的 `registry/event/event_registry.yaml` 及生成产物为准。
 
 #### 5.1 device 事件
 

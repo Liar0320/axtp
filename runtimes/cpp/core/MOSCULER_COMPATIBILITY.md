@@ -20,4 +20,4 @@
 
 - WebSocketJsonRpc does not use Standard Frame headers, Binary RPC 11B headers, CONTROL, STREAM, CRC16, or message fragmentation.
 - WebSocketJsonRpc is not an AXDP/legacy adapter and does not carry legacy command ids, legacy status codes, old checksums, or old headers.
-- Legacy adapters may be implemented as separate optional packages that depend on cpp-core normalized payload interfaces.
+- Legacy adapters may be implemented as separate optional packages that depend on cpp/core normalized payload interfaces.

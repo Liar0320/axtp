@@ -15,10 +15,10 @@
 #include "axtp/generated/method_traits.h"
 #include "axtp/generated/schema_codec.h"
 
-#include "axtp_sdk/call_options.hpp"
-#include "axtp_sdk/client_options.hpp"
-#include "axtp_sdk/endpoints.hpp"
-#include "axtp_sdk/sdk_error.hpp"
+#include "call_options.hpp"
+#include "client_options.hpp"
+#include "endpoints.hpp"
+#include "sdk_error.hpp"
 
 namespace axtp::sdk {
 

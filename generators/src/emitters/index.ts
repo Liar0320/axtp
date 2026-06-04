@@ -41,7 +41,7 @@ export async function emitRepositoryRegistryArtifacts(spec: SpecModel, repoRoot:
   await Promise.all([
     emitMarkdownFiles(spec, path.join(repoRoot, "docs", "generated")),
     emitJsonFiles(spec, path.join(repoRoot, "tooling", "mcp")),
-    emitCppFiles(spec, path.join(repoRoot, "runtimes", "cpp-core", "include", "axtp", "generated")),
+    emitCppFiles(spec, path.join(repoRoot, "runtimes", "cpp", "core", "include", "axtp", "generated")),
     emitTestVectorFiles(spec, path.join(repoRoot, "tooling", "test-vectors"))
   ]);
 }

@@ -11,7 +11,7 @@
 | 整理原始业务需求 | `business/README.md` -> 对应 `business/<requirement>.md` |
 | 从业务场景梳理协议交互 | `business/README.md` -> `flows/README.md` -> 对应 `flows/<scenario>.md` -> `protocol/README.md` |
 | 新增业务协议 | `business/README.md` -> `protocol/README.md` -> `protocol/<domain>/<domain.feature>.md` -> 对应 `dev/skills/**` |
-| 使用工具、SDK、runtime | `guides/how-to-use.md` -> `dev/AXTP_*` -> `../runtimes/cpp-core/ARCHITECTURE.md` |
+| 使用工具、SDK、runtime | `guides/how-to-use.md` -> `dev/AXTP_*` -> `../runtimes/cpp/core/ARCHITECTURE.md` |
 | 追溯旧协议迁移 | `legacy-protocols/`、`migration/`、`legacy-classification/` |
 
 ## 文档分区

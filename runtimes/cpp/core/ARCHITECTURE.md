@@ -16,9 +16,9 @@ ITransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker
 | `axtp_broker` | `INTERFACE` | `BasicBroker<>`, `BrokerTask`, `BrokerResult`, dynamic method dispatch helpers |
 | `axtp_runtime` | `INTERFACE` | core + broker + endpoint glue for normal application use |
 | `axtp_json_rpc` | `INTERFACE` | WebSocket session helper adapter and JSON registry-file loader |
-| `axtp_transport_hidapi` | `STATIC` optional | HID report-level transport in `runtimes/cpp-transports`, backed by `runtimes/thirdparty/hidapi` |
-| `axtp_transport_tcp_boost` | `INTERFACE` optional | Boost.Asio TCP transport in `runtimes/cpp-transports` |
-| `axtp_transport_websocket_boost` | `INTERFACE` optional | Boost.Beast WebSocket transport in `runtimes/cpp-transports` |
+| `axtp_transport_hidapi` | `STATIC` optional | HID report-level transport in `runtimes/cpp/transports`, backed by `runtimes/cpp/thirdparty/hidapi` |
+| `axtp_transport_tcp_boost` | `INTERFACE` optional | Boost.Asio TCP transport in `runtimes/cpp/transports` |
+| `axtp_transport_websocket_boost` | `INTERFACE` optional | Boost.Beast WebSocket transport in `runtimes/cpp/transports` |
 
 The recommended runtime include is:
 
@@ -85,8 +85,8 @@ flowchart TB
 
 - `ITransport` implementations only move bytes/messages and expose `TransportProfile`.
 - `HidTransport` handles report id, report size, padding, read/write, and manual `poll()`. It does not parse frames, payloads, method ids, or legacy commands.
-- TCP/WebSocket/HID concrete transports live in `runtimes/cpp-transports`.
-- hidapi is vendored under `runtimes/thirdparty/hidapi` and is only linked by `axtp_transport_hidapi`.
+- TCP/WebSocket/HID concrete transports live in `runtimes/cpp/transports`.
+- hidapi is vendored under `runtimes/cpp/thirdparty/hidapi` and is only linked by `axtp_transport_hidapi`.
 - `axtp_core` public headers must not include hidapi, Boost.Asio, Boost.Beast, socket APIs, thread APIs, or concrete transport headers.
 
 ## Public Header Rules
@@ -95,7 +95,7 @@ flowchart TB
 - Old `axtp/inbound/*`, `axtp/outbound/*`, `AxtpBroker`, `AxtpInboundProcessor`, and `AxtpOutboundProcessor` compatibility names are intentionally not preserved.
 - `BasicBroker<> + AxtpEndpoint + ITransport` is the recommended application runtime shape.
 - Advanced users may use `AxtpCore` directly through `configure()`, `byteSink()`, `pollEvent()`, `handleBrokerResult()`, and `tryPopOutboundBytes()`.
-- Legacy/AXDP adapters are outside cpp-core/runtime. They may depend on this runtime later; this runtime must not depend on them.
+- Legacy/AXDP adapters are outside cpp/core/runtime. They may depend on this runtime later; this runtime must not depend on them.
 
 ## C++ Code Style
 

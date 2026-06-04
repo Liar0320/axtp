@@ -462,7 +462,7 @@ flowchart TD
 | `docs/generated/*_registry.generated.md` | 研发、测试、评审 | 查 methodId、eventId、errorCode、capability |
 | `tooling/mcp/*.generated.json` | 工具链/MCP | 自动化查询协议事实 |
 | `tooling/test-vectors/*` | 测试、runtime | 线格式一致性测试 |
-| `runtimes/cpp-core/include/axtp/generated/*` | C++ runtime/SDK | 生成的 ID、traits、registry、codec |
+| `runtimes/cpp/core/include/axtp/generated/*` | C++ runtime/SDK | 生成的 ID、traits、registry、codec |
 
 ### 4.4 哪些可以手动改，哪些不能改
 
@@ -483,7 +483,7 @@ flowchart TD
 - `tooling/mcp/*.generated.json`
 - `tooling/test-vectors/**`
 - `runtimes/*/generated/**`
-- `runtimes/cpp-core/include/axtp/generated/**`
+- `runtimes/cpp/core/include/axtp/generated/**`
 - `generators/src/__snapshots__/**`
 
 如果 generated 内容错了，修源头，不修 generated。

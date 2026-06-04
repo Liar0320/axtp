@@ -22,7 +22,7 @@ AXTP 的核心约定是：业务方案先进入草案，评审采纳后写入 YA
 | 查当前可实现协议 | [docs/generated/protocol.md](docs/generated/protocol.md) 和 [docs/generated/protocol.json](docs/generated/protocol.json) |
 | 新增或修改业务协议 | [docs/protocol/README.md](docs/protocol/README.md) -> 对应 `docs/dev/skills/**` |
 | 运行 Generator 或 CLI/SDK/runtime | [docs/guides/how-to-use.md](docs/guides/how-to-use.md) |
-| C++ runtime/SDK 接入 | [runtimes/cpp-core/ARCHITECTURE.md](runtimes/cpp-core/ARCHITECTURE.md) 和 [docs/dev/AXTP_SDK_API_DESIGN.md](docs/dev/AXTP_SDK_API_DESIGN.md) |
+| C++ runtime/SDK 接入 | [runtimes/cpp/core/ARCHITECTURE.md](runtimes/cpp/core/ARCHITECTURE.md) 和 [docs/dev/AXTP_SDK_API_DESIGN.md](docs/dev/AXTP_SDK_API_DESIGN.md) |
 | 研发启动会材料 | [docs/dev/AXTP_RD_KICKOFF_GUIDE.md](docs/dev/AXTP_RD_KICKOFF_GUIDE.md) |
 
 ## Repository Layout
@@ -37,9 +37,10 @@ AXTP 的核心约定是：业务方案先进入草案，评审采纳后写入 YA
 | `docs/generated/` | Generator 输出的人读协议参考和 JSON | 否 |
 | `tooling/mcp/`、`tooling/test-vectors/` | Generator 输出的工具 JSON 和测试向量 | 否 |
 | `generators/` | TypeScript Generator 源码 | 是 |
-| `runtimes/cpp-core/` | C++ protocol core/runtime，`include/axtp/generated/` 除外 | 部分 |
-| `runtimes/cpp-sdk/` | C++ 应用层 SDK | 部分 |
-| `runtimes/cpp-tools/axtpctl/` | AXTP CLI 调试工具 | 是 |
+| `runtimes/cpp/core/` | C++ protocol core/runtime，`include/axtp/generated/` 除外 | 部分 |
+| `runtimes/cpp/sdk/` | C++ 应用层 SDK | 部分 |
+| `runtimes/cpp/tools/axtpctl/` | AXTP CLI 调试工具 | 是 |
+| `runtimes/ts/` | TypeScript/Web runtime SDK | 部分 |
 
 `docs/protocol/` 和根目录 `protocol/` 名字相近，但角色不同：前者是草案目录，后者当前只包含生成后的 `protocol/axtp.protocol.yaml`。
 
@@ -139,7 +140,7 @@ git diff --check
 - `tooling/mcp/*.generated.json`
 - `tooling/test-vectors/**`
 - `runtimes/*/generated/**`
-- `runtimes/cpp-core/include/axtp/generated/**`
+- `runtimes/cpp/core/include/axtp/generated/**`
 - `generators/src/__snapshots__/**`
 
 生成结果不符合预期时，应回到草案、specs、YAML 事实源或 Generator 逻辑修正，再重新生成。

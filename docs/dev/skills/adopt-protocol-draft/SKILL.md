@@ -12,7 +12,7 @@ Convert a reviewed AXTP protocol draft into formal protocol facts. This is the s
 - Start from an existing `docs/protocol/<domain>/<domain.feature>.md` draft.
 - Do not adopt drafts containing unresolved `[REVIEW-BLOCKER]`, `[REVIEW-FIX]`, or `[REVIEW-ASK]` facts unless the user provides exact confirmed facts and the adoption is scoped around them.
 - Do not invent method/event/error/capability/profile semantics that are not present in the reviewed draft or specs.
-- Do not edit `protocol/axtp.protocol.yaml`, `docs/generated/*`, `tooling/mcp/*`, `tooling/test-vectors/*`, `runtimes/*/generated/*`, or `runtimes/cpp-core/include/axtp/generated/*` by hand.
+- Do not edit `protocol/axtp.protocol.yaml`, `docs/generated/*`, `tooling/mcp/*`, `tooling/test-vectors/*`, `runtimes/*/generated/*`, or `runtimes/cpp/core/include/axtp/generated/*` by hand.
 - Do not run full generated artifact emission as the main goal of this skill; use `generate-axtp-protocol` after adoption.
 - New business features default to `registry/domains/<domain>/domain.yaml`.
 - Use core `registry/` files only for Core/MVP adopted facts, shared schemas, core constants, profile governance, or accepted legacy mappings.
@@ -41,7 +41,7 @@ docs/generated/protocol.md
 protocol/axtp.protocol.yaml
 ```
 
-For stream, OTA, transport-sensitive, or low-bandwidth features, also read specs 02-06 and 18. For legacy adoption, read cited legacy evidence under `docs/legacy-protocols/**`, `docs/migration/**`, or existing `registry/legacy/legacy_mapping.yaml`.
+For stream, OTA, transport-sensitive, or low-bandwidth features, also read specs 02-06 and 18. For legacy adoption, read cited legacy evidence under `docs/legacy-protocols/**`, `docs/migration/**`, or `registry/legacy/legacy_mapping.yaml` if it already exists.
 
 ## Workflow
 
@@ -105,9 +105,9 @@ Use these defaults:
 | Fact | Default target |
 |---|---|
 | New business method/event/schema/error/capability/profile | `registry/domains/<domain>/domain.yaml` |
-| Core/MVP stable method/event/capability | `registry/method`, `registry/event`, or `registry/capability` only after governance confirmation |
+| Core/MVP stable method/event/capability | `registry/method`, `registry/event`, or `registry/capability` only after governance confirmation; do not keep empty placeholder files |
 | Shared schema used by multiple domains | `registry/schema/*.yaml` only if truly shared |
-| Legacy mapping | `registry/legacy/legacy_mapping.yaml` only with concrete evidence |
+| Legacy mapping | `registry/legacy/legacy_mapping.yaml` only with concrete evidence; create the file only when at least one mapping is adopted |
 | Core constants | `registry/core/*.yaml` only after spec change confirmation |
 
 If no valid target exists, stop and report the required governance change.

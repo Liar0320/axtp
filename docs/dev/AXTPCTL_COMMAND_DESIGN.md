@@ -2,7 +2,7 @@
 
 ## Summary
 
-`runtimes/cpp-tools/axtpctl` is the AXTP command-line tool for debugging, production test, and integration checks. It depends on `runtimes/cpp-sdk` and should not directly manipulate low-level frame decoders except for explicit inspection commands.
+`runtimes/cpp/tools/axtpctl` is the AXTP command-line tool for debugging, production test, and integration checks. It depends on `runtimes/cpp/sdk` and should not directly manipulate low-level frame decoders except for explicit inspection commands.
 
 Runtime calls should flow through the SDK, which in turn uses `AxtpEndpoint` as the glue between `ITransport`, `AxtpCore`, and `BasicBroker<>`.
 
@@ -31,7 +31,7 @@ axtpctl \
   <command>
 ```
 
-`mock` is the default transport for P0 smoke tests. For real devices, the CLI must route through SDK transport connectors or optional transport factories when those are available. Concrete HID/TCP/WebSocket dependencies are tool/runtime dependencies, not cpp-core dependencies.
+`mock` is the default transport for P0 smoke tests. For real devices, the CLI must route through SDK transport connectors or optional transport factories when those are available. Concrete HID/TCP/WebSocket dependencies are tool/runtime dependencies, not cpp/core dependencies.
 
 ## P0 Commands
 
@@ -91,7 +91,7 @@ axtpctl test-vector run PATH
 axtpctl mock-server --listen HOST:PORT
 ```
 
-These should continue to use SDK-level APIs rather than reaching into cpp-core internals.
+These should continue to use SDK-level APIs rather than reaching into cpp/core internals.
 
 ## Internal Execution Flow
 
@@ -121,7 +121,7 @@ Only `inspect` commands may directly touch frame/payload decoders. User-facing d
 
 ## Transport Policy
 
-`axtpctl` may link optional transport targets because it is a tool target. It must not move concrete transport dependencies down into cpp-core. The command implementation should keep transport factory logic at the CLI/SDK boundary:
+`axtpctl` may link optional transport targets because it is a tool target. It must not move concrete transport dependencies down into cpp/core. The command implementation should keep transport factory logic at the CLI/SDK boundary:
 
 ```text
 mock      -> testing/mock transport or local handler
@@ -132,7 +132,7 @@ ble/uart  -> reserved endpoint values until concrete transports exist
 
 ## Documentation Links
 
-- Runtime architecture: `runtimes/cpp-core/ARCHITECTURE.md`
+- Runtime architecture: `runtimes/cpp/core/ARCHITECTURE.md`
 - Runtime patterns: `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md`
 - Execution flow: `docs/dev/AXTP_CPP_EXECUTION_FLOW.md`
 - C++ style: `docs/dev/AXTP_CPP_STYLE.md`

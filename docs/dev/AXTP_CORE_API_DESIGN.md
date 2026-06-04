@@ -2,7 +2,7 @@
 
 ## Summary
 
-`runtimes/cpp-core` is the protocol-correct C++ runtime layer. It owns AXTP model types, byte IO interfaces, FramedBinary parsing/encoding, WebSocketJsonRpc text JSON parsing/encoding, core protocol state, transport profiles, and runtime lookup helpers. It does not expose business-friendly client APIs, platform transports, concrete HID/TCP/WebSocket dependencies, or legacy AXDP adapters.
+`runtimes/cpp/core` is the protocol-correct C++ runtime layer. It owns AXTP model types, byte IO interfaces, FramedBinary parsing/encoding, WebSocketJsonRpc text JSON parsing/encoding, core protocol state, transport profiles, and runtime lookup helpers. It does not expose business-friendly client APIs, platform transports, concrete HID/TCP/WebSocket dependencies, or legacy AXDP adapters.
 
 The core runtime supports two AXTP v1 wire paths:
 
@@ -11,7 +11,7 @@ The core runtime supports two AXTP v1 wire paths:
 | `FramedBinary` | `FrameDecoder -> MessageReassembler -> PayloadDecoder -> IPayloadSink` | `PayloadEncoder -> MessageFragmenter -> FrameEncoder -> IByteWriter` |
 | `WebSocketJsonRpc` | complete text message -> `JsonRpcDecoder -> IPayloadSink` | `JsonRpcEncoder -> IByteWriter` |
 
-`WebSocketJsonRpc` is an AXTP protocol profile, not a compatibility or legacy layer. Legacy protocol adapters must live outside cpp-core and depend on it.
+`WebSocketJsonRpc` is an AXTP protocol profile, not a compatibility or legacy layer. Legacy protocol adapters must live outside cpp/core and depend on it.
 
 The runtime layering is:
 
@@ -157,7 +157,7 @@ Generated typed traits and schema codecs remain optional convenience headers. Th
 - `AxtpCore` does not parse business JSON directly; JSON-RPC parsing belongs to the wire adapter/decoder.
 - `AxtpCore` does not call `SchemaCodec`, `MethodTraits`, or business request/response structs.
 - `AxtpCore` does not know legacy command IDs or AXDP framing.
-- TCP/WebSocket/HID classes are optional targets under `runtimes/cpp-transports`, not part of `axtp_core`.
+- TCP/WebSocket/HID classes are optional targets under `runtimes/cpp/transports`, not part of `axtp_core`.
 
 ## Implementation Patterns
 

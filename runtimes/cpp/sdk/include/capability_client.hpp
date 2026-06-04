@@ -5,7 +5,7 @@
 
 #include "axtp/generated/axtp_method_registry_generated.h"
 
-#include "axtp_sdk/axtp_client.hpp"
+#include "axtp_client.hpp"
 
 namespace axtp::sdk {
 

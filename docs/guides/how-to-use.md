@@ -27,9 +27,9 @@ docs/generated/* + tooling/* + runtime generated headers
 | YAML 位置 | 事实来源 | 产生方式 | 和 specs / docs/protocol 的关系 |
 |---|---|---|---|
 | `registry/core/*.yaml` | AXTP Core 架构裁决、wire format、payload type、RPC op、transport profile、stream profile 等核心规则 | 根据 `docs/specs/00-06`、`18`、`19` 中已冻结或已确认的规则人工维护 | `docs/specs` 是规则说明和治理依据；Core YAML 是这些规则的机器可读表达 |
-| `registry/method`、`registry/event`、`registry/error`、`registry/capability`、`registry/schema` | 已采纳的 Core/shared method、event、error、capability、公共 schema | 从已确认的规范表、Core 决策、稳定公共能力中人工写入 | 对应规则由 `docs/specs/08-14` 约束；不是从 generated 文档反推 |
+| `registry/error`、`registry/capability`、`registry/schema`，以及按需创建的 `registry/method`、`registry/event` | 已采纳的 Core/shared error、capability、公共 schema，以及被治理为 Core/shared 的 method/event | 从已确认的规范表、Core 决策、稳定公共能力中人工写入 | 对应规则由 `docs/specs/08-14` 约束；不是从 generated 文档反推；空集合不保留占位文件 |
 | `registry/domains/<domain>/domain.yaml` | 已评审通过的新业务域能力，例如 `audio.algorithm` 下的 method/event/schema/capability | 先在 `docs/protocol/<domain>/<domain.feature>.md` 写草案，评审通过后采纳到 domain YAML | `docs/protocol` 是草案和评审输入；domain YAML 才是采纳后的正式机器事实 |
-| `registry/legacy/legacy_mapping.yaml` | 已确认的旧协议命令、状态码、payload 到 AXTP method/event/stream 的映射 | 根据 `docs/legacy-protocols/**`、`docs/migration/**` 和人工确认结果写入 | 旧协议材料只是证据来源；没有证据的 TBD 映射不能写入 YAML |
+| `registry/legacy/legacy_mapping.yaml` | 已确认的旧协议命令、状态码、payload 到 AXTP method/event/stream 的映射 | 根据 `docs/legacy-protocols/**`、`docs/migration/**` 和人工确认结果按需创建并写入 | 旧协议材料只是证据来源；没有证据的 TBD 映射不能写入 YAML；没有已采纳映射时不保留空文件 |
 
 因此按下面规则操作：
 
@@ -168,7 +168,7 @@ docs/generated/protocol.json
 docs/generated/*_registry.generated.md
 tooling/mcp/*.generated.json
 tooling/test-vectors/*
-runtimes/cpp-core/include/axtp/generated/*
+runtimes/cpp/core/include/axtp/generated/*
 ```
 
 ### 3.5 校验 Protocol IR
@@ -194,7 +194,7 @@ git diff --check
 `axtpctl` 是调试、产测和集成检查工具，位置在：
 
 ```text
-runtimes/cpp-tools/axtpctl
+runtimes/cpp/tools/axtpctl
 ```
 
 P0 支持：
@@ -211,7 +211,7 @@ P0 支持：
 当前仓库没有顶层 CMakeLists，按工具目录单独构建：
 
 ```bash
-cmake -S runtimes/cpp-tools/axtpctl -B build/axtpctl
+cmake -S runtimes/cpp/tools/axtpctl -B build/axtpctl
 cmake --build build/axtpctl
 ```
 
@@ -301,7 +301,7 @@ TCP 示例形态：
 SDK 位置：
 
 ```text
-runtimes/cpp-sdk
+runtimes/cpp/sdk
 ```
 
 SDK 的 P0 策略是 dynamic RPC first。业务调用优先用 method name/id + JSON/TLV/Raw body，不强制依赖 typed generated wrappers。
@@ -309,7 +309,7 @@ SDK 的 P0 策略是 dynamic RPC first。业务调用优先用 method name/id + 
 ### 5.1 JSON 调用
 
 ```cpp
-#include "axtp_sdk/axtp_client.hpp"
+#include "axtp_client.hpp"
 
 int main() {
     axtp::sdk::AxtpClient client;
@@ -355,7 +355,7 @@ Raw API 适合调试、vendor private method 和 legacy bridge。正式业务应
 Typed facade 只有在对应业务协议已采纳并生成 wrapper 后才应暴露；当前优先使用 dynamic RPC：
 
 ```cpp
-#include "axtp_sdk/axtp_client.hpp"
+#include "axtp_client.hpp"
 
 axtp::sdk::AxtpClient client;
 auto config = client.callJson("audio.getAlgorithmConfig", "{}");
@@ -400,7 +400,7 @@ int main() {
 | `AxtpCore` | decode/encode、协议状态、CoreEvent | 持有 transport、调用业务 handler |
 | `AxtpEndpoint` | 连接 core、broker、transport | 写业务逻辑 |
 | `BasicBroker<>` | 注册和分发业务 handler | 回调 core、处理 socket/thread |
-| SDK/CLI | 提供易用 API 和命令 | 把平台依赖下沉到 cpp-core |
+| SDK/CLI | 提供易用 API 和命令 | 把平台依赖下沉到 cpp/core |
 
 ### 6.3 FramedBinary inbound 路径
 
@@ -538,7 +538,7 @@ VM33 迁移流程：
 注意：
 
 - 旧协议继续保留，先通过 adapter 或双栈策略兼容。
-- 没有旧 command/status/payload 证据的映射不能写进 `registry/legacy/legacy_mapping.yaml`。
+- 没有旧 command/status/payload 证据的映射不能写进 `registry/legacy/legacy_mapping.yaml`；没有已采纳映射时不创建空文件。
 - VM33 的配置型接口不要继续堆成万能 `Config.Get/Set`，应拆到明确的 domain.feature。
 
 ## 10. UXPlay 控制方案
@@ -785,9 +785,9 @@ C++ 变更：
 
 ```bash
 scripts/check-format-cpp.sh
-cmake -S runtimes/cpp-core -B build/cpp-core
-cmake --build build/cpp-core
-ctest --test-dir build/cpp-core --output-on-failure
+cmake -S runtimes/cpp/core -B build/cpp/core
+cmake --build build/cpp/core
+ctest --test-dir build/cpp/core --output-on-failure
 ```
 
 按实际改动范围补充 SDK、axtpctl 或 transport 测试。

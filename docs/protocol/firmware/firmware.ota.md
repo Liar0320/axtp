@@ -1375,7 +1375,7 @@ capabilities:
 采纳检查：
 
 1. 先决定旧 `firmware.begin/end/verify/apply` 是否需要 adapter-only alias；稳定方法名和 schema 以本草案评审结论为准。
-2. 更新 `registry/method/method_registry.yaml`、`registry/event/event_registry.yaml`、`registry/schema/firmware_schema.yaml` 和 `registry/core/stream_profile.yaml`。
+2. 优先更新 `registry/domains/firmware/domain.yaml`；只有被治理为 Core/shared 时，才按需创建或更新 `registry/method/`、`registry/event/`、shared schema 或 stream profile 源文件。
 3. 确认 `file.transfer` 是否已定稿；未定稿时不要把 file 暂存方法写成 P0。
 4. 只把已确认的 legacy 字段写入 `legacyRefs`；`CommonSet/GetNoTargetStrategyState` 不得继续作为 OTA legacyRef。
 5. 运行 Generator，确保 `protocol/axtp.protocol.yaml`、`docs/generated/*` 和 runtime generated 文件一致。

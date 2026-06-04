@@ -287,7 +287,7 @@ priority: P0
 
 ### 5. 当前生成方法集合
 
-当前生成方法表以 `registry/method/method_registry.yaml` 与 `registry/domains/<domain>/domain.yaml` 为事实源。当前业务方法只包含已采纳的 `audio.algorithm`；其他方法即使出现在规划表或草案中，也不得视为当前实现合同。
+当前生成方法表以 `registry/domains/<domain>/domain.yaml` 和按需存在的 `registry/method/method_registry.yaml` 为事实源。当前业务方法只包含已采纳的 `audio.algorithm`；其他方法即使出现在规划表或草案中，也不得视为当前实现合同。
 
 | methodId | methodName | Domain | 优先级 | 说明 |
 |---:|---|---|---|---|
@@ -302,7 +302,7 @@ priority: P0
 
 ### 6. 完整 MethodId 规划表
 
-以下表格是正式 MethodId 规划表，用于保留编号空间和约束可采纳能力；当前实现状态以 `registry/method/method_registry.yaml`、`registry/domains/<domain>/domain.yaml` 及生成产物为准。
+以下表格是正式 MethodId 规划表，用于保留编号空间和约束可采纳能力；当前实现状态以 `registry/domains/<domain>/domain.yaml`、按需存在的 `registry/method/method_registry.yaml` 及生成产物为准。
 
 #### 6.1 device.*
 
@@ -622,7 +622,7 @@ priority: P0
 
 如果老协议 `CmdValue` 超过 `uint16`，不应直接作为 `methodId` 使用，应映射为 AXTP 新 methodId，并在 `legacy.cmdValue` 中记录原值。
 
-当前 `registry/legacy/legacy_mapping.yaml` 为空，表示没有已采纳 legacy method mapping。下表只作为 intake 示例和历史分类线索，不参与 generated 协议：
+当前没有 `registry/legacy/legacy_mapping.yaml`，表示没有已采纳 legacy method mapping。下表只作为 intake 示例和历史分类线索，不参与 generated 协议：
 
 | 老协议来源 | legacy CmdValue | 旧命令语义 | 候选 AXTP method | 采纳状态 | 说明 |
 |---|---:|---|---|---|---|

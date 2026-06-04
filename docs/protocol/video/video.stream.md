@@ -5,7 +5,7 @@
 适用范围：通过 AXTP `PayloadType = STREAM` 承载的设备视频预览、编码视频输出、MJPEG/Raw 调试流和 legacy 视频流迁移。
 依赖文档：`docs/specs/06-AXTP-Stream-Spec.md`、`docs/protocol/stream/stream.flowControl.md`、`docs/protocol/video/video.ndi.md`、`docs/protocol/video/video.framing.md`
 
-本文是 `docs/protocol` 评审输入，不是最终生成事实源。采纳后需要同步到 `registry/domains/video/domain.yaml`、`registry/core/stream_profile.yaml`、method/event/capability/schema/error registry，并运行 generator。
+本文是 `docs/protocol` 评审输入，不是最终生成事实源。采纳后需要优先同步到 `registry/domains/video/domain.yaml`；只有被治理为 Core/shared 时，才按需创建或更新 shared method/event/capability/schema/profile registry，并运行 generator。
 
 ## 0. Review 处理结论
 
@@ -102,7 +102,7 @@ AXTP 视频流分为三层：
 
 ## 3. Stream Profile
 
-仓库当前 `registry/core/stream_profile.yaml` 已存在 `media.video`。本文采用 `media.video` 作为正式 registry profile 名称，并保留草案中的 `realtime_video` 作为行为 preset 或 legacy alias。实现层在分配 Stream Context 前应将 `realtime_video` 归一化为 `media.video`。
+当前 generated contract 尚未采纳 `media.video` stream profile。本文采用 `media.video` 作为推荐 registry profile 名称，并保留草案中的 `realtime_video` 作为行为 preset 或 legacy alias。实现层在分配 Stream Context 前应将 `realtime_video` 归一化为 `media.video`。
 
 ```json
 {

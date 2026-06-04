@@ -11,7 +11,7 @@ Change a protocol that has already passed adoption and entered YAML/generated ar
 
 - Start from existing adopted facts in `docs/protocol/<domain>/<domain.feature>.md` plus `registry/**/*.yaml` or `registry/domains/**/*.yaml`.
 - Do not infer new facts from generated files. Generated files are evidence of current output only.
-- Do not hand-edit `protocol/axtp.protocol.yaml`, `docs/generated/*`, `tooling/mcp/*`, `tooling/test-vectors/*`, `runtimes/*/generated/*`, or `runtimes/cpp-core/include/axtp/generated/*`.
+- Do not hand-edit `protocol/axtp.protocol.yaml`, `docs/generated/*`, `tooling/mcp/*`, `tooling/test-vectors/*`, `runtimes/*/generated/*`, or `runtimes/cpp/core/include/axtp/generated/*`.
 - Do not silently break `stable` or `mvp` wire contracts. For stable/MVP facts, prefer `deprecated`, optional additions, or versioned replacements over deletion or semantic mutation.
 - Preserve IDs, `bitOffset`, field IDs, method/event names, and capability IDs for unchanged semantics.
 - Do not reuse a removed/deprecated stable ID or field ID for a different meaning.

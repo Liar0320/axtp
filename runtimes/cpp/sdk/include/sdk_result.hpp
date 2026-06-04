@@ -2,7 +2,7 @@
 
 #include <utility>
 
-#include "axtp_sdk/sdk_error.hpp"
+#include "sdk_error.hpp"
 
 namespace axtp::sdk {
 

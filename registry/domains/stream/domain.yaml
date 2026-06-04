@@ -1,7 +1,0 @@
-domain: stream
-description: STREAM control-plane methods and events.
-
-methods: []
-events: []
-types: {}
-profiles: []

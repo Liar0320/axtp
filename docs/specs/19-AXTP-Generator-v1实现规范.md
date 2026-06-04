@@ -82,7 +82,7 @@ registry/**/*.yaml + registry/domains/**/*.yaml
         ↓ generate-registry
 docs/generated/*_registry.generated.md
 tooling/mcp/*.generated.json
-runtimes/cpp-core/include/axtp/generated/*
+runtimes/cpp/core/include/axtp/generated/*
 tooling/test-vectors/*
 ```
 
@@ -194,16 +194,12 @@ axtp/
 │   │   ├── control_opcode.yaml
 │   │   ├── rpc_encoding.yaml
 │   │   ├── rpc_body_encoding.yaml
-│   │   ├── rpc_op.yaml
-│   │   └── stream_profile.yaml
-│   ├── method/method_registry.yaml
-│   ├── event/event_registry.yaml
+│   │   └── rpc_op.yaml
 │   ├── error/error_code.yaml
 │   ├── capability/
 │   │   ├── capability_registry.yaml
 │   │   └── mvp_profile.yaml
 │   ├── schema/*.yaml
-│   ├── legacy/legacy_mapping.yaml
 │   ├── domains/
 │   │   └── <domain>/domain.yaml
 │   └── vendor/                 # reserved, not enabled in v1 P0
@@ -227,7 +223,8 @@ axtp/
 | 路径 | 当前作用 | 是否可手写 |
 | ---- | ---- | ---- |
 | `registry/core/` | 协议元信息、核心枚举、传输/帧/profile 事实源 | 是 |
-| `registry/method|event|error|capability|schema|legacy/` | 已采纳核心/MVP/共享事实源 | 是 |
+| `registry/error|capability|schema/` | 当前已采纳核心/MVP/共享事实源 | 是 |
+| `registry/method|event|legacy/` | Core/shared method/event 或 legacy mapping 按需创建；空集合不保留占位文件 | 是 |
 | `registry/domains/<domain>/domain.yaml` | 新增业务域事实源，包含 method/event/type/error/capability/profile | 是 |
 | `registry/vendor/` | P1 vendor extension 预留目录，当前不参与生成 | 否 |
 | `protocol/axtp.protocol.yaml` | Generator 生成的聚合 Protocol IR | 否 |
@@ -267,7 +264,6 @@ control_opcode.yaml
 rpc_encoding.yaml
 rpc_body_encoding.yaml
 rpc_op.yaml
-stream_profile.yaml
 ```
 
 ### 4.2 Adopted Registry
@@ -283,7 +279,7 @@ registry/schema/*.yaml
 registry/legacy/legacy_mapping.yaml
 ```
 
-这些文件适合放稳定基础能力和核心共享事实，例如：
+这些文件适合放稳定基础能力和核心共享事实。`registry/method/`、`registry/event/`、`registry/legacy/` 以及额外 schema 文件可以缺省，只有存在已采纳条目时才创建，例如：
 
 ```text
 CONTROL / RPC / STREAM shared schemas
@@ -303,7 +299,7 @@ registry/domains/<domain>/domain.yaml
 
 Domain YAML 表示“业务域事实”。它同样会进入最终 `protocol/axtp.protocol.yaml`、`docs/generated/protocol.md`、MCP JSON、C++ headers 和 test vectors；区别只在治理层级，不在协议有效性。放在 domain YAML 中的 draft 或可选 profile 能力仍然是正式机器事实源，只是不自动成为 v1 Core/MVP 必选项。
 
-例如 `stream.open` 当前属于 `stream` domain 的 HID media profile 业务事实，应放在 `registry/domains/stream/domain.yaml`。如果未来它被定义为所有 AXTP v1 Core 实现必须支持的建流方法，再按晋升流程迁入 `registry/method/`、`registry/schema/`、`registry/capability/` 等核心文件。
+例如某个业务建流方法若仍属于具体业务 domain，应放在 `registry/domains/<domain>/domain.yaml`。如果未来它被定义为所有 AXTP v1 Core 实现必须支持的建流能力，再按晋升流程迁入 `registry/method/`、`registry/schema/`、`registry/capability/` 等核心文件。
 
 Generator v1 必须接受已治理的业务域词表，包括 `input`、`output`、`room` 和 `signage`。`output` 与 `input` 成对表达信号边界，`room` 使用单数形式，`signage` 专用于数字标牌业务。未在词表中的新 domain 必须先补充 Domain Registry 和 ID 分配，再进入 domain YAML。
 

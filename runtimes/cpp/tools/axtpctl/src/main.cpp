@@ -19,7 +19,7 @@
 #include "axtp/transports/tcp_boost/tcp_transport.hpp"
 #include "axtp/transports/websocket_boost/websocket_transport.hpp"
 
-#include "axtp_sdk/axtp_sdk_all.hpp"
+#include "axtp_sdk_all.hpp"
 
 namespace {
 

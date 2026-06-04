@@ -28,6 +28,20 @@ async function loadYamlFile(filePath: string): Promise<any> {
   }
 }
 
+async function loadOptionalYamlFile(filePath: string): Promise<any> {
+  try {
+    const text = await readFile(filePath, "utf8");
+    return YAML.parse(text) ?? {};
+  } catch (error: any) {
+    if (error?.code === "ENOENT") return {};
+    throw new GeneratorError({
+      code: "AXTP-GEN-1001",
+      file: filePath,
+      message: error instanceof Error ? error.message : String(error)
+    });
+  }
+}
+
 function asArray(value: unknown): any[] {
   return Array.isArray(value) ? value : [];
 }
@@ -202,20 +216,20 @@ export async function loadSpec(specRoot: string): Promise<SpecModel> {
     loadYamlFile(path.join(registryDir, "core", "rpc_encoding.yaml")),
     loadYamlFile(path.join(registryDir, "core", "rpc_body_encoding.yaml")),
     loadYamlFile(path.join(registryDir, "core", "rpc_op.yaml")),
-    loadYamlFile(path.join(registryDir, "core", "stream_profile.yaml")),
-    loadYamlFile(path.join(registryDir, "method", "method_registry.yaml")),
-    loadYamlFile(path.join(registryDir, "event", "event_registry.yaml")),
+    loadOptionalYamlFile(path.join(registryDir, "core", "stream_profile.yaml")),
+    loadOptionalYamlFile(path.join(registryDir, "method", "method_registry.yaml")),
+    loadOptionalYamlFile(path.join(registryDir, "event", "event_registry.yaml")),
     loadYamlFile(path.join(registryDir, "error", "error_code.yaml")),
     loadYamlFile(path.join(registryDir, "capability", "capability_registry.yaml")),
-    loadYamlFile(path.join(registryDir, "legacy", "legacy_mapping.yaml")),
+    loadOptionalYamlFile(path.join(registryDir, "legacy", "legacy_mapping.yaml")),
     loadYamlFile(path.join(registryDir, "capability", "mvp_profile.yaml")),
     loadYamlFile(path.join(schemaDir, "common_fields.yaml")),
     loadYamlFile(path.join(schemaDir, "control_schema.yaml")),
-    loadYamlFile(path.join(schemaDir, "device_schema.yaml")),
-    loadYamlFile(path.join(schemaDir, "capability_schema.yaml")),
-    loadYamlFile(path.join(schemaDir, "display_schema.yaml")),
-    loadYamlFile(path.join(schemaDir, "firmware_schema.yaml")),
-    loadYamlFile(path.join(schemaDir, "stream_schema.yaml")),
+    loadOptionalYamlFile(path.join(schemaDir, "device_schema.yaml")),
+    loadOptionalYamlFile(path.join(schemaDir, "capability_schema.yaml")),
+    loadOptionalYamlFile(path.join(schemaDir, "display_schema.yaml")),
+    loadOptionalYamlFile(path.join(schemaDir, "firmware_schema.yaml")),
+    loadOptionalYamlFile(path.join(schemaDir, "stream_schema.yaml")),
     loadYamlFile(path.join(schemaDir, "event_schema.yaml")),
     loadYamlFile(path.join(schemaDir, "session_schema.yaml"))
   ]);

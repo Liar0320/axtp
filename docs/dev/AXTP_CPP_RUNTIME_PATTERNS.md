@@ -20,7 +20,7 @@ ITransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker<>
 | Port adapter | `AxtpCore` 内部 sink/writer port | 把内部 processor 适配成队列输出，避免 core 暴露可变实现细节 |
 | Pipeline processor | `axtp/core/inbound/*`、`axtp/core/outbound/*` | 把 wire mode 的解析和编码分成小组件 |
 | Dynamic RPC first | `MethodRegistry` + broker dynamic handlers | 默认按 method id/name + body bytes 调用业务 |
-| Optional platform adapter | `runtimes/cpp-transports/*` | HID/TCP/WebSocket 作为可选 transport target，不污染 core |
+| Optional platform adapter | `runtimes/cpp/transports/*` | HID/TCP/WebSocket 作为可选 transport target，不污染 core |
 | Generated facts boundary | `axtp/generated/*` | ID、registry、schema 是事实源产物；runtime 不手写业务常量 |
 
 ## Endpoint Glue Pattern
@@ -139,7 +139,7 @@ Transport 可以处理平台特有边界，例如 HID report id、report size、
 - JSON-RPC method name
 - Legacy/AXDP command
 
-如果 transport 需要额外平台库，应放在 `runtimes/cpp-transports` 或更上层 target。`runtimes/cpp-core/include/axtp` 不能泄漏平台 include。
+如果 transport 需要额外平台库，应放在 `runtimes/cpp/transports` 或更上层 target。`runtimes/cpp/core/include/axtp` 不能泄漏平台 include。
 
 ## Dynamic RPC Pattern
 
@@ -161,7 +161,7 @@ method name/id + RpcEncoding + body bytes
 
 ### Add A Transport
 
-1. 在 `runtimes/cpp-transports/include/axtp/transports/<name>/` 增加 public header。
+1. 在 `runtimes/cpp/transports/include/axtp/transports/<name>/` 增加 public header。
 2. 实现 `ITransport`，只处理平台 I/O。
 3. `profile()` 填写 `TransportKind`、`AxtpWireMode`、message/text/binary 能力和 `preferredFrameSize`。
 4. 在 optional CMake target 中链接平台依赖。
@@ -182,7 +182,7 @@ method name/id + RpcEncoding + body bytes
 
 ### Add A CLI Command
 
-1. 命令解析留在 `runtimes/cpp-tools/axtpctl/src/main.cpp` 或后续拆分模块。
+1. 命令解析留在 `runtimes/cpp/tools/axtpctl/src/main.cpp` 或后续拆分模块。
 2. 业务调用走 SDK；只有 `inspect` 类命令可以直接读 core model/decoder。
 3. 输出格式固定为 JSON、hex 或 file，不混合 debug 文本和机器输出。
 
@@ -190,7 +190,7 @@ method name/id + RpcEncoding + body bytes
 
 - `AxtpCore` 直接 `attachTransport()` 或 `attachBroker()`。
 - `BasicBroker<>` 保存 `AxtpCore*` 并回调 core。
-- concrete transport include 出现在 `runtimes/cpp-core/include/axtp`。
+- concrete transport include 出现在 `runtimes/cpp/core/include/axtp`。
 - transport 根据 `MethodId` 或 payload type 分流。
 - CLI 为普通 `call` 命令手写 frame。
 - core 为某个业务 schema 引入 `MethodTraits` 或 `SchemaCodec`。
