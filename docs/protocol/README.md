@@ -18,6 +18,12 @@
 ## 生成路径
 
 ```text
+业务场景、UI 原型、用户 story 或旧协议材料
+        ↓
+Codex skill: plan-protocol-flow
+        ↓ scenario / protocol coverage / gap list
+docs/flows/<scenario>.md
+        ↓ protocol gap or confirmed protocol requirement
 产品/架构师业务描述、草稿文档或旧协议材料
         ↓
 Codex skill: draft-business-protocol
@@ -48,6 +54,7 @@ refreshed protocol/axtp.protocol.yaml + generated artifacts
 | 阶段 | 触发输入 | Skill 做什么 | 允许修改 | 输出 |
 |---|---|---|---|---|
 | 总控路由 | 用户不确定应该起草、采纳、修订、生成还是实现 | `axtp-protocol-workflow` 判断生命周期阶段并路由到正确 skill | 按被路由阶段决定 | 明确下一步 workflow |
+| 流程 | 业务场景、用户 story、UI 原型、端到端交互 | `plan-protocol-flow` 遍历 story 步骤，查询 adopted/generated/draft 协议覆盖，输出协议交互方案和缺口 | `docs/flows/**` | 场景流程文档，带 sequence、步骤表、协议覆盖和下一步 skill |
 | 草案 | 大白话需求、架构草图、旧协议片段或评审意见 | `draft-business-protocol` 遍历 `docs/protocol/**` 和 legacy 线索，判断复用、修改或新增 domain.feature 草案 | `docs/protocol/**` 草案和待确认问题 | 可评审协议草案，带候选接口、字段、legacyRefs 和 `[REVIEW-*]` 标记 |
 | 采纳 | 内部评审确认后的草案 | `adopt-protocol-draft` 读取草案、specs 和现有 YAML，拒绝未确认 `[REVIEW-*]`，反向确认 08-13，涉及 profile/MVP 时同步 14，固定草案状态，写入 YAML | `docs/protocol/**`、`docs/specs/08-14`、`registry/**`、`registry/domains/**` | formal proposal + YAML 机器事实源 |
 | 修订 | 已采纳或已生成的协议事实需要语义修正、字段删除、字段废弃、重命名或扩展 | `amend-adopted-protocol` 读取 adopted proposal、specs、YAML 和 generated 现状，判断兼容性，记录 amendment，修正 YAML 并重新生成 | `docs/protocol/**`、`docs/specs/08-14`、`registry/**`、`registry/domains/**`、Generator 生成产物 | amended proposal + 更新后的 YAML/生成物 |

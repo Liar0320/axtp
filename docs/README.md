@@ -8,6 +8,7 @@
 |---|---|
 | 先看懂 AXTP 是什么 | `specs/00-AXTP-Overview.md` -> `specs/README.md` |
 | 查当前实现合同 | `generated/protocol.md` 或 `generated/protocol.json` |
+| 从业务场景梳理协议交互 | `flows/README.md` -> 对应 `flows/<scenario>.md` -> `protocol/README.md` |
 | 新增业务协议 | `protocol/README.md` -> `protocol/<domain>/<domain.feature>.md` -> 对应 `dev/skills/**` |
 | 使用工具、SDK、runtime | `guides/how-to-use.md` -> `dev/AXTP_*` -> `../runtimes/cpp-core/ARCHITECTURE.md` |
 | 追溯旧协议迁移 | `legacy-protocols/`、`migration/`、`legacy-classification/` |
@@ -17,6 +18,7 @@
 | 分组 | 路径 | 谁读 | 什么时候读 | 手写 |
 |---|---|---|---|---:|
 | Active specs | `docs/specs/` | 架构、协议维护者、runtime/SDK 研发 | 理解正式规则、wire format、命名治理、Generator 合同 | 是 |
+| Flow plans | `docs/flows/` | 产品、架构、App/固件/后台、测试 | 从业务 story、UI 原型或端到端交互梳理协议步骤和缺口 | 是 |
 | Draft intake | `docs/protocol/` | 产品、架构、协议维护者、业务研发、测试 | 新业务起草、评审和采纳前确认 | 是 |
 | Generated reference | `docs/generated/` | 研发、测试、工具、SDK | 实现和验收当前协议 | 否 |
 | Guides | `docs/guides/` | 所有人 | 查命令、跑 Generator、用 CLI/SDK/runtime、看完整例子 | 是 |

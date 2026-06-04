@@ -1,6 +1,6 @@
 ---
 name: axtp-protocol-workflow
-description: Route AXTP protocol work to the correct lifecycle skill. Use when the user asks to add, change, amend, migrate, adopt, generate, or implement an AXTP business method, event, schema/type, error, capability, profile, stream/OTA flow, or legacy mapping but has not specified the exact stage. Routes rough requirements to draft-business-protocol, reviewed drafts to adopt-protocol-draft, already-adopted semantic changes to amend-adopted-protocol, and YAML-to-artifact generation to generate-axtp-protocol.
+description: Route AXTP protocol work to the correct lifecycle skill. Use when the user asks to add, change, amend, migrate, adopt, generate, or implement an AXTP business method, event, schema/type, error, capability, profile, stream/OTA flow, scenario interaction flow, UI-prototype-driven protocol plan, or legacy mapping but has not specified the exact stage. Routes business scenarios to plan-protocol-flow, rough protocol requirements to draft-business-protocol, reviewed drafts to adopt-protocol-draft, already-adopted semantic changes to amend-adopted-protocol, and YAML-to-artifact generation to generate-axtp-protocol.
 ---
 
 # AXTP Protocol Workflow
@@ -13,6 +13,7 @@ Classify the request before editing anything:
 
 | User state | Correct workflow | Allowed edits |
 |---|---|---|
+| Business scenario, user story, UI prototype, or end-to-end interaction needs protocol mapping | Use `docs/dev/skills/plan-protocol-flow/SKILL.md` | `docs/flows/**` only |
 | Rough product/architecture/business requirement | Use `docs/dev/skills/draft-business-protocol/SKILL.md` | `docs/protocol/**` only |
 | Existing `docs/protocol/<domain>/<domain.feature>.md` draft needs review or refinement | Use `draft-business-protocol` | `docs/protocol/**` only |
 | Reviewed draft should become formal protocol | Use `docs/dev/skills/adopt-protocol-draft/SKILL.md` | `docs/protocol/**`, `docs/specs/08-14` as needed, `registry/**`, `registry/domains/**` |
@@ -26,6 +27,10 @@ Default to draft, adoption, or amendment. Direct registry edits are exceptional.
 ## Lifecycle
 
 ```text
+plan-protocol-flow
+  scenario / UI prototype / user story -> docs/flows/<scenario>.md
+                                      -> gap list for draft/amend workflows
+
 draft-business-protocol
   rough requirement -> docs/protocol/<domain>/<domain.feature>.md
 
@@ -51,7 +56,8 @@ generate-axtp-protocol
 
 ## Non-Negotiables
 
-- Do not convert rough requirements directly into YAML.
+- Do not convert rough requirements or scenario flow plans directly into YAML.
+- Do not put scenario-only UI behavior into protocol drafts; keep it in `docs/flows/**`.
 - Do not adopt unresolved `[REVIEW-ASK]`, `[REVIEW-FIX]`, or `[REVIEW-BLOCKER]` facts.
 - Do not edit `protocol/axtp.protocol.yaml`, `docs/generated/*`, `tooling/mcp/*`, `tooling/test-vectors/*`, or runtime generated files by hand.
 - New business features default to `docs/protocol/**` first, then `registry/domains/<domain>/domain.yaml` after adoption.
@@ -72,7 +78,7 @@ Generated outputs expected:
 Open questions:
 ```
 
-If protocol semantics are still being designed, stop and route to `draft-business-protocol`.
+If the user is still describing an end-to-end story or UI interaction, route to `plan-protocol-flow`. If protocol semantics are already being designed, stop and route to `draft-business-protocol`.
 
 ## Final Report
 

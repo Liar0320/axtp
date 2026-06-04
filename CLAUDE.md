@@ -124,6 +124,7 @@ Classify protocol work before editing:
 
 | Request state | Correct path | Allowed edits |
 |---|---|---|
+| Business scenario, user story, UI prototype, or interaction flow needs protocol mapping | `docs/dev/skills/plan-protocol-flow/SKILL.md` | `docs/flows/**` |
 | Rough product/business requirement | `docs/dev/skills/draft-business-protocol/SKILL.md` | `docs/protocol/**` |
 | Reviewed draft should become formal protocol | `docs/dev/skills/adopt-protocol-draft/SKILL.md` | adopted draft, specs 08-14 as needed, registry YAML |
 | Already-adopted/generated fact needs semantic change | `docs/dev/skills/amend-adopted-protocol/SKILL.md` | adopted proposal, specs/YAML, generated only via Generator |

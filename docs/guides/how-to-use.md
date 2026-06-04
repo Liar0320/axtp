@@ -43,6 +43,7 @@ docs/generated/* + tooling/* + runtime generated headers
 | 层级 | Skill | 输入 | 输出 | 边界 |
 |---|---|---|---|---|
 | 总控路由 | `docs/dev/skills/axtp-protocol-workflow/SKILL.md` | 用户提出的“新增/修改/迁移/采纳/实现业务协议”任务 | 判断应该进入草案、采纳、修订、生成还是 runtime 实现 | 默认不直接写 YAML，先路由 |
+| 流程阶段 | `docs/dev/skills/plan-protocol-flow/SKILL.md` | 业务场景、用户 story、UI 原型、端到端交互 | `docs/flows/<scenario>.md` 场景流程方案 | 只梳理协议步骤、已有覆盖和缺口，不写 YAML |
 | 草案阶段 | `docs/dev/skills/draft-business-protocol/SKILL.md` | 大白话需求、旧协议线索、产品/架构想法 | `docs/protocol/<domain>/<domain.feature>.md` 草案 | 不写 registry，不生成正式协议 |
 | 采纳阶段 | `docs/dev/skills/adopt-protocol-draft/SKILL.md` | 已评审草案 MD | specs 08-13 对齐；涉及 profile/MVP 时同步 14；草案 formalized；写入 YAML | 不采纳未确认 `[REVIEW-*]`，不手写 generated |
 | 修订阶段 | `docs/dev/skills/amend-adopted-protocol/SKILL.md` | 已采纳或已生成协议的语义修正、字段删除、废弃、重命名或扩展 | amendment 记录、proposal/specs/YAML 修正、generated 重新生成 | 先判断 draft/experimental vs stable/MVP，不直接手写 generated |
@@ -54,6 +55,7 @@ docs/generated/* + tooling/* + runtime generated headers
 |---|---|---|---|---|---|
 | 需求输入 | 业务负责人 / 产品 / 架构 | 固件、上位机、后台、测试 | 描述业务目标、触发条件、设备行为、旧协议线索和优先级 | 确认需求是否真实存在、是否有旧协议兼容要求 | 有明确业务描述或旧协议证据 |
 | 总控路由 | 协议维护者 / 架构 | 提需求的人 | 使用 `axtp-protocol-workflow` 判断走草案、采纳、生成还是 runtime 实现 | 确认当前阶段判断是否符合预期 | 明确下一步 skill 和允许修改范围 |
+| 流程阶段 | 协议维护者 / 架构 | 产品、固件、上位机、后台、测试 | 使用 `plan-protocol-flow` 从业务 story 或 UI 原型生成 `docs/flows/**`，逐步列出协议调用、事件、已有覆盖和缺口 | 确认交互流程是否完整，哪些步骤是协议、哪些是 UI/业务逻辑 | 场景流程方案和下一步草案/修订清单 |
 | 草案阶段 | 协议维护者 / 架构 | 业务、固件、上位机、后台、测试 | 使用 `draft-business-protocol` 搜索复用项，起草或更新 `docs/protocol/**`，写候选 method/schema/event/error/capability | 业务确认语义，固件确认可实现性，上位机/后台确认调用方式，测试确认可测性 | 草案带 `[REVIEW-*]`，open questions 明确 |
 | 草案评审 | 架构 / 业务负责人 | 固件、上位机、后台、SDK/工具、测试 | 组织评审，逐项处理 `[REVIEW-*]` | 各端确认字段、错误码、事件、stream、legacy 映射和兼容边界 | 可采纳内容均为 `[REVIEW-OK]` 或等价确认 |
 | 采纳阶段 | 协议维护者 / 架构 | 业务、固件、上位机、测试 | 使用 `adopt-protocol-draft` 对齐 specs 08-13/14，固定草案状态，写入 YAML，分配 ID / `bit_offset` / fieldId | 确认没有未解决 review blocker 被写入 YAML | `validate:sources` 通过，YAML 只含已确认事实 |
@@ -66,7 +68,8 @@ docs/generated/* + tooling/* + runtime generated headers
 
 实际开发时：
 
-- 产品/架构/研发讨论新能力，先写 `docs/protocol/**` 草案。
+- 产品/架构/研发讨论端到端场景或 UI 原型时，先用 `plan-protocol-flow` 写 `docs/flows/**`，把 story 步骤、已有协议覆盖和缺口列清楚。
+- 明确需要新增或修改协议后，再写 `docs/protocol/**` 草案。
 - 草案评审通过后，使用 `adopt-protocol-draft` 把已确认事实写入 `registry/**` 或 `registry/domains/**`。
 - 已采纳协议需要删除字段、收窄范围、重命名、废弃或扩展时，使用 `amend-adopted-protocol`，不要回到普通草案流程或手改 generated。
 - 使用 `generate-axtp-protocol` 运行 Generator，刷新 generated 文档、JSON、C++ 头文件和测试向量。

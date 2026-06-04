@@ -379,9 +379,11 @@ docs/protocol/<domain>/<domain.feature>.md
 
 ```mermaid
 flowchart TD
-    A["业务需求 / 旧协议线索 / 架构想法"]
+    A["业务需求 / UI 原型 / 用户 story / 旧协议线索 / 架构想法"]
     B["业务分支<br/>business/domain-feature"]
     C["axtp-protocol-workflow<br/>判断生命周期阶段"]
+    C1{"是否是端到端交互或 UI 场景?"}
+    C2["plan-protocol-flow<br/>生成 docs/flows/scenario.md<br/>列出协议覆盖和缺口"]
     D{"是否已有 adopted/generated 事实?"}
     E["draft-business-protocol<br/>起草或更新 docs/protocol/domain/domain.feature.md"]
     F{"是否已有可复用草案?"}
@@ -402,7 +404,9 @@ flowchart TD
     R["合并 main<br/>发布最新 generated 协议"]
     S["研发 / 测试按 generated 产物实现和验收"]
 
-    A --> B --> C --> D
+    A --> B --> C --> C1
+    C1 -->|"是"| C2 --> D
+    C1 -->|"否"| D
     D -->|"否，新协议或未采纳草案"| E --> F
     F -->|"是"| F1 --> G
     F -->|"否"| F2 --> G
@@ -422,6 +426,7 @@ flowchart TD
 |---|---|---|---|---|---|
 | 需求输入 | 业务负责人 / 产品 / 架构 | 固件、上位机、后台、测试 | 提供业务目标、旧协议线索、触发场景、优先级 | 需求是否真实、是否要兼容旧协议、是否涉及 event/stream | 业务描述、旧协议证据、优先级 |
 | 建分支和路由 | 协议维护者 / 架构 | 提需求的人 | 建 `business/<domain-feature>` 或 feature 分支；用 `axtp-protocol-workflow` 判断阶段 | 这次是草案、采纳、修订、生成还是实现 | 分支和明确 workflow |
+| 交互流程方案 | 协议维护者 / 架构 | 产品、固件、上位机、后台、测试 | 用 `plan-protocol-flow` 从 UI 原型、用户 story 或端到端场景生成 `docs/flows/<scenario>.md` | story 是否完整；每一步是已有协议、协议缺口还是 UI/业务逻辑 | 场景流程文档、协议覆盖表、草案/修订缺口清单 |
 | 草案设计 | 协议维护者 / 架构 | 业务、固件、上位机、后台、测试 | 用 `draft-business-protocol` 起草或更新 `docs/protocol/<domain>/<domain.feature>.md` | 业务语义、domain.feature、method/schema/event/error/capability 是否合理 | 带 `[REVIEW-*]` 的协议草案 |
 | 草案评审 | 架构 / 业务负责人 | 固件、上位机、后台、SDK/工具、测试 | 组织评审，逐项关闭或保留 review 标记 | 固件确认资源和状态机；上位机/后台确认调用方式；测试确认可测性；SDK/工具确认生成消费方式 | `[REVIEW-OK]` 的可采纳范围和 open questions |
 | 采纳到规范 | 协议维护者 / 架构 | 业务、固件、上位机、测试 | 用 `adopt-protocol-draft` 反向确认 specs 08-13，固定草案为正式方案，写 registry/domain YAML | 未确认事实没有进入 YAML；ID、`bit_offset`、fieldId 无冲突 | specs/YAML/source validation 结果 |
@@ -490,6 +495,7 @@ flowchart TD
 ```text
 main
   -> business/<domain-feature> 或 feature/<ticket>
+  -> plan-protocol-flow: docs/flows 场景交互方案
   -> draft-business-protocol: docs/protocol 草案设计
   -> 业务/固件/上位机/测试/架构评审
   -> 修正 [REVIEW-*] 问题

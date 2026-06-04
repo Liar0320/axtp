@@ -66,17 +66,18 @@ Transport  USB HID / TCP / WebSocket / future low-bandwidth paths
 
 ## Protocol Lifecycle
 
-当前仓库按五个阶段维护协议：
+当前仓库按六个阶段维护协议：
 
 | 阶段 | Skill / 入口 | 输入 | 输出 |
 |---|---|---|---|
 | 路由 | [axtp-protocol-workflow](docs/dev/skills/axtp-protocol-workflow/SKILL.md) | 不确定处于哪个阶段的需求 | 明确应该起草、采纳、修订、生成还是实现 |
+| 流程 | [plan-protocol-flow](docs/dev/skills/plan-protocol-flow/SKILL.md) | 业务场景、用户 story、UI 原型、端到端交互 | `docs/flows/<scenario>.md`，列出协议步骤、已有覆盖和缺口 |
 | 起草 | [draft-business-protocol](docs/dev/skills/draft-business-protocol/SKILL.md) | 产品需求、架构草图、旧协议线索 | `docs/protocol/<domain>/<domain.feature>.md` |
 | 采纳 | [adopt-protocol-draft](docs/dev/skills/adopt-protocol-draft/SKILL.md) | 已评审确认的草案 | `docs/specs/08-13` 对齐记录；涉及 profile/MVP 时同步 14；写入 `registry/**/*.yaml` / `registry/domains/**/*.yaml` |
 | 修订 | [amend-adopted-protocol](docs/dev/skills/amend-adopted-protocol/SKILL.md) | 已采纳或已生成协议的语义变更 | amendment 记录 + 更新后的草案/specs/YAML + generated 产物 |
 | 生成 | [generate-axtp-protocol](docs/dev/skills/generate-axtp-protocol/SKILL.md) | 已更新的 YAML 事实源 | Protocol IR、generated docs、tooling JSON、test vectors、runtime generated headers |
 
-`docs/specs/**` 是协议规则和治理依据，`docs/protocol/**` 是草案、评审和修订记录，`registry/**/*.yaml` 与 `registry/domains/**/*.yaml` 才是 Generator 的机器输入。仓库不要求研发照着 Markdown 手工填写生成产物；草案到 YAML 的采纳动作由 `adopt-protocol-draft` 固化流程，已采纳协议的语义修正由 `amend-adopted-protocol` 管理，YAML 到产物的动作由 `generate-axtp-protocol` 完成。
+`docs/specs/**` 是协议规则和治理依据，`docs/flows/**` 是业务场景到协议交互的桥接文档，`docs/protocol/**` 是草案、评审和修订记录，`registry/**/*.yaml` 与 `registry/domains/**/*.yaml` 才是 Generator 的机器输入。仓库不要求研发照着 Markdown 手工填写生成产物；场景到协议清单由 `plan-protocol-flow` 梳理，草案到 YAML 的采纳动作由 `adopt-protocol-draft` 固化流程，已采纳协议的语义修正由 `amend-adopted-protocol` 管理，YAML 到产物的动作由 `generate-axtp-protocol` 完成。
 
 ## Quick Start
 
