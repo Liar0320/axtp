@@ -14,7 +14,7 @@ Stage 20. Create or update an AXTP business protocol draft in `docs/protocol/<do
 - Do not assign final numeric IDs unless they already exist in YAML/specs; use `TBD after adoption` for new methodId/eventId/errorCode/fieldId values.
 - Do not introduce new PayloadType, Frame Header business fields, WebSocket STREAM support, or runtime Header Profile negotiation.
 - JSON examples must be embedded in the `docs/protocol/**` Markdown draft by default; do not create generated JSON artifacts unless the user explicitly asks.
-- JSON examples must follow `docs/specs/05-AXTP-RPC-Session-Spec.md` and `docs/specs/09-AXTP-Protocol-Definition-Mapping-Spec.md`: use the `sid` / `op` / `d` envelope, `op=7` for Request, `op=8` for RequestResponse, `op=6` for Event, numeric `status.code`, and required `status.ok`.
+- JSON examples in protocol drafts must show only the RPC `d` data block, not the outer `sid` / `op` / `d` wire envelope, unless the user explicitly asks to document wire format. Request examples use `id`, `method`, and optional `params`; response examples use `id`, `status`, and optional `result`; event examples use `event`, numeric `intent`, and optional `data`.
 - Always leave `[REVIEW-*]` markers for human review. Unconfirmed facts must be `[REVIEW-ASK]`, `[REVIEW-DRAFT]`, `[REVIEW-FIX]`, or `[REVIEW-BLOCKER]`.
 
 ## Required Workflow
@@ -111,10 +111,10 @@ When creating a new draft or materially updating an existing draft, include or r
 - Include representative event payload examples when events are proposed.
 - Include at least one important edge or failure example when the scenario depends on error handling.
 - Keep examples consistent with candidate schema names and fields, but do not imply final methodId/eventId/fieldId values.
-- Use full JSON RPC envelope examples unless explicitly labeling a snippet as a `d-block` fragment.
-- Request examples must use `op: 7` and `d.id`, `d.method`, and optional `d.params`.
-- Response examples must use `op: 8`, echo `d.id`, include `d.status.ok`, and use numeric `d.status.code`; use `0` for success.
-- Event examples must use `op: 6`, `d.event`, numeric `d.intent`, and optional `d.data`; do not include request `id` in events.
+- Use RPC `d` data-block examples only; do not wrap examples in the outer `sid` / `op` / `d` envelope.
+- Request examples must include `id`, `method`, and optional `params`.
+- Response examples must echo `id`, include `status.ok`, and use numeric `status.code`; use `0` for success.
+- Event examples must include `event`, numeric `intent`, and optional `data`; do not include request `id` in events.
 - Do not use string error names in `status.code`. Use adopted numeric ErrorCode values from specs/YAML/generated. If a draft-only candidate error lacks a numeric code, either use the nearest adopted common numeric code in the JSON example and put the candidate name in `status.details.candidateError`, or state that the final code is `TBD after adoption` in prose outside JSON.
 - Use placeholders for secrets, credentials, tokens, keys, personal data, serial numbers, MAC addresses, and IP addresses when exact values are not confirmed.
 - Mark unconfirmed example fields or behavior in nearby prose with `[REVIEW-ASK]`.

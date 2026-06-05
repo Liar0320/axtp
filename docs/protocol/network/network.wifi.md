@@ -249,7 +249,7 @@ Capability ID：`network.wifi`
 
 ## 9. JSON 示例
 
-示例用于评审 `network.wifi` request/response/event 语义，不是 generated 事实源。JSON 示例遵循 05《AXTP RPC Session Spec》的 `sid` / `op` / `d` envelope：Request 使用 `op=7`，RequestResponse 使用 `op=8`，Event 使用 `op=6`；`status.code` 必须是数字 ErrorCode。`credential.value`、MAC、序列号等敏感或设备相关字段均使用占位符。
+示例用于评审 `network.wifi` request/response/event 语义，不是 generated 事实源。JSON 示例只写 RPC `d` 数据块，不包裹外层 `sid` / `op` / `d` wire envelope；Request 使用 `id`、`method`、`params`，Response 使用 `id`、`status`、`result`，Event 使用 `event`、`intent`、`data`。`status.code` 必须是数字 ErrorCode。`credential.value`、MAC、序列号等敏感或设备相关字段均使用占位符。
 
 失败示例中的草案业务错误尚未分配数字码，因此 JSON 中先使用已采纳通用错误码，并在 `status.details.candidateError` 中标注候选错误名。
 
@@ -257,37 +257,37 @@ Capability ID：`network.wifi`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 201,
-    "method": "network.getWifiCapabilities",
-    "params": {
-      "interfaceId": "wlan0"
-    }
+  "id": 201,
+  "method": "network.getWifiCapabilities",
+  "params": {
+    "interfaceId": "wlan0"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 201,
-    "status": {
-      "ok": true,
-      "code": 0
-    },
-    "result": {
-      "capability": "network.wifi",
-      "securityTypes": ["wpa2_psk", "wpa3_sae"],
-      "bands": ["5g"],
-      "credentialImportModes": ["pairing_token", "opaque_ref"],
-      "savedProfilesSupported": true,
-      "scanSupported": true,
-      "autoConnectSupported": true
-    }
+  "id": 201,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "capability": "network.wifi",
+    "securityTypes": [
+      "wpa2_psk",
+      "wpa3_sae"
+    ],
+    "bands": [
+      "5g"
+    ],
+    "credentialImportModes": [
+      "pairing_token",
+      "opaque_ref"
+    ],
+    "savedProfilesSupported": true,
+    "scanSupported": true,
+    "autoConnectSupported": true
   }
 }
 ```
@@ -296,64 +296,56 @@ Capability ID：`network.wifi`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 202,
-    "method": "network.setWifiConfig",
-    "params": {
-      "interfaceId": "wlan0",
-      "profile": {
-        "ssid": "NA20-<receiver-id>",
-        "security": "wpa2_psk",
-        "credential": {
-          "type": "pairing_token",
-          "value": "<PAIRING_TOKEN_OR_SECRET>",
-          "expiresAtMs": 0
-        },
-        "bssid": "<NA20_AP_BSSID>",
-        "hidden": false,
-        "persist": true,
-        "autoConnect": true,
-        "source": "pairing"
+  "id": 202,
+  "method": "network.setWifiConfig",
+  "params": {
+    "interfaceId": "wlan0",
+    "profile": {
+      "ssid": "NA20-<receiver-id>",
+      "security": "wpa2_psk",
+      "credential": {
+        "type": "pairing_token",
+        "value": "<PAIRING_TOKEN_OR_SECRET>",
+        "expiresAtMs": 0
       },
-      "replaceExisting": true,
-      "makeDefault": true,
-      "connectAfterSave": false
-    }
+      "bssid": "<NA20_AP_BSSID>",
+      "hidden": false,
+      "persist": true,
+      "autoConnect": true,
+      "source": "pairing"
+    },
+    "replaceExisting": true,
+    "makeDefault": true,
+    "connectAfterSave": false
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 202,
-    "status": {
-      "ok": true,
-      "code": 0
-    },
-    "result": {
-      "profileId": "<WIFI_PROFILE_ID>",
-      "connectStarted": false,
-      "config": {
-        "interfaceId": "wlan0",
-        "defaultProfileId": "<WIFI_PROFILE_ID>",
-        "profiles": [
-          {
-            "profileId": "<WIFI_PROFILE_ID>",
-            "ssid": "NA20-<receiver-id>",
-            "security": "wpa2_psk",
-            "bssid": "<NA20_AP_BSSID>",
-            "hidden": false,
-            "persist": true,
-            "autoConnect": true,
-            "source": "pairing"
-          }
-        ]
-      }
+  "id": 202,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "profileId": "<WIFI_PROFILE_ID>",
+    "connectStarted": false,
+    "config": {
+      "interfaceId": "wlan0",
+      "defaultProfileId": "<WIFI_PROFILE_ID>",
+      "profiles": [
+        {
+          "profileId": "<WIFI_PROFILE_ID>",
+          "ssid": "NA20-<receiver-id>",
+          "security": "wpa2_psk",
+          "bssid": "<NA20_AP_BSSID>",
+          "hidden": false,
+          "persist": true,
+          "autoConnect": true,
+          "source": "pairing"
+        }
+      ]
     }
   }
 }
@@ -363,39 +355,31 @@ Capability ID：`network.wifi`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 203,
-    "method": "network.connectWifi",
-    "params": {
-      "interfaceId": "wlan0",
-      "profileId": "<WIFI_PROFILE_ID>",
-      "timeoutMs": 15000
-    }
+  "id": 203,
+  "method": "network.connectWifi",
+  "params": {
+    "interfaceId": "wlan0",
+    "profileId": "<WIFI_PROFILE_ID>",
+    "timeoutMs": 15000
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 203,
-    "status": {
-      "ok": true,
-      "code": 0
-    },
-    "result": {
-      "accepted": true,
-      "state": {
-        "interfaceId": "wlan0",
-        "state": "connecting",
-        "profileId": "<WIFI_PROFILE_ID>",
-        "ssid": "NA20-<receiver-id>",
-        "bssid": "<NA20_AP_BSSID>"
-      }
+  "id": 203,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "accepted": true,
+    "state": {
+      "interfaceId": "wlan0",
+      "state": "connecting",
+      "profileId": "<WIFI_PROFILE_ID>",
+      "ssid": "NA20-<receiver-id>",
+      "bssid": "<NA20_AP_BSSID>"
     }
   }
 }
@@ -405,28 +389,24 @@ Capability ID：`network.wifi`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 6,
-  "d": {
-    "event": "network.wifiStateChanged",
-    "intent": 2,
-    "data": {
+  "event": "network.wifiStateChanged",
+  "intent": 2,
+  "data": {
+    "interfaceId": "wlan0",
+    "previousState": {
       "interfaceId": "wlan0",
-      "previousState": {
-        "interfaceId": "wlan0",
-        "state": "connecting",
-        "profileId": "<WIFI_PROFILE_ID>"
-      },
-      "state": {
-        "interfaceId": "wlan0",
-        "state": "connected",
-        "profileId": "<WIFI_PROFILE_ID>",
-        "ssid": "NA20-<receiver-id>",
-        "bssid": "<NA20_AP_BSSID>",
-        "rssiDbm": -48
-      },
-      "reason": "connect_completed"
-    }
+      "state": "connecting",
+      "profileId": "<WIFI_PROFILE_ID>"
+    },
+    "state": {
+      "interfaceId": "wlan0",
+      "state": "connected",
+      "profileId": "<WIFI_PROFILE_ID>",
+      "ssid": "NA20-<receiver-id>",
+      "bssid": "<NA20_AP_BSSID>",
+      "rssiDbm": -48
+    },
+    "reason": "connect_completed"
   }
 }
 ```
@@ -437,34 +417,26 @@ Capability ID：`network.wifi`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 204,
-    "method": "network.connectWifi",
-    "params": {
-      "interfaceId": "wlan0",
-      "profileId": "<MISSING_PROFILE_ID>",
-      "timeoutMs": 15000
-    }
+  "id": 204,
+  "method": "network.connectWifi",
+  "params": {
+    "interfaceId": "wlan0",
+    "profileId": "<MISSING_PROFILE_ID>",
+    "timeoutMs": 15000
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 204,
-    "status": {
-      "ok": false,
-      "code": 12,
-      "msg": "Wi-Fi profile was not found.",
-      "details": {
-        "candidateError": "NETWORK_PROFILE_NOT_FOUND",
-        "profileId": "<MISSING_PROFILE_ID>"
-      }
+  "id": 204,
+  "status": {
+    "ok": false,
+    "code": 12,
+    "msg": "Wi-Fi profile was not found.",
+    "details": {
+      "candidateError": "NETWORK_PROFILE_NOT_FOUND",
+      "profileId": "<MISSING_PROFILE_ID>"
     }
   }
 }

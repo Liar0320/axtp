@@ -205,7 +205,7 @@ Capability ID：`network.ap`
 
 ## 9. JSON 示例
 
-示例用于评审 `network.ap` request/response/event 语义，不是 generated 事实源。JSON 示例遵循 05《AXTP RPC Session Spec》的 `sid` / `op` / `d` envelope：Request 使用 `op=7`，RequestResponse 使用 `op=8`，Event 使用 `op=6`；`status.code` 必须是数字 ErrorCode。`credential.value`、MAC、序列号等敏感或设备相关字段均使用占位符。
+示例用于评审 `network.ap` request/response/event 语义，不是 generated 事实源。JSON 示例只写 RPC `d` 数据块，不包裹外层 `sid` / `op` / `d` wire envelope；Request 使用 `id`、`method`、`params`，Response 使用 `id`、`status`、`result`，Event 使用 `event`、`intent`、`data`。`status.code` 必须是数字 ErrorCode。`credential.value`、MAC、序列号等敏感或设备相关字段均使用占位符。
 
 失败示例中的草案业务错误尚未分配数字码，因此 JSON 中先使用已采纳通用错误码，并在 `status.details.candidateError` 中标注候选错误名。
 
@@ -213,37 +213,37 @@ Capability ID：`network.ap`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 101,
-    "method": "network.getApCapabilities",
-    "params": {
-      "interfaceId": "ap0"
-    }
+  "id": 101,
+  "method": "network.getApCapabilities",
+  "params": {
+    "interfaceId": "ap0"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 101,
-    "status": {
-      "ok": true,
-      "code": 0
-    },
-    "result": {
-      "capability": "network.ap",
-      "securityTypes": ["wpa2_psk", "wpa3_sae"],
-      "bands": ["5g"],
-      "credentialExportModes": ["pairing_token", "opaque_ref"],
-      "canStartStop": true,
-      "clientListSupported": true,
-      "maxClients": 8
-    }
+  "id": 101,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "capability": "network.ap",
+    "securityTypes": [
+      "wpa2_psk",
+      "wpa3_sae"
+    ],
+    "bands": [
+      "5g"
+    ],
+    "credentialExportModes": [
+      "pairing_token",
+      "opaque_ref"
+    ],
+    "canStartStop": true,
+    "clientListSupported": true,
+    "maxClients": 8
   }
 }
 ```
@@ -252,42 +252,34 @@ Capability ID：`network.ap`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 102,
-    "method": "network.getApConfig",
-    "params": {
-      "interfaceId": "ap0"
-    }
+  "id": 102,
+  "method": "network.getApConfig",
+  "params": {
+    "interfaceId": "ap0"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 102,
-    "status": {
-      "ok": true,
-      "code": 0
+  "id": 102,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "interfaceId": "ap0",
+    "ssid": "NA20-<receiver-id>",
+    "security": "wpa2_psk",
+    "credential": {
+      "type": "pairing_token",
+      "value": "<PAIRING_TOKEN_OR_SECRET>",
+      "expiresAtMs": 0
     },
-    "result": {
-      "interfaceId": "ap0",
-      "ssid": "NA20-<receiver-id>",
-      "security": "wpa2_psk",
-      "credential": {
-        "type": "pairing_token",
-        "value": "<PAIRING_TOKEN_OR_SECRET>",
-        "expiresAtMs": 0
-      },
-      "hidden": false,
-      "band": "5g",
-      "channel": 149,
-      "maxClients": 8
-    }
+    "hidden": false,
+    "band": "5g",
+    "channel": 149,
+    "maxClients": 8
   }
 }
 ```
@@ -296,36 +288,28 @@ Capability ID：`network.ap`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 103,
-    "method": "network.startAp",
-    "params": {
-      "interfaceId": "ap0"
-    }
+  "id": 103,
+  "method": "network.startAp",
+  "params": {
+    "interfaceId": "ap0"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 103,
-    "status": {
-      "ok": true,
-      "code": 0
-    },
-    "result": {
-      "accepted": true,
-      "state": {
-        "interfaceId": "ap0",
-        "state": "starting",
-        "ssid": "NA20-<receiver-id>",
-        "bssid": "<NA20_AP_BSSID>"
-      }
+  "id": 103,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "accepted": true,
+    "state": {
+      "interfaceId": "ap0",
+      "state": "starting",
+      "ssid": "NA20-<receiver-id>",
+      "bssid": "<NA20_AP_BSSID>"
     }
   }
 }
@@ -335,26 +319,22 @@ Capability ID：`network.ap`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 6,
-  "d": {
-    "event": "network.apStateChanged",
-    "intent": 2,
-    "data": {
+  "event": "network.apStateChanged",
+  "intent": 2,
+  "data": {
+    "interfaceId": "ap0",
+    "previousState": {
       "interfaceId": "ap0",
-      "previousState": {
-        "interfaceId": "ap0",
-        "state": "starting"
-      },
-      "state": {
-        "interfaceId": "ap0",
-        "state": "running",
-        "ssid": "NA20-<receiver-id>",
-        "bssid": "<NA20_AP_BSSID>",
-        "clientCount": 0
-      },
-      "reason": "user_request"
-    }
+      "state": "starting"
+    },
+    "state": {
+      "interfaceId": "ap0",
+      "state": "running",
+      "ssid": "NA20-<receiver-id>",
+      "bssid": "<NA20_AP_BSSID>",
+      "clientCount": 0
+    },
+    "reason": "user_request"
   }
 }
 ```
@@ -363,32 +343,26 @@ Capability ID：`network.ap`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 104,
-    "method": "network.getApConfig",
-    "params": {
-      "interfaceId": "ap0"
-    }
+  "id": 104,
+  "method": "network.getApConfig",
+  "params": {
+    "interfaceId": "ap0"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 104,
-    "status": {
-      "ok": false,
-      "code": 9,
-      "msg": "AP credential is not exportable by current policy.",
-      "details": {
-        "candidateError": "NETWORK_CREDENTIAL_NOT_EXPORTABLE",
-        "supportedCredentialExportModes": ["opaque_ref"]
-      }
+  "id": 104,
+  "status": {
+    "ok": false,
+    "code": 9,
+    "msg": "AP credential is not exportable by current policy.",
+    "details": {
+      "candidateError": "NETWORK_CREDENTIAL_NOT_EXPORTABLE",
+      "supportedCredentialExportModes": [
+        "opaque_ref"
+      ]
     }
   }
 }
