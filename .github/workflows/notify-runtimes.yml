@@ -1,0 +1,55 @@
+name: Notify Runtime Repositories
+
+on:
+  workflow_dispatch:
+    inputs:
+      spec_tag:
+        description: AXTP Spec tag, for example spec/v0.3.0
+        required: true
+        type: string
+      spec_version:
+        description: AXTP Spec version, for example 0.3.0
+        required: true
+        type: string
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${{ inputs.spec_tag }}" =~ ^spec/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "spec_tag must match spec/vMAJOR.MINOR.PATCH" >&2
+            exit 2
+          fi
+          if [[ ! "${{ inputs.spec_version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "spec_version must match MAJOR.MINOR.PATCH" >&2
+            exit 2
+          fi
+          expected="spec/v${{ inputs.spec_version }}"
+          if [[ "${{ inputs.spec_tag }}" != "$expected" ]]; then
+            echo "spec_tag must equal spec/v<spec_version>; expected $expected" >&2
+            exit 2
+          fi
+
+      - name: Print dry-run notifications
+        shell: bash
+        run: |
+          set -euo pipefail
+          repositories=(
+            "Mostorm-Labs/axtp-c-runtime"
+            "Mostorm-Labs/axtp-cpp-runtime"
+            "Mostorm-Labs/axtp-flutter-runtime"
+            "Mostorm-Labs/axtp-node-runtime"
+            "Mostorm-Labs/axtp-mock-server"
+          )
+
+          echo "Dry run only. No GitHub API calls will be made."
+          for repository in "${repositories[@]}"; do
+            echo "Would notify $repository with:"
+            echo "  event_type: axtp-spec-released"
+            echo "  spec_tag: ${{ inputs.spec_tag }}"
+            echo "  spec_version: ${{ inputs.spec_version }}"
+          done

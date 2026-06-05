@@ -6,3 +6,4 @@ runtimes/**/dist/
 runtimes/**/.dart_tool/
 build/
 runtimes/**/build/
+dist/

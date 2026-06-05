@@ -1,0 +1,23 @@
+axtp_spec:
+  version: "{{VERSION}}"
+  tag: "spec/v{{VERSION}}"
+  commit: "{{COMMIT}}"
+  released_at: "{{DATE}}"
+
+contents:
+  specs: true
+  registry: true
+  schemas: true
+  conformance: true
+  migration: true
+
+compatibility:
+  wire: "{{WIRE_COMPATIBILITY}}"
+  registry: "{{REGISTRY_COMPATIBILITY}}"
+  schema: "{{SCHEMA_COMPATIBILITY}}"
+  runtime_action: "{{RUNTIME_ACTION}}"
+
+notes:
+  summary: ""
+  breaking_changes: []
+  runtime_required_changes: []

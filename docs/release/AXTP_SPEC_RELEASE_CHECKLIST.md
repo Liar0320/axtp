@@ -45,11 +45,13 @@ The GitHub Release body should include:
 
 After the release:
 
-1. Notify C++ runtime maintainers to update `AXTP_SPEC.lock.yaml`.
-2. Notify TypeScript runtime maintainers to update `AXTP_SPEC.lock.yaml`, package metadata, or spec package dependency.
-3. Notify Flutter/Dart runtime maintainers to update `AXTP_SPEC.lock.yaml` or `axtp_spec.yaml`.
-4. Ask runtime maintainers to record the tag, version, commit hash, compatibility range, and update date.
-5. Do not ask runtimes to depend on `main`; every runtime dependency must point to a tag or commit.
+1. Notify `axtp-c-runtime` maintainers to update `AXTP_SPEC.lock.yaml`.
+2. Notify `axtp-cpp-runtime` maintainers to update `AXTP_SPEC.lock.yaml`.
+3. Notify `axtp-flutter-runtime` maintainers to update `AXTP_SPEC.lock.yaml`.
+4. Notify `axtp-node-runtime` maintainers to update `AXTP_SPEC.lock.yaml` and package metadata.
+5. Notify `axtp-mock-server` maintainers to update `AXTP_SPEC.lock.yaml`.
+6. Ask runtime and mock maintainers to record the tag, version, commit hash, compatibility range, and update date.
+7. Do not ask runtimes to depend on `main`; every runtime dependency must point to a tag or commit.
 
 ## Non-Goals
 
