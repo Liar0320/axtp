@@ -51,6 +51,7 @@ The real runtime and mock repositories are:
 - `axtp-cpp-runtime`
 - `axtp-flutter-runtime`
 - `axtp-node-runtime`
+- `axtp-python-runtime`
 - `axtp-mock-server`
 
 ## Non-Goals

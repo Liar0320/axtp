@@ -49,7 +49,8 @@ GitHub Release body 应包含：
 2. 通知 `axtp-cpp-runtime` 维护者更新 `AXTP_SPEC.lock.yaml`。
 3. 通知 `axtp-flutter-runtime` 维护者更新 `AXTP_SPEC.lock.yaml`。
 4. 通知 `axtp-node-runtime` 维护者更新 `AXTP_SPEC.lock.yaml` 和 package metadata。
-5. 通知 `axtp-mock-server` 维护者更新 `AXTP_SPEC.lock.yaml`。
+5. 通知 `axtp-python-runtime` 维护者更新 `AXTP_SPEC.lock.yaml`。
+6. 通知 `axtp-mock-server` 维护者更新 `AXTP_SPEC.lock.yaml`。
 6. 要求 runtime 和 mock 维护者记录 tag、version、commit hash、compatibility range 和 update date。
 7. 不要要求 runtime 依赖 `main`；每个 runtime 依赖都必须指向 tag 或 commit。
 

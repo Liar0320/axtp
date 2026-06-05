@@ -43,6 +43,7 @@ jobs:
             "Mostorm-Labs/axtp-cpp-runtime"
             "Mostorm-Labs/axtp-flutter-runtime"
             "Mostorm-Labs/axtp-node-runtime"
+            "Mostorm-Labs/axtp-python-runtime"
             "Mostorm-Labs/axtp-mock-server"
           )
 

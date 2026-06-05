@@ -49,7 +49,8 @@ After the release:
 2. Notify `axtp-cpp-runtime` maintainers to update `AXTP_SPEC.lock.yaml`.
 3. Notify `axtp-flutter-runtime` maintainers to update `AXTP_SPEC.lock.yaml`.
 4. Notify `axtp-node-runtime` maintainers to update `AXTP_SPEC.lock.yaml` and package metadata.
-5. Notify `axtp-mock-server` maintainers to update `AXTP_SPEC.lock.yaml`.
+5. Notify `axtp-python-runtime` maintainers to update `AXTP_SPEC.lock.yaml`.
+6. Notify `axtp-mock-server` maintainers to update `AXTP_SPEC.lock.yaml`.
 6. Ask runtime and mock maintainers to record the tag, version, commit hash, compatibility range, and update date.
 7. Do not ask runtimes to depend on `main`; every runtime dependency must point to a tag or commit.
 

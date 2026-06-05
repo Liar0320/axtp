@@ -6,6 +6,7 @@ Full runtime implementations have been moved to dedicated repositories:
 - `axtp-cpp-runtime`
 - `axtp-flutter-runtime`
 - `axtp-node-runtime`
+- `axtp-python-runtime`
 - `axtp-mock-server`
 
 This repository remains the AXTP Spec source of truth.

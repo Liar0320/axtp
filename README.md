@@ -64,6 +64,7 @@ AXTP runtime implementations are maintained in dedicated repositories:
 - [`axtp-cpp-runtime`](https://github.com/Mostorm-Labs/axtp-cpp-runtime)
 - [`axtp-flutter-runtime`](https://github.com/Mostorm-Labs/axtp-flutter-runtime)
 - [`axtp-node-runtime`](https://github.com/Mostorm-Labs/axtp-node-runtime)
+- [`axtp-python-runtime`](https://github.com/Mostorm-Labs/axtp-python-runtime)
 - [`axtp-mock-server`](https://github.com/Mostorm-Labs/axtp-mock-server)
 
 This repository is the AXTP Spec source of truth. Runtime repositories must
