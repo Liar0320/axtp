@@ -170,7 +170,7 @@ Capability ID：`network.ip`
 
 ## 10. JSON 示例
 
-示例用于评审 `network.ip` request/response/event 语义，不是 generated 事实源。JSON 示例遵循 05《AXTP RPC Session Spec》的 `sid` / `op` / `d` envelope：Request 使用 `op=7`，RequestResponse 使用 `op=8`，Event 使用 `op=6`；`status.code` 必须是数字 ErrorCode。IP 等设备相关字段均使用占位符。
+示例用于评审 `network.ip` request/response/event 语义，不是 generated 事实源。JSON 示例只写 RPC `d` 数据块，不包裹外层 `sid` / `op` / `d` wire envelope；Request 使用 `id`、`method`、`params`，Response 使用 `id`、`status`、`result`，Event 使用 `event`、`intent`、`data`。`status.code` 必须是数字 ErrorCode。IP 等设备相关字段均使用占位符。
 
 失败示例中的草案业务错误尚未分配数字码，因此 JSON 中先使用已采纳通用错误码，并在 `status.details.candidateError` 中标注候选错误名。
 
@@ -178,40 +178,34 @@ Capability ID：`network.ip`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 401,
-    "method": "network.getIpConfig",
-    "params": {
-      "interfaceId": "wlan0",
-      "family": "ipv4"
-    }
+  "id": 401,
+  "method": "network.getIpConfig",
+  "params": {
+    "interfaceId": "wlan0",
+    "family": "ipv4"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 401,
-    "status": {
-      "ok": true,
-      "code": 0
-    },
-    "result": {
-      "interfaceId": "wlan0",
-      "family": "ipv4",
-      "mode": "dhcp",
-      "address": "<DEVICE_IP>",
-      "prefixLength": 24,
-      "gateway": "<GATEWAY_IP>",
-      "dnsServers": ["<DNS_IP>"],
-      "source": "dhcp",
-      "effective": true
-    }
+  "id": 401,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "interfaceId": "wlan0",
+    "family": "ipv4",
+    "mode": "dhcp",
+    "address": "<DEVICE_IP>",
+    "prefixLength": 24,
+    "gateway": "<GATEWAY_IP>",
+    "dnsServers": [
+      "<DNS_IP>"
+    ],
+    "source": "dhcp",
+    "effective": true
   }
 }
 ```
@@ -220,48 +214,42 @@ Capability ID：`network.ip`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 402,
-    "method": "network.setIpConfig",
-    "params": {
-      "interfaceId": "wlan0",
-      "family": "ipv4",
-      "mode": "dhcp",
-      "apply": "immediate"
-    }
+  "id": 402,
+  "method": "network.setIpConfig",
+  "params": {
+    "interfaceId": "wlan0",
+    "family": "ipv4",
+    "mode": "dhcp",
+    "apply": "immediate"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 402,
-    "status": {
-      "ok": true,
-      "code": 0
+  "id": 402,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "config": {
+      "interfaceId": "wlan0",
+      "family": "ipv4",
+      "mode": "dhcp",
+      "address": "<NEW_DEVICE_IP>",
+      "prefixLength": 24,
+      "gateway": "<GATEWAY_IP>",
+      "dnsServers": [
+        "<DNS_IP>"
+      ],
+      "source": "dhcp",
+      "effective": true
     },
-    "result": {
-      "config": {
-        "interfaceId": "wlan0",
-        "family": "ipv4",
-        "mode": "dhcp",
-        "address": "<NEW_DEVICE_IP>",
-        "prefixLength": 24,
-        "gateway": "<GATEWAY_IP>",
-        "dnsServers": ["<DNS_IP>"],
-        "source": "dhcp",
-        "effective": true
-      },
-      "applied": true,
-      "effectiveAfter": "immediate",
-      "requiresReconnect": true,
-      "requiresReboot": false
-    }
+    "applied": true,
+    "effectiveAfter": "immediate",
+    "requiresReconnect": true,
+    "requiresReboot": false
   }
 }
 ```
@@ -270,52 +258,50 @@ Capability ID：`network.ip`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 403,
-    "method": "network.setIpConfig",
-    "params": {
-      "interfaceId": "eth0",
-      "family": "ipv4",
-      "mode": "static",
-      "address": "<STATIC_IP>",
-      "prefixLength": 24,
-      "gateway": "<STATIC_GATEWAY_IP>",
-      "dnsServers": ["<DNS_IP_1>", "<DNS_IP_2>"],
-      "apply": "on_reconnect"
-    }
+  "id": 403,
+  "method": "network.setIpConfig",
+  "params": {
+    "interfaceId": "eth0",
+    "family": "ipv4",
+    "mode": "static",
+    "address": "<STATIC_IP>",
+    "prefixLength": 24,
+    "gateway": "<STATIC_GATEWAY_IP>",
+    "dnsServers": [
+      "<DNS_IP_1>",
+      "<DNS_IP_2>"
+    ],
+    "apply": "on_reconnect"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 403,
-    "status": {
-      "ok": true,
-      "code": 0
+  "id": 403,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "config": {
+      "interfaceId": "eth0",
+      "family": "ipv4",
+      "mode": "static",
+      "address": "<STATIC_IP>",
+      "prefixLength": 24,
+      "gateway": "<STATIC_GATEWAY_IP>",
+      "dnsServers": [
+        "<DNS_IP_1>",
+        "<DNS_IP_2>"
+      ],
+      "source": "static",
+      "effective": false
     },
-    "result": {
-      "config": {
-        "interfaceId": "eth0",
-        "family": "ipv4",
-        "mode": "static",
-        "address": "<STATIC_IP>",
-        "prefixLength": 24,
-        "gateway": "<STATIC_GATEWAY_IP>",
-        "dnsServers": ["<DNS_IP_1>", "<DNS_IP_2>"],
-        "source": "static",
-        "effective": false
-      },
-      "applied": false,
-      "effectiveAfter": "on_reconnect",
-      "requiresReconnect": true,
-      "requiresReboot": false
-    }
+    "applied": false,
+    "effectiveAfter": "on_reconnect",
+    "requiresReconnect": true,
+    "requiresReboot": false
   }
 }
 ```
@@ -324,27 +310,25 @@ Capability ID：`network.ip`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 6,
-  "d": {
-    "event": "network.ipConfigChanged",
-    "intent": 2,
-    "data": {
+  "event": "network.ipConfigChanged",
+  "intent": 2,
+  "data": {
+    "interfaceId": "wlan0",
+    "family": "ipv4",
+    "config": {
       "interfaceId": "wlan0",
       "family": "ipv4",
-      "config": {
-        "interfaceId": "wlan0",
-        "family": "ipv4",
-        "mode": "dhcp",
-        "address": "<NEW_DEVICE_IP>",
-        "prefixLength": 24,
-        "gateway": "<GATEWAY_IP>",
-        "dnsServers": ["<DNS_IP>"],
-        "source": "dhcp",
-        "effective": true
-      },
-      "reason": "dhcp_updated"
-    }
+      "mode": "dhcp",
+      "address": "<NEW_DEVICE_IP>",
+      "prefixLength": 24,
+      "gateway": "<GATEWAY_IP>",
+      "dnsServers": [
+        "<DNS_IP>"
+      ],
+      "source": "dhcp",
+      "effective": true
+    },
+    "reason": "dhcp_updated"
   }
 }
 ```
@@ -353,36 +337,28 @@ Capability ID：`network.ip`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 404,
-    "method": "network.setIpConfig",
-    "params": {
-      "interfaceId": "eth0",
-      "family": "ipv4",
-      "mode": "static",
-      "address": "<STATIC_IP>",
-      "apply": "immediate"
-    }
+  "id": 404,
+  "method": "network.setIpConfig",
+  "params": {
+    "interfaceId": "eth0",
+    "family": "ipv4",
+    "mode": "static",
+    "address": "<STATIC_IP>",
+    "apply": "immediate"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 404,
-    "status": {
-      "ok": false,
-      "code": 10,
-      "msg": "Static IP address requires prefixLength.",
-      "details": {
-        "candidateError": "NETWORK_IP_CONFIG_INVALID",
-        "field": "prefixLength"
-      }
+  "id": 404,
+  "status": {
+    "ok": false,
+    "code": 10,
+    "msg": "Static IP address requires prefixLength.",
+    "details": {
+      "candidateError": "NETWORK_IP_CONFIG_INVALID",
+      "field": "prefixLength"
     }
   }
 }

@@ -171,70 +171,69 @@ Capability ID：`network.interface`
 
 ## 9. JSON 示例
 
-示例用于评审 `network.interface` request/response/event 语义，不是 generated 事实源。JSON 示例遵循 05《AXTP RPC Session Spec》的 `sid` / `op` / `d` envelope：Request 使用 `op=7`，RequestResponse 使用 `op=8`，Event 使用 `op=6`；`status.code` 必须是数字 ErrorCode。MAC 等设备相关字段均使用占位符。
+示例用于评审 `network.interface` request/response/event 语义，不是 generated 事实源。JSON 示例只写 RPC `d` 数据块，不包裹外层 `sid` / `op` / `d` wire envelope；Request 使用 `id`、`method`、`params`，Response 使用 `id`、`status`、`result`，Event 使用 `event`、`intent`、`data`。`status.code` 必须是数字 ErrorCode。MAC 等设备相关字段均使用占位符。
 
 ### 9.1 查询接口列表
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 301,
-    "method": "network.getInterfaces",
-    "params": {}
-  }
+  "id": 301,
+  "method": "network.getInterfaces",
+  "params": {}
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 301,
-    "status": {
-      "ok": true,
-      "code": 0
-    },
-    "result": {
-      "interfaces": [
-        {
-          "interfaceId": "eth0",
-          "type": "ethernet",
-          "roles": ["uplink", "control"],
-          "state": {
-            "admin": "enabled",
-            "link": "up"
-          },
-          "macAddress": "<ETH0_MAC>"
+  "id": 301,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "interfaces": [
+      {
+        "interfaceId": "eth0",
+        "type": "ethernet",
+        "roles": [
+          "uplink",
+          "control"
+        ],
+        "state": {
+          "admin": "enabled",
+          "link": "up"
         },
-        {
-          "interfaceId": "wlan0",
-          "type": "wifi",
-          "roles": ["sta"],
-          "state": {
-            "admin": "enabled",
-            "link": "up"
-          },
-          "macAddress": "<WLAN0_MAC>"
+        "macAddress": "<ETH0_MAC>"
+      },
+      {
+        "interfaceId": "wlan0",
+        "type": "wifi",
+        "roles": [
+          "sta"
+        ],
+        "state": {
+          "admin": "enabled",
+          "link": "up"
         },
-        {
-          "interfaceId": "ap0",
-          "type": "wifi",
-          "roles": ["ap"],
-          "state": {
-            "admin": "enabled",
-            "link": "up"
-          },
-          "macAddress": "<AP0_MAC>"
-        }
-      ],
-      "defaults": {
-        "uplink": "eth0",
-        "wifiSta": "wlan0",
-        "ap": "ap0"
+        "macAddress": "<WLAN0_MAC>"
+      },
+      {
+        "interfaceId": "ap0",
+        "type": "wifi",
+        "roles": [
+          "ap"
+        ],
+        "state": {
+          "admin": "enabled",
+          "link": "up"
+        },
+        "macAddress": "<AP0_MAC>"
       }
+    ],
+    "defaults": {
+      "uplink": "eth0",
+      "wifiSta": "wlan0",
+      "ap": "ap0"
     }
   }
 }
@@ -244,40 +243,34 @@ Capability ID：`network.interface`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 302,
-    "method": "network.getInterfaceInfo",
-    "params": {
-      "interfaceId": "wlan0"
-    }
+  "id": 302,
+  "method": "network.getInterfaceInfo",
+  "params": {
+    "interfaceId": "wlan0"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 302,
-    "status": {
-      "ok": true,
-      "code": 0
+  "id": 302,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "interfaceId": "wlan0",
+    "type": "wifi",
+    "roles": [
+      "sta"
+    ],
+    "state": {
+      "admin": "enabled",
+      "link": "up"
     },
-    "result": {
-      "interfaceId": "wlan0",
-      "type": "wifi",
-      "roles": ["sta"],
-      "state": {
-        "admin": "enabled",
-        "link": "up"
-      },
-      "macAddress": "<WLAN0_MAC>",
-      "mtu": 1500,
-      "displayName": "Wi-Fi STA"
-    }
+    "macAddress": "<WLAN0_MAC>",
+    "mtu": 1500,
+    "displayName": "Wi-Fi STA"
   }
 }
 ```
@@ -286,23 +279,19 @@ Capability ID：`network.interface`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 6,
-  "d": {
-    "event": "network.interfaceStateChanged",
-    "intent": 2,
-    "data": {
-      "interfaceId": "eth0",
-      "previousState": {
-        "admin": "enabled",
-        "link": "up"
-      },
-      "state": {
-        "admin": "enabled",
-        "link": "down"
-      },
-      "reason": "link_lost"
-    }
+  "event": "network.interfaceStateChanged",
+  "intent": 2,
+  "data": {
+    "interfaceId": "eth0",
+    "previousState": {
+      "admin": "enabled",
+      "link": "up"
+    },
+    "state": {
+      "admin": "enabled",
+      "link": "down"
+    },
+    "reason": "link_lost"
   }
 }
 ```
@@ -311,32 +300,24 @@ Capability ID：`network.interface`
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 7,
-  "d": {
-    "id": 303,
-    "method": "network.getInterfaceInfo",
-    "params": {
-      "interfaceId": "<MISSING_INTERFACE_ID>"
-    }
+  "id": 303,
+  "method": "network.getInterfaceInfo",
+  "params": {
+    "interfaceId": "<MISSING_INTERFACE_ID>"
   }
 }
 ```
 
 ```json
 {
-  "sid": "<sid>",
-  "op": 8,
-  "d": {
-    "id": 303,
-    "status": {
-      "ok": false,
-      "code": 12,
-      "msg": "Network interface was not found.",
-      "details": {
-        "candidateError": "NETWORK_INTERFACE_NOT_FOUND",
-        "interfaceId": "<MISSING_INTERFACE_ID>"
-      }
+  "id": 303,
+  "status": {
+    "ok": false,
+    "code": 12,
+    "msg": "Network interface was not found.",
+    "details": {
+      "candidateError": "NETWORK_INTERFACE_NOT_FOUND",
+      "interfaceId": "<MISSING_INTERFACE_ID>"
     }
   }
 }
