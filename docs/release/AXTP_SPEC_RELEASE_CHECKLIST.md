@@ -41,22 +41,20 @@ The GitHub Release body should include:
 - Runtime impact
 - Links to `CHANGELOG.md` and relevant generated protocol docs
 
-## Runtime Notification
+## Runtime Automation
 
 After the release:
 
-1. Notify `axtp-c-runtime` maintainers to update `AXTP_SPEC.lock.yaml`.
-2. Notify `axtp-cpp-runtime` maintainers to update `AXTP_SPEC.lock.yaml`.
-3. Notify `axtp-flutter-runtime` maintainers to update `AXTP_SPEC.lock.yaml`.
-4. Notify `axtp-ts-runtime` maintainers to update `AXTP_SPEC.lock.yaml` and package metadata.
-5. Notify `axtp-python-runtime` maintainers to update `AXTP_SPEC.lock.yaml`.
-6. Notify `axtp-mock-server` maintainers to update `AXTP_SPEC.lock.yaml`.
-6. Confirm the `spec-release-dispatch` workflow dispatched `axtp_spec_released` to all real runtime/mock repositories.
-7. Ask runtime and mock maintainers to review generated manifests and release only from runtime `vX.Y.Z` tags.
-8. Do not ask runtimes to depend on `main`; every runtime dependency must point to a tag or commit.
+1. Confirm the `spec-release-dispatch` workflow dispatched `axtp_spec_released` to all real runtime/mock repositories.
+2. Confirm each runtime/tool repository opened or updated `automation/upgrade-axtp-spec-vX.Y.Z`.
+3. Confirm each upgrade PR updates `AXTP_SPEC.lock.yaml`, runtime/tool version files, generated code, and `generated/axtp_generated_manifest.json`.
+4. Confirm each generated manifest records AXTP Spec `X.Y.Z` and runtime/tool version `X.Y.Z`.
+5. Confirm each automation PR auto-merges only after checks pass.
+6. Confirm each runtime/tool repository creates `vX.Y.Z` and a GitHub Release.
+7. Do not ask runtimes to depend on `main`; every runtime dependency must point to a tag or commit.
 
 ## Non-Goals
 
-- Do not create a runtime package release automatically from an AXTP Spec release.
+- Do not publish npm, pub, PyPI, Docker, or registry packages from an AXTP Spec release.
 - Do not force every runtime repository to use the same dependency mechanism.
 - Do not publish an AXTP Spec tag until source facts and generated outputs are aligned.

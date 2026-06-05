@@ -2,6 +2,41 @@
 
 This changelog records AXTP Spec releases published with `spec/vMAJOR.MINOR.PATCH` tags.
 
+## spec/v0.0.2
+
+Automation validation release for the AXTP Spec to runtime/tool upgrade flow.
+
+### Protocol
+
+- No protocol fact changes from `spec/v0.0.1`.
+- Uses the current generated AXTP protocol snapshot to validate release artifact packaging.
+
+### Registry
+
+- No registry fact changes from `spec/v0.0.1`.
+- Reuses the current method, event, error, capability, profile, and domain registry facts.
+
+### Schemas
+
+- No schema source changes from `spec/v0.0.1`.
+- Reuses the current generated schema descriptors and metadata.
+
+### Conformance
+
+- Validates that the release workflow can build the Spec artifact and dispatch runtime/tool upgrades.
+- Validates that runtime/tool repositories can regenerate artifacts from the released Spec tag.
+
+### Migration
+
+- No migration content changes from `spec/v0.0.1`.
+- Reuses the current legacy classification and migration planning material.
+
+### Runtime Impact
+
+- Exercises the automatic `spec/v0.0.2` to runtime/tool `v0.0.2` synchronization path.
+- Expected runtime/tool behavior is automated upgrade PR creation, generated manifest refresh, auto-merge after checks, `v0.0.2` tag creation, and GitHub Release creation.
+- No npm, pub, PyPI, Docker, or runtime package registry publish is part of this Spec release.
+
 ## spec/v0.0.1
 
 Initial tagged AXTP Spec release from the current repository snapshot.

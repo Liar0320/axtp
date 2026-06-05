@@ -177,6 +177,11 @@ GitHub Release. The axtp repository must configure
 `AXTP_RUNTIME_DISPATCH_TOKEN` with permission to send `repository_dispatch`
 events to the runtime/tool repositories.
 
+Runtime/tool repositories should configure `AXTP_RUNTIME_AUTOMATION_TOKEN` when
+automation-created PRs must trigger downstream `pull_request` checks. Local
+`build/` and `dist/` directories are ignored scratch outputs; release workflows
+rebuild the Spec artifact from source instead of relying on checked-in archives.
+
 ## Source Boundaries
 
 可以手动修改：

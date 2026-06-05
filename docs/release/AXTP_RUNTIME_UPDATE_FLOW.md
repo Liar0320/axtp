@@ -56,6 +56,18 @@ The dispatch payload includes:
 - `spec_repository`
 - `spec_commit`
 
+## Verification
+
+For an end-to-end test release such as `spec/v0.0.2`, verify:
+
+- The `axtp` release workflow uploads `dist/axtp-spec-v0.0.2.zip`.
+- Each runtime/tool repository opens or updates
+  `automation/upgrade-axtp-spec-v0.0.2`.
+- Each generated manifest records AXTP Spec `0.0.2` and runtime/tool version
+  `0.0.2`.
+- Each automation PR auto-merges only after checks pass.
+- Each runtime/tool repository creates `v0.0.2` and a GitHub Release.
+
 ## Version Contract
 
 Runtime repositories keep three version records, but automated releases align

@@ -41,22 +41,20 @@ GitHub Release body 应包含：
 - Runtime impact
 - `CHANGELOG.md` 和相关 generated protocol docs 链接
 
-## Runtime 通知
+## Runtime 自动化
 
 发布后：
 
-1. 通知 `axtp-c-runtime` 维护者更新 `AXTP_SPEC.lock.yaml`。
-2. 通知 `axtp-cpp-runtime` 维护者更新 `AXTP_SPEC.lock.yaml`。
-3. 通知 `axtp-flutter-runtime` 维护者更新 `AXTP_SPEC.lock.yaml`。
-4. 通知 `axtp-ts-runtime` 维护者更新 `AXTP_SPEC.lock.yaml` 和 package metadata。
-5. 通知 `axtp-python-runtime` 维护者更新 `AXTP_SPEC.lock.yaml`。
-6. 通知 `axtp-mock-server` 维护者更新 `AXTP_SPEC.lock.yaml`。
-6. 确认 `spec-release-dispatch` workflow 已向所有真实 runtime/mock 仓库发送 `axtp_spec_released`。
-7. 确认 runtime 和 mock 仓库的自动升级 PR 通过检查后合并，并创建对应的 `vX.Y.Z` tag / GitHub Release。
-8. 不要要求 runtime 依赖 `main`；每个 runtime 依赖都必须指向 tag 或 commit。
+1. 确认 `spec-release-dispatch` workflow 已向所有真实 runtime/mock 仓库发送 `axtp_spec_released`。
+2. 确认每个 runtime/tool 仓库打开或更新了 `automation/upgrade-axtp-spec-vX.Y.Z`。
+3. 确认每个升级 PR 更新了 `AXTP_SPEC.lock.yaml`、runtime/tool 版本文件、生成代码和 `generated/axtp_generated_manifest.json`。
+4. 确认每个 generated manifest 记录 AXTP Spec `X.Y.Z` 和 runtime/tool version `X.Y.Z`。
+5. 确认每个自动化 PR 只在检查通过后 auto-merge。
+6. 确认每个 runtime/tool 仓库创建了 `vX.Y.Z` 和 GitHub Release。
+7. 不要要求 runtime 依赖 `main`；每个 runtime 依赖都必须指向 tag 或 commit。
 
 ## 非目标
 
-- 不从 AXTP Spec release 自动创建 runtime package release。
+- 不从 AXTP Spec release 发布 npm、pub、PyPI、Docker 或其他 package registry 包。
 - 不强制所有 runtime 仓库使用同一种依赖机制。
 - 在 source facts 与 generated outputs 对齐前，不发布 AXTP Spec tag。
