@@ -1,16 +1,18 @@
-# AXTP Protocol Interaction Flows
+# AXTP 协议交互流程
 
-`docs/flows/` stores scenario-level protocol interaction plans.
+`docs/flows/` 存放场景级协议交互方案，是 Stage 10 `plan-protocol-flow` 的默认输出目录。
 
-These documents bridge product stories, UI prototypes, legacy evidence, and AXTP protocol work. They answer:
+这类文档把产品 story、UI 原型、旧协议线索和 AXTP 协议工作连接起来，回答：
 
-- what the user is trying to do
-- which actors participate
-- which protocol methods/events/capabilities are needed
-- which facts are already adopted/generated
-- which gaps should become new or amended `docs/protocol/**` drafts
+- 用户或系统要完成什么目标。
+- 哪些 actor 参与，例如用户、App、云端、设备、固件服务、SDK 或工具。
+- 每一步需要哪些 method、event、capability、profile 或 stream。
+- 哪些协议事实已经 adopted/generated，可以直接复用。
+- 哪些能力缺失，需要转入 Stage 20 `draft-business-protocol`。
+- 哪些已采纳协议需要语义变更，需要转入 Stage 40 `amend-adopted-protocol`。
+- 哪些只是 UI-only 或业务编排行为，不应该进入协议草案。
 
-They are not final protocol facts. Stable implementation contracts still come from:
+`docs/flows/**` 不是最终协议事实源。稳定实现合同仍然来自：
 
 ```text
 registry/**/*.yaml + registry/domains/**/*.yaml
@@ -18,19 +20,28 @@ registry/**/*.yaml + registry/domains/**/*.yaml
   -> docs/generated/**
 ```
 
-## Workflow
+## 什么时候用 Stage 10
+
+当输入不是单个明确协议方法，而是一个端到端需求时，先使用 `docs/dev/skills/10-plan-protocol-flow/SKILL.md`：
+
+| 输入 | Stage 10 做什么 | 后续 |
+|---|---|---|
+| UI 原型，例如音频算法强度滑条和恢复默认按钮 | 识别屏幕控件、读写流程、默认值、错误路径和已有协议覆盖 | 写 `docs/flows/<scenario>.md`，缺口转 20/40 |
+| 用户 story，例如“用户在 App 中切换输出布局” | 拆 actor、步骤、请求、响应、事件和状态同步 | 判断复用已有协议还是新增草案 |
+| 旧协议迁移场景 | 把旧命令映射到 story 步骤，区分兼容保留和 AXTP 新增能力 | 缺口转 `docs/protocol/**` 草案 |
+| 跨端业务流程 | 标出 App、后台、设备、SDK、测试各自消费的协议事实 | 给研发和测试形成共同流程图 |
+
+## 工作流
 
 ```text
-business scenario / UI prototype / user story
-  -> plan-protocol-flow
+docs/business/<requirement>.md 或业务场景 / UI 原型 / 用户 story
+  -> Stage 10 plan-protocol-flow
   -> docs/flows/<scenario>.md
-  -> draft-business-protocol or amend-adopted-protocol for protocol gaps
-  -> adopt-protocol-draft
-  -> generate-axtp-protocol
+  -> Stage 20 draft-business-protocol 或 Stage 40 amend-adopted-protocol
+  -> Stage 30 adopt-protocol-draft
+  -> Stage 50 generate-axtp-protocol
 ```
-
-Use `docs/dev/skills/plan-protocol-flow/SKILL.md` when a requirement describes an end-to-end interaction rather than a single protocol method.
 
 ## Active Flow Plans
 
-- [Audio Algorithm Level Control](audio-algorithm-level-control.md): App UI sliders for audio algorithm strength levels and restore-default behavior using `audio.algorithm`.
+- [Audio Algorithm Level Control](audio-algorithm-level-control.md)：App UI 中的音频算法强度滑条和恢复默认流程，复用 `audio.algorithm`。

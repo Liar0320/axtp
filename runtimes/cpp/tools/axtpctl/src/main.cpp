@@ -12,12 +12,12 @@
 #include <utility>
 #include <vector>
 
-#include "axtp/axtp.hpp"
-#include "axtp/json_rpc/method_registry_json.hpp"
-#include "axtp/testing/mock_transport.hpp"
-#include "axtp/transports/hidapi/hid_transport.hpp"
-#include "axtp/transports/tcp_boost/tcp_transport.hpp"
-#include "axtp/transports/websocket_boost/websocket_transport.hpp"
+#include "axtp.hpp"
+#include "method_registry_json.hpp"
+#include "testing/mock_transport.hpp"
+#include "hidapi/hid_transport.hpp"
+#include "tcp_boost/tcp_transport.hpp"
+#include "websocket_boost/websocket_transport.hpp"
 
 #include "axtp_sdk_all.hpp"
 

@@ -1,7 +1,7 @@
 #include <cassert>
 #include <string>
 
-#include "axtp/axtp.hpp"
+#include "axtp.hpp"
 
 namespace {
 

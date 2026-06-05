@@ -3,9 +3,9 @@
 #include <utility>
 #include <vector>
 
-#include "axtp/core/inbound/inbound_processor.hpp"
-#include "axtp/core/outbound/outbound_processor.hpp"
-#include "axtp/io/byte_writer_sink.hpp"
+#include "core/inbound/inbound_processor.hpp"
+#include "core/outbound/outbound_processor.hpp"
+#include "io/byte_writer_sink.hpp"
 
 namespace {
 

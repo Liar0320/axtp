@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-#include "axtp/transport/transport_profile.hpp"
+#include "transport/transport_profile.hpp"
 
 namespace axtp::sdk {
 

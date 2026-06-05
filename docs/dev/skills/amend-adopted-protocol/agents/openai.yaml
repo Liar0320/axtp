@@ -1,4 +1,0 @@
-interface:
-  display_name: "Amend Adopted Protocol"
-  short_description: "Revise adopted AXTP protocol facts"
-  default_prompt: "Use $amend-adopted-protocol to revise an already-adopted AXTP protocol and regenerate artifacts."

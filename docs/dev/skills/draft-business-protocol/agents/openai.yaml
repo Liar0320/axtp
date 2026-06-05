@@ -1,4 +1,0 @@
-interface:
-  display_name: "Draft Business Protocol"
-  short_description: "Draft AXTP business protocol proposals"
-  default_prompt: "Draft an AXTP docs/protocol domain-feature proposal from this product, architecture, or legacy protocol requirement."

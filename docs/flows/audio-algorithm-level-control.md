@@ -3,7 +3,7 @@
 > Status: flow design
 > Scope: App UI for adjusting audio algorithm strength levels
 > Source inputs: user request for an audio algorithm tuning UI with level sliders and a restore-default button
-> Protocol lifecycle: `plan-protocol-flow`
+> Protocol lifecycle: Stage 10 `plan-protocol-flow`
 
 本文根据“UI 界面上能够调控音频算法强度等级，具备各个调试等级的拖动条，以及恢复默认按钮”的业务场景，梳理 App、设备和 AXTP 协议之间的交互流程。
 

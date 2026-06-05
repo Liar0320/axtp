@@ -6,10 +6,10 @@
 #include <utility>
 #include <vector>
 
-#include "axtp/broker/basic_broker.hpp"
-#include "axtp/core/axtp_core.hpp"
-#include "axtp/runtime/axtp_endpoint.hpp"
-#include "axtp/transports/hidapi/hid_transport.hpp"
+#include "broker/basic_broker.hpp"
+#include "core/axtp_core.hpp"
+#include "runtime/axtp_endpoint.hpp"
+#include "hidapi/hid_transport.hpp"
 
 namespace {
 

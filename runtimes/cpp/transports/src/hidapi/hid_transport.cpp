@@ -1,4 +1,4 @@
-#include "axtp/transports/hidapi/hid_transport.hpp"
+#include "hidapi/hid_transport.hpp"
 
 #include <algorithm>
 #include <cwchar>

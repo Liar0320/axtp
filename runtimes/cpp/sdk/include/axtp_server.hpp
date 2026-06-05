@@ -6,7 +6,7 @@
 #include <string_view>
 #include <utility>
 
-#include "axtp/axtp.hpp"
+#include "axtp.hpp"
 
 namespace axtp::sdk {
 

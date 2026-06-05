@@ -22,7 +22,7 @@ AXTP 的核心约定是：业务方案先进入草案，评审采纳后写入 YA
 | 查当前可实现协议 | [docs/generated/protocol.md](docs/generated/protocol.md) 和 [docs/generated/protocol.json](docs/generated/protocol.json) |
 | 新增或修改业务协议 | [docs/protocol/README.md](docs/protocol/README.md) -> 对应 `docs/dev/skills/**` |
 | 运行 Generator 或 CLI/SDK/runtime | [docs/guides/how-to-use.md](docs/guides/how-to-use.md) |
-| C++ runtime/SDK 接入 | [runtimes/cpp/core/ARCHITECTURE.md](runtimes/cpp/core/ARCHITECTURE.md) 和 [docs/dev/AXTP_SDK_API_DESIGN.md](docs/dev/AXTP_SDK_API_DESIGN.md) |
+| C++ runtime/SDK 接入 | [docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md](docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md)、[docs/dev/AXTP_CORE_API_DESIGN.md](docs/dev/AXTP_CORE_API_DESIGN.md) 和 [docs/dev/AXTP_SDK_API_DESIGN.md](docs/dev/AXTP_SDK_API_DESIGN.md) |
 | 研发启动会材料 | [docs/dev/AXTP_RD_KICKOFF_GUIDE.md](docs/dev/AXTP_RD_KICKOFF_GUIDE.md) |
 
 ## Repository Layout
@@ -37,7 +37,7 @@ AXTP 的核心约定是：业务方案先进入草案，评审采纳后写入 YA
 | `docs/generated/` | Generator 输出的人读协议参考和 JSON | 否 |
 | `tooling/mcp/`、`tooling/test-vectors/` | Generator 输出的工具 JSON 和测试向量 | 否 |
 | `generators/` | TypeScript Generator 源码 | 是 |
-| `runtimes/cpp/core/` | C++ protocol core/runtime，`include/axtp/generated/` 除外 | 部分 |
+| `runtimes/cpp/core/` | C++ protocol core/runtime，`include/generated/` 除外 | 部分 |
 | `runtimes/cpp/sdk/` | C++ 应用层 SDK | 部分 |
 | `runtimes/cpp/tools/axtpctl/` | AXTP CLI 调试工具 | 是 |
 | `runtimes/ts/` | TypeScript/Web runtime SDK | 部分 |
@@ -67,18 +67,18 @@ Transport  USB HID / TCP / WebSocket / future low-bandwidth paths
 
 ## Protocol Lifecycle
 
-当前仓库按六个阶段维护协议：
+当前仓库按六个阶段维护协议；完整 skill 索引见 [docs/dev/skills/README.md](docs/dev/skills/README.md)：
 
 | 阶段 | Skill / 入口 | 输入 | 输出 |
 |---|---|---|---|
-| 路由 | [axtp-protocol-workflow](docs/dev/skills/axtp-protocol-workflow/SKILL.md) | 不确定处于哪个阶段的需求 | 明确应该起草、采纳、修订、生成还是实现 |
-| 流程 | [plan-protocol-flow](docs/dev/skills/plan-protocol-flow/SKILL.md) | 业务场景、用户 story、UI 原型、端到端交互 | `docs/flows/<scenario>.md`，列出协议步骤、已有覆盖和缺口 |
-| 起草 | [draft-business-protocol](docs/dev/skills/draft-business-protocol/SKILL.md) | 产品需求、架构草图、旧协议线索 | `docs/protocol/<domain>/<domain.feature>.md` |
-| 采纳 | [adopt-protocol-draft](docs/dev/skills/adopt-protocol-draft/SKILL.md) | 已评审确认的草案 | `docs/specs/08-13` 对齐记录；涉及 profile/MVP 时同步 14；写入 `registry/**/*.yaml` / `registry/domains/**/*.yaml` |
-| 修订 | [amend-adopted-protocol](docs/dev/skills/amend-adopted-protocol/SKILL.md) | 已采纳或已生成协议的语义变更 | amendment 记录 + 更新后的草案/specs/YAML + generated 产物 |
-| 生成 | [generate-axtp-protocol](docs/dev/skills/generate-axtp-protocol/SKILL.md) | 已更新的 YAML 事实源 | Protocol IR、generated docs、tooling JSON、test vectors、runtime generated headers |
+| 路由 | [axtp-protocol-workflow](docs/dev/skills/00-axtp-protocol-workflow/SKILL.md) | 不确定处于哪个阶段的需求 | 明确应该起草、采纳、修订、生成还是实现 |
+| Stage 10 流程 | [plan-protocol-flow](docs/dev/skills/10-plan-protocol-flow/SKILL.md) | 业务场景、用户 story、UI 原型、端到端交互 | `docs/flows/<scenario>.md`，列出协议步骤、已有覆盖和缺口；协议缺口再转 20/40 |
+| 起草 | [draft-business-protocol](docs/dev/skills/20-draft-business-protocol/SKILL.md) | 产品需求、架构草图、旧协议线索 | `docs/protocol/<domain>/<domain.feature>.md` |
+| 采纳 | [adopt-protocol-draft](docs/dev/skills/30-adopt-protocol-draft/SKILL.md) | 已评审确认的草案 | `docs/specs/08-13` 对齐记录；涉及 profile/MVP 时同步 14；写入 `registry/**/*.yaml` / `registry/domains/**/*.yaml` |
+| 修订 | [amend-adopted-protocol](docs/dev/skills/40-amend-adopted-protocol/SKILL.md) | 已采纳或已生成协议的语义变更 | amendment 记录 + 更新后的草案/specs/YAML + generated 产物 |
+| 生成 | [generate-axtp-protocol](docs/dev/skills/50-generate-axtp-protocol/SKILL.md) | 已更新的 YAML 事实源 | Protocol IR、generated docs、tooling JSON、test vectors、runtime generated headers |
 
-`docs/specs/**` 是协议规则和治理依据，`docs/flows/**` 是业务场景到协议交互的桥接文档，`docs/protocol/**` 是草案、评审和修订记录，`registry/**/*.yaml` 与 `registry/domains/**/*.yaml` 才是 Generator 的机器输入。仓库不要求研发照着 Markdown 手工填写生成产物；场景到协议清单由 `plan-protocol-flow` 梳理，草案到 YAML 的采纳动作由 `adopt-protocol-draft` 固化流程，已采纳协议的语义修正由 `amend-adopted-protocol` 管理，YAML 到产物的动作由 `generate-axtp-protocol` 完成。
+`docs/specs/**` 是协议规则和治理依据，`docs/flows/**` 是业务场景到协议交互的桥接文档，`docs/protocol/**` 是草案、评审和修订记录，`registry/**/*.yaml` 与 `registry/domains/**/*.yaml` 才是 Generator 的机器输入。仓库不要求研发照着 Markdown 手工填写生成产物；场景到协议清单由 Stage 10 `plan-protocol-flow` 梳理，草案到 YAML 的采纳动作由 `adopt-protocol-draft` 固化流程，已采纳协议的语义修正由 `amend-adopted-protocol` 管理，YAML 到产物的动作由 `generate-axtp-protocol` 完成。
 
 ## Quick Start
 
@@ -140,7 +140,7 @@ git diff --check
 - `tooling/mcp/*.generated.json`
 - `tooling/test-vectors/**`
 - `runtimes/*/generated/**`
-- `runtimes/cpp/core/include/axtp/generated/**`
+- `runtimes/cpp/core/include/generated/**`
 - `generators/src/__snapshots__/**`
 
 生成结果不符合预期时，应回到草案、specs、YAML 事实源或 Generator 逻辑修正，再重新生成。

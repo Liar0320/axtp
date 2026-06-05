@@ -3,9 +3,9 @@
 #include <utility>
 #include <vector>
 
-#include "axtp/core/inbound/inbound_processor.hpp"
-#include "axtp/io/byte_writer.hpp"
-#include "axtp/io/crc16.hpp"
+#include "core/inbound/inbound_processor.hpp"
+#include "io/byte_writer.hpp"
+#include "io/crc16.hpp"
 
 namespace {
 

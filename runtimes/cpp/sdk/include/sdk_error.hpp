@@ -3,7 +3,7 @@
 #include <string>
 #include <utility>
 
-#include "axtp/model/error.hpp"
+#include "model/error.hpp"
 
 namespace axtp::sdk {
 

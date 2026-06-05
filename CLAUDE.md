@@ -122,13 +122,15 @@ registry/
 
 Classify protocol work before editing:
 
+The numbered skill directory index is `docs/dev/skills/README.md`; directory numbers are for browsing order, while each `SKILL.md` keeps its semantic `name`.
+
 | Request state | Correct path | Allowed edits |
 |---|---|---|
-| Business scenario, user story, UI prototype, or interaction flow needs protocol mapping | `docs/dev/skills/plan-protocol-flow/SKILL.md` | `docs/flows/**` |
-| Rough product/business requirement | `docs/dev/skills/draft-business-protocol/SKILL.md` | `docs/protocol/**` |
-| Reviewed draft should become formal protocol | `docs/dev/skills/adopt-protocol-draft/SKILL.md` | adopted draft, specs 08-14 as needed, registry YAML |
-| Already-adopted/generated fact needs semantic change | `docs/dev/skills/amend-adopted-protocol/SKILL.md` | adopted proposal, specs/YAML, generated only via Generator |
-| YAML facts are ready and outputs need refresh | `docs/dev/skills/generate-axtp-protocol/SKILL.md` | generated outputs via Generator |
+| Stage 10: business scenario, user story, UI prototype, or interaction flow needs protocol mapping | `docs/dev/skills/10-plan-protocol-flow/SKILL.md` | `docs/flows/**` |
+| Rough product/business requirement | `docs/dev/skills/20-draft-business-protocol/SKILL.md` | `docs/protocol/**` |
+| Reviewed draft should become formal protocol | `docs/dev/skills/30-adopt-protocol-draft/SKILL.md` | adopted draft, specs 08-14 as needed, registry YAML |
+| Already-adopted/generated fact needs semantic change | `docs/dev/skills/40-amend-adopted-protocol/SKILL.md` | adopted proposal, specs/YAML, generated only via Generator |
+| YAML facts are ready and outputs need refresh | `docs/dev/skills/50-generate-axtp-protocol/SKILL.md` | generated outputs via Generator |
 | Runtime/SDK/tool implementation | normal code workflow | non-generated runtime/SDK/tool code |
 
 Direct registry edits are exceptional. Use core `registry/` files only for core constants, shared schemas, MVP/Core adopted entries, profile governance, and accepted legacy mappings. New ordinary business facts default to `registry/domains/<domain>/domain.yaml` after adoption.

@@ -1,44 +1,44 @@
-# AXTP SDK API Design
+# AXTP SDK API 设计
 
-## Summary
+## 概要
 
-`runtimes/cpp/sdk` is the C++ application-facing layer built on top of `runtimes/cpp/core`. It hides Frame/Message/Payload internals and exposes client/server, endpoint, call, event, capability, and typed method helpers.
+`runtimes/cpp/sdk` 是面向应用的 C++ 层，构建在 `runtimes/cpp/core` 之上。它隐藏 Frame、Message、Payload 等底层细节，对外提供 client/server、endpoint、call、event、capability 和 typed method helper。
 
-The SDK uses the runtime layering directly:
+SDK 直接复用 runtime 分层：
 
 ```text
 ITransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker
 ```
 
-Client and server wrappers own `BasicBroker<>` plus `AxtpEndpoint`; they do not wire transports directly into `AxtpCore`.
+Client 和 server wrapper 拥有 `BasicBroker<>` 与 `AxtpEndpoint`，但不会把 transport 直接接进 `AxtpCore`。
 
-The SDK is dynamic-RPC first. It supports three API levels:
+SDK 以 dynamic RPC 为默认路径，支持三个 API level：
 
-| Level | Shape | Purpose |
+| Level | 形态 | 用途 |
 |---|---|---|
-| Raw API | methodId + encoding + body bytes | Debug, vendor private methods, bridging |
-| Dynamic API | methodName + JSON/TLV body | Default extension-friendly app API |
-| Typed API | generated request/response structs | Optional stable-domain convenience |
+| Raw API | methodId + encoding + body bytes | 调试、vendor 私有方法、桥接 |
+| Dynamic API | methodName + JSON/TLV body | 默认面向扩展的应用 API |
+| Typed API | generated request/response structs | 稳定 domain 的可选便利层 |
 
-The SDK P0 goal is a buildable vertical slice:
+SDK P0 目标是跑通一条可构建、可测试的纵向链路：
 
-- construct a client or server object,
-- attach a transport or use a local mock handler,
-- call methods by ID or name through `callJson`, `callTlv`, and `callRaw`,
-- keep typed calls as wrappers over raw dynamic calls,
-- provide generated domain client facades for common device/display/capability operations.
+- 构造 client 或 server。
+- 绑定 transport，或使用本地 mock handler。
+- 通过 `callJson`、`callTlv`、`callRaw` 按 ID 或 name 调用方法。
+- Typed call 只作为 raw/dynamic call 的 wrapper。
+- 为常用 device/display/capability 操作提供 generated-style domain client facade。
 
-Real asynchronous network connection management, full event subscriptions, stream helpers, and full generated schema-aware codecs are P1/P2.
+真实异步网络连接管理、完整 event subscription、stream helper 和完整 schema-aware codec 属于 P1/P2。
 
-Related implementation documents:
+相关实现文档：
 
-| Document | Purpose |
+| 文档 | 作用 |
 |---|---|
-| `docs/dev/AXTP_CPP_EXECUTION_FLOW.md` | Client/server call flow, endpoint polling, and CLI flow |
-| `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md` | Dynamic RPC, endpoint glue, transport boundary, and extension recipes |
-| `docs/dev/AXTP_CPP_STYLE.md` | C++ naming, include, formatting, and ownership rules |
+| `docs/dev/AXTP_CPP_EXECUTION_FLOW.md` | Client/server call flow、endpoint polling 和 CLI flow |
+| `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md` | Dynamic RPC、endpoint glue、transport boundary 和 extension recipe |
+| `docs/dev/AXTP_CPP_STYLE.md` | C++ 命名、include、格式化和 ownership 规则 |
 
-## Package Layout
+## 包布局
 
 ```text
 runtimes/cpp/sdk/
@@ -60,11 +60,11 @@ runtimes/cpp/sdk/
   tests/
 ```
 
-The SDK namespace is `axtp::sdk`.
+SDK namespace 是 `axtp::sdk`。
 
 ## Client API
 
-P0 client entry points:
+P0 client 入口：
 
 ```cpp
 class AxtpClient {
@@ -100,11 +100,13 @@ public:
 };
 ```
 
-`callJson(methodName, paramsJson)` resolves the method name through `MethodRegistry`, puts only the business params object into `RpcPayload.body`, and does not require generated C++ request types. Typed calls are convenience wrappers: typed request -> schema codec -> `callRaw` -> schema codec -> typed response.
+`callJson(methodName, paramsJson)` 通过 `MethodRegistry` 解析 method name，只把业务 params object 放进 `RpcPayload.body`，不要求 generated C++ request type。
+
+Typed call 是便利 wrapper：typed request -> schema codec -> `callRaw` -> schema codec -> typed response。
 
 ## Server API
 
-P0 server entry points:
+P0 server 入口：
 
 ```cpp
 class AxtpServer {
@@ -120,11 +122,11 @@ public:
 };
 ```
 
-The server API is a thin ergonomic wrapper over `BasicBroker<>` and `AxtpEndpoint`. It should prefer `onJson`, `onTlv`, and `onRaw`; typed handlers are optional generator output. Full multi-connection routing remains out of scope for P0.
+Server API 是 `BasicBroker<>` 和 `AxtpEndpoint` 之上的薄封装。它应优先提供 `onJson`、`onTlv`、`onRaw`；typed handler 是可选 generator 输出。完整多连接 routing 不属于 P0。
 
-## Domain Clients
+## Domain Client
 
-Generated-style facades provide discoverable methods:
+Generated-style facade 让常用 domain 调用更容易发现：
 
 ```cpp
 AxtpClient client;
@@ -134,11 +136,11 @@ auto config = device.audio.getAlgorithmConfig();
 device.audio.setAlgorithmConfig(request);
 ```
 
-These facades are hand-written P0 placeholders matching the currently adopted protocol surface. A later generator update should emit the full set from the protocol registry, but adding a new business method should not require recompiling the SDK if the caller can provide method name/id plus JSON/TLV/Raw body.
+这些 facade 是 P0 手写占位，匹配当前已采纳的协议面。后续 generator 应从 protocol registry 生成完整集合；但新增业务方法不应强迫 SDK 重新编译，只要 caller 能提供 method name/id 加 JSON/TLV/Raw body，就应该能调用。
 
-## Endpoint And Options
+## Endpoint 与 Options
 
-Endpoints are value types:
+Endpoint 是 value type：
 
 - `TcpEndpoint { host, port }`
 - `WebSocketEndpoint { url, wireMode }`
@@ -146,11 +148,11 @@ Endpoints are value types:
 - `BleEndpoint { deviceId, serviceUuid, characteristicUuid }`
 - `UartEndpoint { path, baudRate }`
 
-P0 transport creation is intentionally limited because current cpp/core TCP/WebSocket classes are server-oriented test transports. Production client connectors will be added after the core transport abstraction grows a client connection API.
+P0 对 transport 创建能力刻意保持有限，因为当前 cpp/core TCP/WebSocket 类偏 server-oriented test transport。生产 client connector 要等 core transport abstraction 增加 client connection API 后再落地。
 
-## Execution Flow
+## 执行流程
 
-`AxtpClient::callJson()` and other dynamic calls follow this path:
+`AxtpClient::callJson()` 和其他 dynamic call 走这条路径：
 
 ```text
 method name/id + params/body
@@ -164,7 +166,7 @@ method name/id + params/body
   -> SDK result bytes/string/typed response
 ```
 
-`AxtpServer::poll()` follows this path:
+`AxtpServer::poll()` 走这条路径：
 
 ```text
 transport bytes
@@ -177,15 +179,17 @@ transport bytes
   -> transport sendBytes()
 ```
 
-SDK wrappers must keep this direction. They may own endpoint, broker, and transport objects, but they should not make `AxtpCore` aware of SDK abstractions.
+SDK wrapper 必须保持这个方向。它可以拥有 endpoint、broker 和 transport object，但不能让 `AxtpCore` 反向知道 SDK abstraction。
 
-## Connector Boundary
+## Connector 边界
 
-`attachTransport(std::unique_ptr<ITransport>)` is the stable P0 path. Endpoint value types such as `TcpEndpoint`, `WebSocketEndpoint`, and `HidEndpoint` are kept as API placeholders, but real platform construction belongs to optional connector/helper code. This keeps `axtp_sdk` usable with mock or application-owned transports and prevents platform libraries from becoming mandatory dependencies.
+`attachTransport(std::unique_ptr<ITransport>)` 是稳定 P0 路径。`TcpEndpoint`、`WebSocketEndpoint`、`HidEndpoint` 等 endpoint value type 保留为 API 占位，但真实平台对象构造属于可选 connector/helper code。
 
-## Dynamic RPC Policy
+这样可以让 `axtp_sdk` 在 mock 或应用自持 transport 场景下可用，同时避免平台库变成 mandatory dependency。
 
-The SDK should prefer dynamic calls in public examples:
+## Dynamic RPC 策略
+
+SDK public example 应优先使用 dynamic call：
 
 ```cpp
 client.callJson("audio.getAlgorithmConfig", "{}");
@@ -193,4 +197,4 @@ client.callTlv("audio.setAlgorithmConfig", bytes);
 client.callRawBytes(0x90010001, bytes);
 ```
 
-Typed calls are allowed for stable generated domains but must remain wrappers over dynamic/raw calls. New vendor or experimental methods should be callable through `MethodRegistry` without regenerating the SDK.
+Typed call 可用于稳定 generated domain，但必须保持为 dynamic/raw call 的 wrapper。新增 vendor 或 experimental method 应能通过 `MethodRegistry` 调用，不需要重新生成 SDK。

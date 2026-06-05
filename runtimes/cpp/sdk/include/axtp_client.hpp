@@ -11,9 +11,9 @@
 #include <thread>
 #include <utility>
 
-#include "axtp/axtp.hpp"
-#include "axtp/generated/method_traits.h"
-#include "axtp/generated/schema_codec.h"
+#include "axtp.hpp"
+#include "generated/method_traits.h"
+#include "generated/schema_codec.h"
 
 #include "call_options.hpp"
 #include "client_options.hpp"

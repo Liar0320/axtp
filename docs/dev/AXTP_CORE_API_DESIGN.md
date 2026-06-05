@@ -1,61 +1,77 @@
-# AXTP Core API Design
+# AXTP Core API 设计
 
-## Summary
+## 概要
 
-`runtimes/cpp/core` is the protocol-correct C++ runtime layer. It owns AXTP model types, byte IO interfaces, FramedBinary parsing/encoding, WebSocketJsonRpc text JSON parsing/encoding, core protocol state, transport profiles, and runtime lookup helpers. It does not expose business-friendly client APIs, platform transports, concrete HID/TCP/WebSocket dependencies, or legacy AXDP adapters.
+`runtimes/cpp/core` 是协议正确性优先的 C++ runtime 层。它负责 AXTP model 类型、byte IO 接口、FramedBinary 解析/编码、WebSocketJsonRpc 文本 JSON 解析/编码、核心协议状态、transport profile 和运行时 lookup helper。
 
-The core runtime supports two AXTP v1 wire paths:
+Core 不暴露面向业务的 client API，不直接依赖平台 transport，不包含 HID/TCP/WebSocket concrete transport，也不承载 legacy AXDP adapter。
+
+当前 core 支持两条 AXTP v1 wire path：
 
 | Wire mode | Inbound path | Outbound path |
 |---|---|---|
 | `FramedBinary` | `FrameDecoder -> MessageReassembler -> PayloadDecoder -> IPayloadSink` | `PayloadEncoder -> MessageFragmenter -> FrameEncoder -> IByteWriter` |
 | `WebSocketJsonRpc` | complete text message -> `JsonRpcDecoder -> IPayloadSink` | `JsonRpcEncoder -> IByteWriter` |
 
-`WebSocketJsonRpc` is an AXTP protocol profile, not a compatibility or legacy layer. Legacy protocol adapters must live outside cpp/core and depend on it.
+`WebSocketJsonRpc` 是 AXTP 正式协议 profile，不是兼容层或 legacy adapter。旧协议 adapter 必须放在 cpp/core 之外，并作为可选包依赖 core 的归一化 payload 接口。
 
-The runtime layering is:
+Runtime 分层固定为：
 
 ```text
 ITransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker
 ```
 
-`AxtpEndpoint` is the only glue layer. `AxtpCore` emits `CoreEvent`, accepts `BrokerResult`, and produces outbound bytes. `BasicBroker<>` accepts `BrokerTask`, dispatches handlers, and queues `BrokerResult`.
+`AxtpEndpoint` 是唯一 glue layer。`AxtpCore` 输出 `CoreEvent`、接收 `BrokerResult`、生成 outbound bytes。`BasicBroker<>` 接收 `BrokerTask`、分发 handler、排队 `BrokerResult`。
 
-Related code-design documents:
+## 目标与模块
 
-| Document | Purpose |
-|---|---|
-| `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md` | Runtime design patterns, extension recipes, and anti-patterns |
-| `docs/dev/AXTP_CPP_EXECUTION_FLOW.md` | FramedBinary, WebSocketJsonRpc, SDK, CLI, HID, and direct-core execution flows |
-| `docs/dev/AXTP_CPP_STYLE.md` | Naming, file layout, include rules, formatting, and layer boundaries |
+| Target | 形态 | 职责 |
+|---|---|---|
+| `axtp_core` | `INTERFACE` | model、IO 接口、transport profile、FramedBinary pipeline、WebSocketJsonRpc decoder/encoder、`AxtpCore`、generated lookup helpers |
+| `axtp_broker` | `INTERFACE` | `BasicBroker<>`、`BrokerTask`、`BrokerResult`、dynamic method dispatch helper |
+| `axtp_runtime` | `INTERFACE` | core + broker + endpoint glue，供普通应用使用 |
+| `axtp_json_rpc` | `INTERFACE` | WebSocket session helper adapter 和 JSON registry-file loader |
+| `axtp_transport_hidapi` | `STATIC` optional | HID report-level transport，位于 `runtimes/cpp/transports`，依赖 vendored `runtimes/cpp/thirdparty/hidapi` |
+| `axtp_transport_tcp_boost` | `INTERFACE` optional | Boost.Asio TCP transport，位于 `runtimes/cpp/transports` |
+| `axtp_transport_websocket_boost` | `INTERFACE` optional | Boost.Beast WebSocket transport，位于 `runtimes/cpp/transports` |
 
-## Public API Surface
-
-Core public headers are grouped by responsibility:
-
-| Area | Purpose |
-|---|---|
-| `axtp/model/*` | Bytes, status/result, frame, message, payload, protocol constants and enums |
-| `axtp/io/*` | byte sinks/writers, optional text writer, transport packet boundary types |
-| `axtp/core/inbound/*` | FramedBinary and WebSocketJsonRpc inbound processors |
-| `axtp/core/outbound/*` | FramedBinary and WebSocketJsonRpc outbound processors |
-| `axtp/core/*` | `AxtpCore`, `CoreEvent`, session helpers, pending calls |
-| `axtp/transport/*` | transport interface and profile only |
-| `axtp/broker/*` | `BasicBroker<>`, task dispatch, business routing, result queue |
-| `axtp/runtime/*` | `AxtpEndpoint` glue and endpoint ports |
-| `axtp/generated/*` | generated IDs, dynamic registries, lookup helpers |
-
-The aggregate include is:
+推荐 runtime 聚合 include：
 
 ```cpp
-#include <axtp/axtp.hpp>
+#include <axtp.hpp>
 ```
 
-This header is the runtime entry point. It intentionally excludes HID/TCP/WebSocket concrete transports, `MockTransport`, and schema-aware typed codecs. `axtp/axtp_core_all.hpp` remains as a compatibility wrapper over the same entry point.
+该聚合头只包含 runtime/core/broker 常用入口，不包含 HID/TCP/WebSocket concrete transport、`MockTransport` 或 schema-aware typed codec。
 
-## Core API Contract
+## 相关开发文档
 
-`AxtpCore` is usable without endpoint, broker, SDK, or transport:
+| 文档 | 作用 |
+|---|---|
+| `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md` | Runtime 架构、target map、设计模式、扩展 recipe、anti-pattern |
+| `docs/dev/AXTP_CPP_EXECUTION_FLOW.md` | FramedBinary、WebSocketJsonRpc、SDK、CLI、HID、direct-core 执行流程 |
+| `docs/dev/AXTP_CPP_STYLE.md` | C++ 命名、文件布局、include、格式化和分层边界 |
+| `docs/dev/AXTP_SDK_API_DESIGN.md` | SDK API 形态和 dynamic RPC 策略 |
+| `docs/dev/AXTPCTL_COMMAND_DESIGN.md` | CLI 命令形态和 dispatch 策略 |
+
+## Public API 分组
+
+Core public headers 按职责分组：
+
+| 区域 | 作用 |
+|---|---|
+| `model/*` | Bytes、status/result、frame、message、payload、协议常量和枚举 |
+| `io/*` | byte sink/writer、可选 text writer、transport packet 边界类型 |
+| `core/inbound/*` | FramedBinary 和 WebSocketJsonRpc inbound processor |
+| `core/outbound/*` | FramedBinary 和 WebSocketJsonRpc outbound processor |
+| `core/*` | `AxtpCore`、`CoreEvent`、session helper、pending call |
+| `transport/*` | transport interface 和 profile |
+| `broker/*` | `BasicBroker<>`、task dispatch、business routing、result queue |
+| `runtime/*` | `AxtpEndpoint` glue 和 endpoint ports |
+| `generated/*` | 生成的 ID、dynamic registry、lookup helper |
+
+## Core API 契约
+
+`AxtpCore` 可以脱离 endpoint、broker、SDK 和 transport 单独使用：
 
 ```cpp
 axtp::AxtpCore core;
@@ -73,23 +89,23 @@ while (auto bytes = core.tryPopOutboundBytes()) {
 }
 ```
 
-Stable core operations:
+稳定 core 操作：
 
-| API | Responsibility |
+| API | 职责 |
 |---|---|
-| `configure(profile)` | Select wire mode and frame sizing from `TransportProfile` |
-| `byteSink()` | Return the byte ingress port for transport/adapter bytes |
-| `pollEvent()` | Pop normalized protocol events for broker/application routing |
-| `handleBrokerResult(result)` | Feed business result/event/stream output back to core |
-| `tryPopOutboundBytes()` | Pop encoded outbound bytes for the selected wire mode |
-| `expectRpcResponse(requestId)` | Track client-side pending RPC requests |
-| `tryTakeRpcResponse(requestId)` | Retrieve a resolved client-side RPC response |
+| `configure(profile)` | 根据 `TransportProfile` 选择 wire mode 和 frame sizing |
+| `byteSink()` | 返回 transport/adapter bytes 的 ingress port |
+| `pollEvent()` | 弹出归一化协议事件，供 broker 或应用路由 |
+| `handleBrokerResult(result)` | 把业务结果、event、stream output 送回 core |
+| `tryPopOutboundBytes()` | 弹出按当前 wire mode 编码后的 outbound bytes |
+| `expectRpcResponse(requestId)` | 登记客户端侧 pending RPC request |
+| `tryTakeRpcResponse(requestId)` | 读取已完成的客户端侧 RPC response |
 
-`AxtpCore` does not provide `attachTransport()` or `attachBroker()`. That wiring belongs to `AxtpEndpoint`.
+`AxtpCore` 不提供 `attachTransport()` 或 `attachBroker()`。这些 wiring 只属于 `AxtpEndpoint`。
 
-## IO Boundary
+## IO 边界
 
-The existing byte-stream interfaces remain the stable baseline:
+现有 byte-stream 接口是稳定基线：
 
 ```cpp
 class IByteSink {
@@ -105,7 +121,7 @@ public:
 };
 ```
 
-Two additional interfaces describe message-oriented transports without breaking existing code:
+为 message-oriented transport 预留的附加接口：
 
 ```cpp
 class ITextWriter {
@@ -133,39 +149,39 @@ public:
 };
 ```
 
-For P0, `WebSocketJsonRpc` reuses `IByteSink::onBytes()`, but each call must contain one complete UTF-8 WebSocket text message.
+P0 中 `WebSocketJsonRpc` 复用 `IByteSink::onBytes()`，但每次调用必须包含一条完整 UTF-8 WebSocket text message。
 
-## Dynamic RPC First
+## Dynamic RPC 优先
 
-Core treats RPC bodies as bytes. `RpcEncoding` describes those bytes:
+Core 把 RPC body 当作 bytes 处理，`RpcEncoding` 描述这些 bytes 的语义：
 
-- `Json`: UTF-8 JSON business object bytes.
-- `Tlv`: AXTP TLV business body bytes.
-- `Raw`: uninterpreted business bytes.
-- `Binary`: deprecated compatibility name; new code should avoid it.
+- `Json`：UTF-8 JSON 业务对象 bytes。
+- `Tlv`：AXTP TLV 业务 body bytes。
+- `Raw`：不解释的业务 bytes。
+- `Binary`：兼容期旧名，新代码应避免继续使用。
 
-`MethodRegistry` is runtime data and can be loaded from generated defaults or extended at runtime. JSON file loading is provided by optional `axtp_json_rpc` through `axtp/json_rpc/method_registry_json.hpp`.
+`MethodRegistry` 是运行时数据，可以来自 generated defaults，也可以在运行时扩展。可选 `axtp_json_rpc` 通过 `method_registry_json.hpp` 提供 JSON 文件加载。
 
-Generated typed traits and schema codecs remain optional convenience headers. They are not included by `<axtp/axtp.hpp>` and must not be required by core routing.
+Generated typed traits 和 schema codecs 只是可选便利头，不包含在 `<axtp.hpp>` 中，也不能成为 core routing 的前提。
 
-## Current Boundaries
+## 当前边界
 
-- `AxtpCore` handles `ControlPayload`, `RpcPayload`, and `StreamPayload` only.
-- `AxtpCore` does not know `ITransport`, concrete transports, or `BasicBroker<>`.
-- `BasicBroker<>` does not know `AxtpCore` and never calls back into it.
-- `AxtpEndpoint` is responsible for `attachTransport()`, `poll()`, and `flushOutbound()`.
-- `AxtpCore` does not parse business JSON directly; JSON-RPC parsing belongs to the wire adapter/decoder.
-- `AxtpCore` does not call `SchemaCodec`, `MethodTraits`, or business request/response structs.
-- `AxtpCore` does not know legacy command IDs or AXDP framing.
-- TCP/WebSocket/HID classes are optional targets under `runtimes/cpp/transports`, not part of `axtp_core`.
+- `AxtpCore` 只处理 `ControlPayload`、`RpcPayload` 和 `StreamPayload`。
+- `AxtpCore` 不知道 `ITransport`、concrete transport 或 `BasicBroker<>`。
+- `BasicBroker<>` 不知道 `AxtpCore`，也不会回调 core。
+- `AxtpEndpoint` 负责 `attachTransport()`、`poll()` 和 `flushOutbound()`。
+- `AxtpCore` 不直接解析业务 JSON；JSON-RPC wire 解析属于 adapter/decoder。
+- `AxtpCore` 不调用 `SchemaCodec`、`MethodTraits` 或业务 request/response struct。
+- `AxtpCore` 不知道 legacy command ID 或 AXDP framing。
+- TCP/WebSocket/HID 类是 `runtimes/cpp/transports` 下的可选 target，不属于 `axtp_core`。
 
-## Implementation Patterns
+## 实现模式
 
-- Use `AxtpEndpoint` for glue between transport, core, and broker.
-- Use core port adapters and queues instead of exposing processor internals.
-- Use `CoreEvent -> BrokerTask -> BrokerResult` for business dispatch.
-- Keep transports at the report/socket/message boundary; they must not parse payload semantics.
-- Keep typed generated APIs above raw/dynamic RPC.
-- Add new wire parsing through decoder/encoder components before routing it through core.
+- 用 `AxtpEndpoint` 连接 transport、core 和 broker。
+- 用 core port adapter 和队列隔离 processor 内部状态。
+- 用 `CoreEvent -> BrokerTask -> BrokerResult` 做业务分发。
+- Transport 停留在 report/socket/message 边界，不能解析 payload 语义。
+- Typed generated API 必须位于 raw/dynamic RPC 之上。
+- 新 wire parsing 先实现 decoder/encoder，再接入 core pipeline。
 
-See `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md` for the full pattern list and extension recipes.
+完整模式和扩展 recipe 见 `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md`。

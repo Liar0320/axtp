@@ -1,12 +1,12 @@
 #include <cassert>
 #include <cstdint>
 
-#include "axtp/io/byte_buffer.hpp"
-#include "axtp/io/byte_reader.hpp"
-#include "axtp/io/byte_writer.hpp"
-#include "axtp/model/frame.hpp"
-#include "axtp/model/message.hpp"
-#include "axtp/model/payload.hpp"
+#include "io/byte_buffer.hpp"
+#include "io/byte_reader.hpp"
+#include "io/byte_writer.hpp"
+#include "model/frame.hpp"
+#include "model/message.hpp"
+#include "model/payload.hpp"
 
 int main() {
     {

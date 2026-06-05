@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-#include "axtp/model/payload.hpp"
+#include "model/payload.hpp"
 
 namespace axtp::sdk {
 

@@ -1,4 +1,0 @@
-interface:
-  display_name: "AXTP Protocol Workflow"
-  short_description: "Route AXTP protocol lifecycle work"
-  default_prompt: "Route this AXTP protocol task to the correct flow-planning, draft, adoption, amendment, generation, or implementation workflow."

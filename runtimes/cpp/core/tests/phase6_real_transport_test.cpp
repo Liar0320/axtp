@@ -11,17 +11,17 @@
 #include <thread>
 #include <utility>
 
-#include "axtp/broker/basic_broker.hpp"
-#include "axtp/core/axtp_core.hpp"
-#include "axtp/core/inbound/inbound_processor.hpp"
-#include "axtp/core/inbound/json_rpc_decoder.hpp"
-#include "axtp/core/outbound/outbound_processor.hpp"
-#include "axtp/io/byte_writer_sink.hpp"
-#include "axtp/json_rpc/websocket_json_rpc_adapter.hpp"
-#include "axtp/runtime/axtp_endpoint.hpp"
-#include "axtp/testing/mock_transport.hpp"
-#include "axtp/transports/tcp_boost/tcp_transport.hpp"
-#include "axtp/transports/websocket_boost/websocket_transport.hpp"
+#include "broker/basic_broker.hpp"
+#include "core/axtp_core.hpp"
+#include "core/inbound/inbound_processor.hpp"
+#include "core/inbound/json_rpc_decoder.hpp"
+#include "core/outbound/outbound_processor.hpp"
+#include "io/byte_writer_sink.hpp"
+#include "websocket_json_rpc_adapter.hpp"
+#include "runtime/axtp_endpoint.hpp"
+#include "testing/mock_transport.hpp"
+#include "tcp_boost/tcp_transport.hpp"
+#include "websocket_boost/websocket_transport.hpp"
 
 namespace {
 

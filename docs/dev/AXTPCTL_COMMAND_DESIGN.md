@@ -1,23 +1,23 @@
-# axtpctl Command Design
+# axtpctl 命令设计
 
-## Summary
+## 概要
 
-`runtimes/cpp/tools/axtpctl` is the AXTP command-line tool for debugging, production test, and integration checks. It depends on `runtimes/cpp/sdk` and should not directly manipulate low-level frame decoders except for explicit inspection commands.
+`runtimes/cpp/tools/axtpctl` 是 AXTP 命令行工具，用于调试、产测和集成检查。它依赖 `runtimes/cpp/sdk`，除明确的 inspect 命令外，不应直接操作低层 frame decoder。
 
-Runtime calls should flow through the SDK, which in turn uses `AxtpEndpoint` as the glue between `ITransport`, `AxtpCore`, and `BasicBroker<>`.
+Runtime 调用应走 SDK；SDK 再通过 `AxtpEndpoint` 连接 `ITransport`、`AxtpCore` 和 `BasicBroker<>`。
 
-P0 implements a small usable dynamic RPC tool:
+P0 实现一组小而可用的 dynamic RPC 命令：
 
 - `--help`
-- `call <method|--method-id>` with JSON/TLV/Raw body
+- `call <method|--method-id>`，支持 JSON/TLV/Raw body
 - `capability methods`
 - `list-methods`
 - `ping`
 - `inspect frame --hex <HEX>`
 
-P1 keeps the planned larger surface: event watch/emit, stream read/write, mock-server, and full test-vector runner.
+P1 保留更大的规划面：event watch/emit、stream read/write、mock-server 和完整 test-vector runner。
 
-## Global Syntax
+## 全局语法
 
 ```bash
 axtpctl \
@@ -31,9 +31,9 @@ axtpctl \
   <command>
 ```
 
-`mock` is the default transport for P0 smoke tests. For real devices, the CLI must route through SDK transport connectors or optional transport factories when those are available. Concrete HID/TCP/WebSocket dependencies are tool/runtime dependencies, not cpp/core dependencies.
+`mock` 是 P0 smoke test 的默认 transport。真实设备应通过 SDK transport connector 或可选 transport factory 接入。HID/TCP/WebSocket concrete dependency 属于 tool/runtime dependency，不得下沉到 cpp/core。
 
-## P0 Commands
+## P0 命令
 
 ### call
 
@@ -44,12 +44,12 @@ axtpctl --transport mock call --method-id 0x90010001 --raw-hex cafe
 axtpctl --transport mock --registry-file ./methods.json call vendor.echo --json '{"value":80}'
 ```
 
-Behavior:
+行为：
 
-- Resolves method name through runtime `MethodRegistry`.
-- Supports `--json`, `--tlv-hex`, `--tlv-file`, `--raw-hex`, and `--raw-file`.
-- Uses SDK dynamic APIs and does not require generated typed C++ wrappers.
-- Prints JSON response bodies by default; TLV/Raw may be printed as hex or written to file.
+- 通过 runtime `MethodRegistry` 解析 method name。
+- 支持 `--json`、`--tlv-hex`、`--tlv-file`、`--raw-hex` 和 `--raw-file`。
+- 使用 SDK dynamic API，不要求 generated typed C++ wrapper。
+- JSON response body 默认按 JSON 输出；TLV/Raw 可按 hex 输出或写入文件。
 
 ### capability methods
 
@@ -57,7 +57,7 @@ Behavior:
 axtpctl capability methods
 ```
 
-Prints the generated method registry as JSON.
+把 generated method registry 打印为 JSON。
 
 ### ping
 
@@ -65,7 +65,7 @@ Prints the generated method registry as JSON.
 axtpctl --transport mock ping
 ```
 
-P0 mock ping returns a local success JSON document. Real transport ping will be wired to CONTROL/RPC once the SDK owns client-side transport connection management.
+P0 mock ping 返回本地 success JSON 文档。真实 transport ping 等 SDK 拥有 client-side transport connection management 后，再接到 CONTROL/RPC。
 
 ### inspect frame
 
@@ -73,11 +73,11 @@ P0 mock ping returns a local success JSON document. Real transport ping will be 
 axtpctl inspect frame --hex "415801020000000000000001..."
 ```
 
-Parses a hex AXTP standard frame and prints header fields, payload length, payload type, and CRC information. This command may use core model constants directly because it is an explicit debugging tool.
+解析 hex AXTP standard frame，打印 header fields、payload length、payload type 和 CRC 信息。这个命令可以直接使用 core model constants，因为它是明确的诊断工具。
 
-## P1 Commands
+## P1 命令
 
-The following commands are retained in the design but not required for P0:
+以下命令保留在设计中，但不是 P0 必须实现：
 
 ```bash
 axtpctl event watch <event|--all>
@@ -91,11 +91,11 @@ axtpctl test-vector run PATH
 axtpctl mock-server --listen HOST:PORT
 ```
 
-These should continue to use SDK-level APIs rather than reaching into cpp/core internals.
+这些命令后续仍应使用 SDK-level API，不应直接伸进 cpp/core 内部。
 
-## Internal Execution Flow
+## 内部执行流程
 
-Normal command execution is:
+普通命令执行路径：
 
 ```text
 argv
@@ -108,20 +108,20 @@ argv
   -> render json/hex/file output
 ```
 
-Only `inspect` commands may directly touch frame/payload decoders. User-facing device operations should go through SDK calls so CLI behavior matches application behavior.
+只有 `inspect` 命令可以直接接触 frame/payload decoder。面向用户的设备操作应通过 SDK call，以保证 CLI 行为和应用行为一致。
 
-## Command Dispatch Rules
+## 命令分发规则
 
-- Global options are parsed before command-specific options.
-- `--command` and `-c` are shortcuts for `call <method>`.
-- `--params` is accepted only as a compatibility alias for `--json`.
-- `--json-file`, `--tlv-file`, and `--raw-file` must be mutually exclusive with their inline equivalents.
-- `--registry-file` augments runtime method lookup and should not require typed generated wrappers.
-- Output defaults to JSON when the payload is JSON and hex for TLV/Raw unless `--output` overrides it.
+- Global options 先于 command-specific options 解析。
+- `--command` 和 `-c` 是 `call <method>` 的 shortcut。
+- `--params` 只作为 `--json` 的兼容 alias。
+- `--json-file`、`--tlv-file`、`--raw-file` 必须和对应 inline 参数互斥。
+- `--registry-file` 用于扩展 runtime method lookup，不应要求 typed generated wrapper。
+- 输出默认规则：JSON payload 输出 JSON；TLV/Raw 输出 hex，除非 `--output` 指定文件。
 
-## Transport Policy
+## Transport 策略
 
-`axtpctl` may link optional transport targets because it is a tool target. It must not move concrete transport dependencies down into cpp/core. The command implementation should keep transport factory logic at the CLI/SDK boundary:
+`axtpctl` 可以链接 optional transport target，因为它是 tool target。它不能把 concrete transport dependency 下沉到 cpp/core。命令实现应把 transport factory 逻辑保持在 CLI/SDK 边界：
 
 ```text
 mock      -> testing/mock transport or local handler
@@ -130,9 +130,10 @@ tcp/ws    -> optional Boost transport targets
 ble/uart  -> reserved endpoint values until concrete transports exist
 ```
 
-## Documentation Links
+## 文档链接
 
-- Runtime architecture: `runtimes/cpp/core/ARCHITECTURE.md`
 - Runtime patterns: `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md`
 - Execution flow: `docs/dev/AXTP_CPP_EXECUTION_FLOW.md`
+- Core API: `docs/dev/AXTP_CORE_API_DESIGN.md`
+- SDK API: `docs/dev/AXTP_SDK_API_DESIGN.md`
 - C++ style: `docs/dev/AXTP_CPP_STYLE.md`

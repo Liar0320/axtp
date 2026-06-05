@@ -1,4 +1,0 @@
-interface:
-  display_name: "Plan Protocol Flow"
-  short_description: "Map business stories to AXTP protocol flows"
-  default_prompt: "Create a docs/flows protocol interaction plan from this business scenario, UI prototype, or user story, and identify existing AXTP coverage and protocol gaps."

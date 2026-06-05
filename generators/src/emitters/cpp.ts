@@ -309,8 +309,8 @@ struct EventTraits<EventId::${cppName(event.name)}> {
   return `${banner}#pragma once
 #include <cstdint>
 
-#include "axtp/generated/axtp_ids_generated.h"
-#include "axtp/generated/axtp_tlv_codec_generated.h"
+#include "generated/axtp_ids_generated.h"
+#include "generated/axtp_tlv_codec_generated.h"
 
 namespace axtp {
 
@@ -336,9 +336,9 @@ function emitSchemaCodec(): string {
 
 #include <boost/json.hpp>
 
-#include "axtp/generated/method_traits.h"
-#include "axtp/model/bytes.hpp"
-#include "axtp/model/payload.hpp"
+#include "generated/method_traits.h"
+#include "model/bytes.hpp"
+#include "model/payload.hpp"
 
 namespace axtp {
 

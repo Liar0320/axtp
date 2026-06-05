@@ -3,13 +3,13 @@
 #include <utility>
 #include <vector>
 
-#include "axtp/broker/basic_broker.hpp"
-#include "axtp/core/axtp_core.hpp"
-#include "axtp/core/inbound/inbound_processor.hpp"
-#include "axtp/core/outbound/outbound_processor.hpp"
-#include "axtp/io/byte_writer_sink.hpp"
-#include "axtp/runtime/axtp_endpoint.hpp"
-#include "axtp/testing/mock_transport.hpp"
+#include "broker/basic_broker.hpp"
+#include "core/axtp_core.hpp"
+#include "core/inbound/inbound_processor.hpp"
+#include "core/outbound/outbound_processor.hpp"
+#include "io/byte_writer_sink.hpp"
+#include "runtime/axtp_endpoint.hpp"
+#include "testing/mock_transport.hpp"
 
 namespace {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "axtp/generated/method_traits.h"
+#include "generated/method_traits.h"
 #include "axtp_client.hpp"
 
 namespace axtp::sdk {

@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <vector>
 
-#include "axtp/generated/axtp_method_registry_generated.h"
+#include "generated/axtp_method_registry_generated.h"
 
 #include "axtp_client.hpp"
 

@@ -1,54 +1,53 @@
-# AXTP C++ Style Guide
+# AXTP C++ 代码风格指南
 
-## 1. Overall Style
+## 1. 总体风格
 
-AXTP C++ uses a Skia-like library discipline with AXTP-specific naming:
+AXTP C++ 采用偏 library 的代码纪律，借鉴 Skia 的清晰边界，但命名规则按 AXTP 自己的约定执行：
 
-- public API discipline and clear include boundaries
-- 4 spaces, 100 columns, K&R braces, no tabs
-- explicit ownership and ManualPoll-friendly runtime APIs
-- header-only core and header-only generated traits
-- no platform dependencies in cpp/core public headers
-- concrete transports as optional runtime/tool adapters
+- public API 边界清晰，include 关系可控。
+- 4 spaces，100 columns，K&R braces，不使用 tabs。
+- ownership 显式，runtime API 适合 ManualPoll。
+- core 和 generated traits 保持 header-only。
+- cpp/core public headers 不泄漏平台依赖。
+- concrete transports 作为 optional runtime/tool adapter。
 
-AXTP does not use Skia's `fMember` or `gGlobal` naming, and it does not require every type to carry an `Axtp` prefix. AXTP also does not use obs-websocket's tab/132-column/application-plugin style as core style.
+AXTP 不使用 Skia 的 `fMember` 或 `gGlobal` 命名，也不要求所有类型都带 `Axtp` 前缀。AXTP core style 也不采用 obs-websocket 的 tab、132-column 或 application-plugin 风格。
 
-`clang-format` controls whitespace, indentation, braces, wrapping, and include grouping. It does not enforce identifier or file naming; `_member` and lower_snake_case file names are enforced by review and this guide. Future work may add clang-tidy naming checks or a custom file-name lint.
+`clang-format` 负责 whitespace、indentation、braces、wrapping 和 include grouping。identifier naming 和 file naming 由 review 与本文档约束；后续可补 clang-tidy naming check 或自定义 file-name lint。
 
-## 1.1 Code Documentation Map
+## 1.1 C++ 开发文档地图
 
-Use these documents together when changing C++ runtime code:
+修改 C++ runtime、SDK、CLI 或 transport 代码时，按需一起阅读这些文档：
 
-| Document | Scope |
+| 文档 | 范围 |
 |---|---|
-| `runtimes/cpp/core/ARCHITECTURE.md` | Target layout, runtime layers, wire paths, test map |
-| `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md` | Design patterns, extension recipes, anti-patterns |
-| `docs/dev/AXTP_CPP_EXECUTION_FLOW.md` | Runtime, SDK, CLI, HID, and direct-core execution flow |
-| `docs/dev/AXTP_CORE_API_DESIGN.md` | Core public API and boundaries |
-| `docs/dev/AXTP_SDK_API_DESIGN.md` | SDK public API and dynamic RPC policy |
-| `docs/dev/AXTPCTL_COMMAND_DESIGN.md` | CLI command shape and command dispatch policy |
+| `docs/dev/AXTP_CORE_API_DESIGN.md` | Core public API、target map、分层边界 |
+| `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md` | Runtime 设计模式、extension recipe、anti-pattern、测试地图 |
+| `docs/dev/AXTP_CPP_EXECUTION_FLOW.md` | Runtime、SDK、CLI、HID、direct-core 执行流程 |
+| `docs/dev/AXTP_SDK_API_DESIGN.md` | SDK public API 和 dynamic RPC 策略 |
+| `docs/dev/AXTPCTL_COMMAND_DESIGN.md` | CLI command shape 和 command dispatch 策略 |
 
-## 2. Namespace And Type Naming
+## 2. Namespace 与类型命名
 
-All C++ symbols live in `namespace axtp` or a child namespace such as `axtp::sdk`. Do not use a global `Axtp` prefix as a substitute for the namespace.
+所有 C++ symbol 都位于 `namespace axtp` 或子 namespace，例如 `axtp::sdk`。不要用全局 `Axtp` 前缀替代 namespace。
 
-The main protocol-stack entry keeps the prefix:
+协议栈主入口保留前缀：
 
 ```cpp
 axtp::AxtpCore core;
 ```
 
-Do not rename it to `Core`; that name is too generic in user code and docs.
+不要改成 `Core`；这个名字在用户代码和文档里过于泛化。
 
-The lightweight broker is:
+轻量 broker 是：
 
 ```cpp
 axtp::BasicBroker<> broker;
 ```
 
-Do not use `AxtpBroker` for the lightweight header-only broker. This runtime intentionally does not preserve old `AxtpBroker`, `AxtpInboundProcessor`, or `AxtpOutboundProcessor` aliases.
+不要把 header-only broker 命名为 `AxtpBroker`。当前 runtime 有意不保留旧的 `AxtpBroker`、`AxtpInboundProcessor` 或 `AxtpOutboundProcessor` alias。
 
-Internal pipeline components do not use the `Axtp` prefix:
+内部 pipeline component 不带 `Axtp` 前缀：
 
 ```cpp
 axtp::InboundProcessor;
@@ -63,7 +62,7 @@ axtp::JsonRpcDecoder;
 axtp::JsonRpcEncoder;
 ```
 
-Protocol model and runtime value types also avoid the prefix:
+协议 model 和 runtime value type 也不带前缀：
 
 ```cpp
 axtp::Frame;
@@ -78,7 +77,7 @@ axtp::BrokerTask;
 axtp::BrokerResult;
 ```
 
-Interfaces use an `I` prefix, but not an `Axtp` prefix:
+Interface 使用 `I` 前缀，但不加 `Axtp` 前缀：
 
 ```cpp
 axtp::ITransport;
@@ -87,13 +86,13 @@ axtp::IByteWriter;
 axtp::IPayloadSink;
 ```
 
-Function names use lowerCamelCase: `attachTransport()`, `detachTransport()`, `flushOutbound()`, `onBytes()`, `sendBytes()`, and `handleBrokerResult()`.
+函数名使用 lowerCamelCase：`attachTransport()`、`detachTransport()`、`flushOutbound()`、`onBytes()`、`sendBytes()`、`handleBrokerResult()`。
 
-Constants use `kConstantName`. New non-generated enum values should prefer `kValue` naming, but existing generated and protocol enum values such as `RpcOp::Request` and `ErrorCode::Success` remain unchanged in this migration.
+常量使用 `kConstantName`。新的非 generated enum value 优先采用 `kValue` 风格；已有 generated/protocol enum value，例如 `RpcOp::Request` 和 `ErrorCode::Success`，在本轮迁移中保持不变。
 
-## 3. Private Member Naming
+## 3. Private Member 命名
 
-Private and protected non-static data members use leading underscore plus lowerCamelCase:
+Private/protected non-static data member 使用 leading underscore + lowerCamelCase：
 
 ```cpp
 class InboundProcessor {
@@ -104,21 +103,21 @@ private:
 };
 ```
 
-Do not use `member_`, `fMember`, `gGlobal`, `__member`, or `_Member`.
+不要使用 `member_`、`fMember`、`gGlobal`、`__member` 或 `_Member`。
 
-Leading underscore safety rules:
+Leading underscore 安全规则：
 
-- `_member` is allowed only for private/protected class or struct data members.
-- The character after `_` must be lowercase.
-- Do not use leading underscore identifiers at namespace or global scope.
-- Do not use leading underscore macros or include guards such as `_AXTP_CORE_HPP`.
-- Prefer `#pragma once`; if a guard is needed, use a non-reserved name such as `AXTP_CORE_HPP`.
+- `_member` 只允许用于 private/protected class 或 struct data member。
+- `_` 后的第一个字符必须是 lowercase。
+- namespace/global scope 不使用 leading underscore identifier。
+- 不使用 leading underscore macro 或 include guard，例如 `_AXTP_CORE_HPP`。
+- 优先使用 `#pragma once`；如果必须用 include guard，使用非保留名称，例如 `AXTP_CORE_HPP`。
 
-## 4. File Naming
+## 4. 文件命名
 
-C++ file names use lower_snake_case. New C++ headers use `.hpp`; implementation files use `.cpp`.
+C++ 文件名使用 lower_snake_case。新的 C++ header 使用 `.hpp`，实现文件使用 `.cpp`。
 
-Recommended examples:
+推荐示例：
 
 ```text
 axtp_core.hpp
@@ -129,9 +128,9 @@ basic_broker.hpp
 hid_transport.cpp
 ```
 
-Do not use UpperCamelCase file names such as `AxtpCore.h` or `AxtpFrameDecoder.hpp`.
+不要使用 `AxtpCore.h` 或 `AxtpFrameDecoder.hpp` 这类 UpperCamelCase 文件名。
 
-Directories also use lower_snake_case. If the directory already expresses the module, do not repeat it in the file name:
+目录也使用 lower_snake_case。如果目录已经表达模块，不要在文件名里重复模块名：
 
 ```text
 core/axtp_core.hpp
@@ -143,73 +142,73 @@ transport/transport_profile.hpp
 testing/mock_transport.hpp
 ```
 
-Generated files may keep their current `.h` names until the generator owns a dedicated migration. Third-party code is never renamed or formatted by AXTP scripts.
+Generated files 可以继续使用当前 `.h` 文件名，直到 generator 单独负责迁移。Third-party code 不由 AXTP 脚本改名或格式化。
 
-## 5. Include Rules
+## 5. Include 规则
 
-Use full module include paths:
-
-```cpp
-#include <axtp/axtp.hpp>
-#include <axtp/core/axtp_core.hpp>
-#include <axtp/broker/basic_broker.hpp>
-#include <axtp/core/inbound/frame_decoder.hpp>
-#include <axtp/core/outbound/frame_encoder.hpp>
-#include <axtp/transport/transport.hpp>
-```
-
-Do not include old top-level pipeline paths:
+使用完整 module include path：
 
 ```cpp
-#include <axtp/inbound/frame_decoder.hpp>   // forbidden
-#include <axtp/outbound/frame_encoder.hpp>  // forbidden
+#include <axtp.hpp>
+#include <core/axtp_core.hpp>
+#include <broker/basic_broker.hpp>
+#include <core/inbound/frame_decoder.hpp>
+#include <core/outbound/frame_encoder.hpp>
+#include <transport/transport.hpp>
 ```
 
-Core public headers may include standard C++ headers, AXTP public headers, generated headers, and Boost.JSON where required by the formal `WebSocketJsonRpc` core wire mode. They must not include `windows.h`, `unistd.h`, `sys/socket.h`, `hidapi.h`, Boost.Asio, Boost.Beast, websocket libraries, Qt headers, or pthread headers.
+不要包含旧的 top-level pipeline path：
 
-Concrete transport targets and tools may include platform libraries, but those dependencies must not leak through cpp/core public headers.
+```cpp
+#include <inbound/frame_decoder.hpp>   // forbidden
+#include <outbound/frame_encoder.hpp>  // forbidden
+```
 
-## 6. Runtime Layering And Ownership
+Core public headers 可以 include 标准 C++ 头、AXTP public headers、generated headers，以及正式 `WebSocketJsonRpc` core wire mode 需要的 Boost.JSON。它们不能 include `windows.h`、`unistd.h`、`sys/socket.h`、`hidapi.h`、Boost.Asio、Boost.Beast、websocket libraries、Qt headers 或 pthread headers。
 
-The runtime layering is fixed:
+Concrete transport target 和 tool 可以 include 平台库，但这些依赖不能通过 cpp/core public headers 泄漏。
+
+## 6. Runtime 分层与 Ownership
+
+Runtime 分层固定为：
 
 ```text
 ITransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker
 ```
 
-- `AxtpEndpoint` is the only glue layer.
-- `AxtpCore` may know payload models, processors, `CoreEvent`, `BrokerResult`, and `TransportProfile`.
-- `AxtpCore` must not know `ITransport`, concrete transports, SDK clients, CLI code, or legacy command ids.
-- `BasicBroker<>` may know `BrokerTask`, `BrokerResult`, method registry, and handler dispatch.
-- `BasicBroker<>` must not know `AxtpCore`, `ITransport`, frames, or transport-specific behavior.
+- `AxtpEndpoint` 是唯一 glue layer。
+- `AxtpCore` 可以知道 payload models、processors、`CoreEvent`、`BrokerResult` 和 `TransportProfile`。
+- `AxtpCore` 不得知道 `ITransport`、concrete transport、SDK client、CLI code 或 legacy command id。
+- `BasicBroker<>` 可以知道 `BrokerTask`、`BrokerResult`、method registry 和 handler dispatch。
+- `BasicBroker<>` 不得知道 `AxtpCore`、`ITransport`、frame 或 transport-specific behavior。
 
-Transport implementations store `IByteSink*` as a non-owning callback target. `AxtpEndpoint` owns neither the transport nor the broker; application or SDK code owns them.
+Transport implementation 以非 owning callback target 的方式保存 `IByteSink*`。`AxtpEndpoint` 不拥有 transport，也不拥有 broker；应用层或 SDK 负责 ownership。
 
-Preferred lifecycle:
+推荐生命周期：
 
 ```text
 construct -> attach/bind -> open -> poll -> close -> detach -> destroy
 ```
 
-Do not create ownership cycles.
+不要制造 ownership cycle。
 
-## 7. Header-Only Core, Broker, And Transport Rules
+## 7. Header-Only Core、Broker 与 Transport 规则
 
-`axtp_core` and `BasicBroker<>` are header-only and ManualPoll-based.
+`axtp_core` 和 `BasicBroker<>` 是 header-only、ManualPoll-based。
 
-Core may parse frames, reassemble messages, decode payload envelopes, manage sessions, track pending calls, and enqueue outbound bytes. Core must not create threads, do socket I/O, call HID APIs, execute business handlers directly, or hardcode legacy command IDs.
+Core 可以解析 frame、重组 message、解码 payload envelope、维护 session、跟踪 pending call、排队 outbound bytes。Core 不得创建 thread、做 socket I/O、调用 HID API、直接执行业务 handler 或硬编码 legacy command ID。
 
-`BasicBroker<>` dispatches business handlers by `RpcPayload.methodOrEventId` and raw body bytes. It must not introduce `std::thread`, condition variables, futures, platform executors, or socket/transport behavior.
+`BasicBroker<>` 按 `RpcPayload.methodOrEventId` 和 raw body bytes 分发业务 handler。它不得引入 `std::thread`、condition variable、future、platform executor 或 socket/transport 行为。
 
-`ITransport` is part of core. Real transport implementations are optional runtime/tool/platform code. A transport must not parse AXTP frames, payloads, method IDs, or legacy command IDs; it only reads/writes bytes or transport-native messages.
+`ITransport` 属于 core interface。真实 transport implementation 是可选 runtime/tool/platform code。Transport 不能解析 AXTP frame、payload、method ID 或 legacy command ID；它只负责读写 bytes 或 transport-native message。
 
-## 8. Formatting Scripts
+## 8. 格式化脚本
 
-Use:
+使用：
 
 ```bash
 scripts/format-cpp.sh
 scripts/check-format-cpp.sh
 ```
 
-The scripts scan `runtimes/cpp/core`, `runtimes/cpp/sdk`, `runtimes/cpp/json-rpc`, `runtimes/cpp/transports`, and `runtimes/cpp/tools`, excluding `build/`, `generated/`, and `thirdparty/`.
+脚本扫描 `runtimes/cpp/core`、`runtimes/cpp/sdk`、`runtimes/cpp/json-rpc`、`runtimes/cpp/transports` 和 `runtimes/cpp/tools`，排除 `build/`、`generated/` 和 `thirdparty/`。

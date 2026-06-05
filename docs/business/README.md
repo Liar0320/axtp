@@ -21,13 +21,14 @@
 ```text
 产品想法 / 客户诉求 / 现场反馈 / UI 草图 / 旧协议需求
   -> docs/business/<requirement>.md
+  -> Stage 10 plan-protocol-flow
   -> docs/flows/<scenario>.md
   -> docs/protocol/<domain>/<domain.feature>.md
   -> registry/**/*.yaml + registry/domains/**/*.yaml
   -> protocol/axtp.protocol.yaml + docs/generated/**
 ```
 
-如果一份需求已经描述了端到端交互，应继续拆成 `docs/flows/<scenario>.md`。如果它已经明确指出某个缺失或需要修订的协议能力，应继续创建或修订 `docs/protocol/<domain>/<domain.feature>.md`。
+如果一份需求已经描述了端到端交互，应使用 `docs/dev/skills/10-plan-protocol-flow/SKILL.md` 拆成 `docs/flows/<scenario>.md`。如果它已经明确指出某个缺失或需要修订的协议能力，应继续创建或修订 `docs/protocol/<domain>/<domain.feature>.md`。
 
 ## 建议模板
 
@@ -70,6 +71,7 @@
 ## 下一步
 
 - 创建或更新 `docs/flows/<scenario>.md`
+- 使用 `docs/dev/skills/10-plan-protocol-flow/SKILL.md` 梳理协议交互
 - 创建或更新 `docs/protocol/<domain>/<domain.feature>.md`
 ```
 

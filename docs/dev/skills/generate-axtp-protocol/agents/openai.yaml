@@ -1,4 +1,0 @@
-interface:
-  display_name: "Generate AXTP Protocol"
-  short_description: "Generate AXTP protocol artifacts"
-  default_prompt: "Generate AXTP protocol artifacts from accepted registry YAML facts and run validation."

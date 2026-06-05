@@ -16,6 +16,23 @@ AXTP 不是再写一份格式表，而是把公司分散在 HID、HTTP、WebSock
 2. 支撑后续设备在 HID、TCP、WebSocket 等链路上无限丝滑地扩展控制面和数据面。
 3. 让固件、上位机、云端、测试和工具团队使用同一套 method/event/error/schema/capability 语言。
 
+### 1.1 这套协议体系的核心优势
+
+AXTP 的价值不只是“定义一套新的 wire format”，而是把协议研发从人工维护文档和代码常量，升级为一条可追溯、可生成、可校验的工程流水线：
+
+| 优势 | 解决的问题 | 带来的结果 |
+|---|---|---|
+| 从需求到落地的自动化链路 | 过去需求、协议草案、代码常量、测试脚本各写一遍，容易漂移 | 需求进入 `docs/business/**` / `docs/flows/**`，草案进入 `docs/protocol/**`，采纳后写入 YAML 事实源，再统一生成协议文档、工具 JSON、测试向量和 runtime headers |
+| 一站生成式协议文档管理 | Word/PDF/Excel/代码宏并存，难判断哪份才是当前实现合同 | 人读参考、机器读模型、C++ generated headers 和 test vectors 都由同一份事实源生成，减少二次解释 |
+| 草案和事实源分层清楚 | 未评审想法容易直接进入实现，后续返工成本高 | 草案可以充分讨论，只有通过评审的事实才进入 `registry/**/*.yaml` 与 `registry/domains/**/*.yaml` |
+| 新业务扩展更轻 | 每个设备、每条链路都重新设计命令和错误 | 新业务优先扩展 method/event/schema/capability，不改 Frame Header，不新增业务 PayloadType |
+| 跨端协作成本降低 | 固件、App、后台、测试对字段、错误码、能力含义理解不一致 | 所有人围绕同一份 generated protocol、registry 和 test vectors 开发、联调、验收 |
+| 兼容和演进可治理 | 字段删除、重命名、错误码复用容易破坏旧版本 | 通过 draft/experimental/stable/MVP 状态、amendment、deprecate/version 策略控制兼容性 |
+| 测试更早介入 | 传统协议到实现末期才发现字段和错误路径不可测 | 采纳时同步生成 test vectors 和 registry reference，测试可以基于协议事实提前设计用例 |
+| 自动化工具更容易接入 | MCP、CLI、SDK、mock server 需要人工维护协议表 | 工具读取 generated JSON 和 registry，能自动查询 method、schema、error、capability |
+
+因此，AXTP 不是把文档搬到 Markdown，而是建立“业务需求 -> 场景流程 -> 协议草案 -> 采纳事实源 -> 自动生成 -> runtime/SDK/测试消费”的一站式协议生产方式。
+
 ## 2. 为什么要重做协议
 
 ### 2.1 老协议的问题已经从格式问题变成体系问题
@@ -373,6 +390,16 @@ docs/protocol/<domain>/<domain.feature>.md
   -> docs/generated/* + tooling/* + runtime generated headers
 ```
 
+这条链路的关键是“自动化但不越权”：
+
+- Stage 10 `plan-protocol-flow` 自动把业务 story、UI 原型和端到端场景拆成协议交互步骤，先判断已有协议是否覆盖，再列出缺口。
+- `draft-business-protocol` 自动检索既有草案和 legacy 线索，生成可评审的 domain.feature 草案，但不写 YAML。
+- `adopt-protocol-draft` 只处理已评审草案，把确认过的事实反向对齐 specs，再写入 YAML 事实源。
+- `amend-adopted-protocol` 只处理已经进入 YAML/generated 的协议事实，负责记录 amendment、判断兼容性并修正源头。
+- `generate-axtp-protocol` 从 YAML 事实源刷新 Protocol IR、generated docs、tooling JSON、test vectors 和 C++ generated headers，不从 Markdown 猜测新协议。
+
+这意味着研发不需要手动维护多份协议表，也不需要在固件、App、测试工具里各自抄一份 method/schema。协议一旦采纳，所有消费方都从 generated 产物读取同一份事实；如果 generated 内容不对，回修草案/specs/YAML 源头，而不是手改 generated 文件。
+
 已采纳协议如果后续发现字段、枚举、命名或语义需要修正，不回到普通草案流程，也不直接手改 generated；使用 `amend-adopted-protocol` 记录 amendment、判断兼容性、修正 adopted proposal/specs/YAML，再重新生成。
 
 完整协议评审与发布流程：
@@ -383,7 +410,7 @@ flowchart TD
     B["业务分支<br/>business/domain-feature"]
     C["axtp-protocol-workflow<br/>判断生命周期阶段"]
     C1{"是否是端到端交互或 UI 场景?"}
-    C2["plan-protocol-flow<br/>生成 docs/flows/scenario.md<br/>列出协议覆盖和缺口"]
+    C2["Stage 10 plan-protocol-flow<br/>生成 docs/flows/scenario.md<br/>列出协议覆盖和缺口"]
     D{"是否已有 adopted/generated 事实?"}
     E["draft-business-protocol<br/>起草或更新 docs/protocol/domain/domain.feature.md"]
     F{"是否已有可复用草案?"}
@@ -426,7 +453,7 @@ flowchart TD
 |---|---|---|---|---|---|
 | 需求输入 | 业务负责人 / 产品 / 架构 | 固件、上位机、后台、测试 | 提供业务目标、旧协议线索、触发场景、优先级 | 需求是否真实、是否要兼容旧协议、是否涉及 event/stream | 业务描述、旧协议证据、优先级 |
 | 建分支和路由 | 协议维护者 / 架构 | 提需求的人 | 建 `business/<domain-feature>` 或 feature 分支；用 `axtp-protocol-workflow` 判断阶段 | 这次是草案、采纳、修订、生成还是实现 | 分支和明确 workflow |
-| 交互流程方案 | 协议维护者 / 架构 | 产品、固件、上位机、后台、测试 | 用 `plan-protocol-flow` 从 UI 原型、用户 story 或端到端场景生成 `docs/flows/<scenario>.md` | story 是否完整；每一步是已有协议、协议缺口还是 UI/业务逻辑 | 场景流程文档、协议覆盖表、草案/修订缺口清单 |
+| Stage 10 交互流程方案 | 协议维护者 / 架构 | 产品、固件、上位机、后台、测试 | 用 `plan-protocol-flow` 从 UI 原型、用户 story 或端到端场景生成 `docs/flows/<scenario>.md` | story 是否完整；每一步是已有协议、协议缺口还是 UI/业务逻辑 | 场景流程文档、协议覆盖表、草案/修订缺口清单 |
 | 草案设计 | 协议维护者 / 架构 | 业务、固件、上位机、后台、测试 | 用 `draft-business-protocol` 起草或更新 `docs/protocol/<domain>/<domain.feature>.md` | 业务语义、domain.feature、method/schema/event/error/capability 是否合理 | 带 `[REVIEW-*]` 的协议草案 |
 | 草案评审 | 架构 / 业务负责人 | 固件、上位机、后台、SDK/工具、测试 | 组织评审，逐项关闭或保留 review 标记 | 固件确认资源和状态机；上位机/后台确认调用方式；测试确认可测性；SDK/工具确认生成消费方式 | `[REVIEW-OK]` 的可采纳范围和 open questions |
 | 采纳到规范 | 协议维护者 / 架构 | 业务、固件、上位机、测试 | 用 `adopt-protocol-draft` 反向确认 specs 08-13，固定草案为正式方案，写 registry/domain YAML | 未确认事实没有进入 YAML；ID、`bitOffset`、fieldId 无冲突 | specs/YAML/source validation 结果 |
@@ -462,7 +489,7 @@ flowchart TD
 | `docs/generated/*_registry.generated.md` | 研发、测试、评审 | 查 methodId、eventId、errorCode、capability |
 | `tooling/mcp/*.generated.json` | 工具链/MCP | 自动化查询协议事实 |
 | `tooling/test-vectors/*` | 测试、runtime | 线格式一致性测试 |
-| `runtimes/cpp/core/include/axtp/generated/*` | C++ runtime/SDK | 生成的 ID、traits、registry、codec |
+| `runtimes/cpp/core/include/generated/*` | C++ runtime/SDK | 生成的 ID、traits、registry、codec |
 
 ### 4.4 哪些可以手动改，哪些不能改
 
@@ -483,7 +510,7 @@ flowchart TD
 - `tooling/mcp/*.generated.json`
 - `tooling/test-vectors/**`
 - `runtimes/*/generated/**`
-- `runtimes/cpp/core/include/axtp/generated/**`
+- `runtimes/cpp/core/include/generated/**`
 - `generators/src/__snapshots__/**`
 
 如果 generated 内容错了，修源头，不修 generated。
@@ -495,7 +522,7 @@ flowchart TD
 ```text
 main
   -> business/<domain-feature> 或 feature/<ticket>
-  -> plan-protocol-flow: docs/flows 场景交互方案
+  -> Stage 10 plan-protocol-flow: docs/flows 场景交互方案
   -> draft-business-protocol: docs/protocol 草案设计
   -> 业务/固件/上位机/测试/架构评审
   -> 修正 [REVIEW-*] 问题
@@ -649,7 +676,7 @@ C++ runtime 测试地图：
 
 ## 7. 会议建议议程
 
-1. 为什么重做协议：旧协议问题、event/stream/治理缺口、后续设备需要。
+1. 为什么重做协议：旧协议问题、event/stream/治理缺口、自动化链路、一站生成式协议管理、后续设备需要。
 2. 新协议是什么：五层架构、CONTROL/RPC/STREAM、两条传输路径。
 3. Wire format：Standard Frame、CONTROL、RPC Binary、RPC JSON、STREAM。
 4. C++ runtime：`ITransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker<>`。

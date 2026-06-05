@@ -2,7 +2,7 @@
 #include <memory>
 #include <string>
 
-#include "axtp/testing/mock_transport.hpp"
+#include "testing/mock_transport.hpp"
 
 #include "axtp_sdk_all.hpp"
 

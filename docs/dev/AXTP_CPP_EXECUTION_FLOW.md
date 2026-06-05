@@ -1,8 +1,8 @@
-# AXTP C++ Execution Flow
+# AXTP C++ 执行流程
 
-本文档描述当前 C++ runtime、SDK 和 CLI 的端到端执行流程。代码架构见 `runtimes/cpp/core/ARCHITECTURE.md`，命名规范见 `docs/dev/AXTP_CPP_STYLE.md`，设计模式见 `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md`。
+本文档描述当前 C++ runtime、SDK 和 CLI 的端到端执行流程。Core API 见 `docs/dev/AXTP_CORE_API_DESIGN.md`，runtime 架构和设计模式见 `docs/dev/AXTP_CPP_RUNTIME_PATTERNS.md`，命名规范见 `docs/dev/AXTP_CPP_STYLE.md`。
 
-## Common Runtime Lifecycle
+## 通用 Runtime 生命周期
 
 普通应用推荐生命周期：
 
@@ -24,7 +24,7 @@ endpoint.detachTransport()
 
 实际 `ITransport` 接口没有强制 `poll()`，因为不同 transport 可以用不同平台机制。当前 HID 和测试 transport 使用 ManualPoll；SDK/工具层负责识别 concrete transport 的轮询入口。
 
-## FramedBinary Inbound Request
+## FramedBinary Inbound 请求
 
 FramedBinary 入口是字节流或二进制消息。transport 不解析 AXTP，只把 bytes 交给 endpoint 绑定的 sink。
 
@@ -51,14 +51,14 @@ sequenceDiagram
     E->>T: sendBytes(response frames)
 ```
 
-Key points:
+关键点：
 
 - `FrameDecoder` 可以接收 split bytes；重组在 core pipeline 内完成。
 - `AxtpCore` 不执行 handler，只输出 `CoreEvent`。
 - `BasicBroker<>` 不知道 frame/header/CRC。
 - `AxtpEndpoint::poll()` 是事件和结果搬运点。
 
-## WebSocketJsonRpc Text Flow
+## WebSocketJsonRpc Text 流程
 
 WebSocketJsonRpc 是正式 AXTP wire mode，输入是一条完整 UTF-8 text message：
 
@@ -83,14 +83,22 @@ WebSocket text message bytes
   -> ITransport::sendBytes()
 ```
 
-Rules:
+规则：
 
 - WebSocketJsonRpc 不走 AX Standard Frame、CRC、message fragmentation。
 - `params/result/data` 作为 UTF-8 JSON bytes 存在 `RpcPayload.body` 中。
 - method/event/error name 通过 generated registry lookup 解析。
 - 若继续使用 `IByteSink::onBytes()`，每次调用必须是一条完整 text message。
 
-## Client Dynamic Call Flow
+Spec 对齐：
+
+- `docs/specs/03-AXTP-Transport-Profiles.md` 定义 `AXTP-WS-JSON` 和 `AXTP-WS-CLOUD-REVERSE`，它们都是 WebSocket Unframed JSON profile。
+- `docs/specs/05-AXTP-RPC-Session-Spec.md` 定义 `sid/op/d` envelope，以及 Hello、Identify、Identified、Request、RequestResponse、Event、Batch 语义。
+- 当前没有独立 WebSocket JSON-RPC profile 文档；如果后续新增，应作为 runtime 的最具体依据。
+
+Mosculer 只作为历史上下文，用来解释 OBS-style envelope 的来源；runtime 格式以 AXTP specs 为准。WebSocketJsonRpc 不是 AXDP/legacy adapter，也不承载 legacy command id、legacy status code、旧 checksum 或旧 header。需要兼容旧协议时，应做成独立可选 adapter，并依赖 cpp/core 的归一化 payload 接口。
+
+## Client Dynamic Call 流程
 
 SDK client 默认动态 RPC：
 
@@ -106,7 +114,7 @@ AxtpClient::callJson("audio.getAlgorithmConfig", "{}")
   -> poll loop until tryTakeRpcResponse(requestId)
 ```
 
-If a local mock handler is registered on `AxtpClient`, `callRaw()` may return without transport I/O. Otherwise the client requires an attached transport and a poll loop.
+如果 `AxtpClient` 注册了本地 mock handler，`callRaw()` 可以不经过 transport I/O 直接返回。否则 client 需要已绑定 transport 和 poll loop。
 
 Typed calls follow the same path:
 
@@ -116,7 +124,7 @@ typed request -> SchemaCodec -> callRaw -> response bytes -> SchemaCodec -> type
 
 Typed API must not bypass dynamic/raw RPC.
 
-## Server Flow
+## Server 流程
 
 SDK server wraps endpoint + broker:
 
@@ -137,7 +145,7 @@ AxtpServer::poll()
 
 `AxtpServer` is intentionally thin. Full multi-connection routing, session tables, subscription filters, and async I/O are future layers above endpoint/core/broker.
 
-## HID Transport Flow
+## HID Transport 流程
 
 HID transport is the first real concrete transport and follows the transport-boundary rule:
 
@@ -155,7 +163,7 @@ sendBytes(bytes)
 
 HID transport does not strip inbound trailing zero padding because it cannot know AXTP payload length. FramedBinary decoder performs length-based parsing and resync.
 
-## CLI Command Flow
+## CLI Command 流程
 
 Normal CLI command flow:
 
@@ -172,7 +180,7 @@ argv
 
 `inspect` commands are the exception: they may directly parse AXTP frame bytes for diagnostics. Regular `call`, `ping`, `capability`, `event`, and future `stream` commands should stay at SDK level.
 
-## Direct Core Flow
+## Direct Core 流程
 
 Advanced users can bypass endpoint and broker:
 
@@ -194,7 +202,7 @@ while (auto bytes = core.tryPopOutboundBytes()) {
 
 Direct core usage is useful for fuzzing, protocol conformance tests, or embedding AXTP in an existing scheduler. Application code that wants normal request/response dispatch should use `AxtpEndpoint + BasicBroker<>`.
 
-## Poll Ordering
+## Poll 顺序
 
 Recommended tick order when using ManualPoll transports:
 
@@ -213,7 +221,7 @@ flushOutbound()
 
 This keeps request handling deterministic and makes unit tests independent of threads.
 
-## Error And Status Flow
+## Error 与 Status 流程
 
 - Wire/protocol errors should be represented as `CoreEventType::ProtocolError` or status/error payloads.
 - Business errors should return `RpcResponseData` with a non-success `ErrorCode`; broker converts that into `BrokerResult::rpcError()`.
