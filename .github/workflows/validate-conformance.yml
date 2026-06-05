@@ -1,0 +1,40 @@
+name: Validate Conformance Cases
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout AXTP spec
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@11.3.0 --activate
+
+      - name: Build generator
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm --dir generators install --frozen-lockfile
+          pnpm --dir generators build
+
+      - name: Validate conformance cases
+        shell: bash
+        run: scripts/validate-conformance.sh

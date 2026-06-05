@@ -1,0 +1,26 @@
+id: handshake.ping_pong
+title: CONTROL PING / PONG
+since: spec/v0.0.2
+level: framed-binary
+profiles:
+  - framed-binary
+
+given:
+  session:
+    control: open
+
+steps:
+  - direction: client_to_server
+    control:
+      type: PING
+      controlId: 3
+
+  - direction: server_to_client
+    expect:
+      control:
+        type: PONG
+        controlId: 3
+        statusCode: SUCCESS
+
+assertions:
+  - pong.controlId == ping.controlId

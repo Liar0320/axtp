@@ -1,0 +1,32 @@
+id: stream.stream_open
+title: STREAM context is opened by RPC control plane
+since: spec/v0.0.2
+level: stream
+profiles:
+  - stream
+  - framed-binary
+
+given:
+  transport: standard_frame
+
+steps:
+  - direction: client_to_server
+    rpc:
+      op: REQUEST
+      requestId: 200
+      method: stream.open
+      params:
+        profile: vendor.test
+
+  - direction: server_to_client
+    expect:
+      rpc:
+        op: REQUEST_RESPONSE
+        requestId: 200
+        result:
+          streamId:
+            gt: 0
+
+assertions:
+  - streamId > 0
+  - streamId != 0

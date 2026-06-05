@@ -1,0 +1,32 @@
+id: stream.stream_data
+title: STREAM data header carries streamId, seqId, and cursor
+since: spec/v0.0.2
+level: stream
+profiles:
+  - stream
+  - framed-binary
+
+given:
+  stream:
+    streamId: 9
+    state: open
+
+steps:
+  - direction: client_to_server
+    stream:
+      streamId: 9
+      seqId: 1
+      cursor: 0
+      data: "AABBCC"
+
+  - direction: server_observes
+    expect:
+      stream:
+        streamId: 9
+        seqId: 1
+        cursor: 0
+        data: "AABBCC"
+
+assertions:
+  - observed.streamId == stream.streamId
+  - observed.seqId == stream.seqId

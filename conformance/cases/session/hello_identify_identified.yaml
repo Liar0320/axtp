@@ -1,0 +1,36 @@
+id: session.hello_identify_identified
+title: HELLO / IDENTIFY / IDENTIFIED session setup
+since: spec/v0.0.2
+level: websocket-jsonrpc
+profiles:
+  - websocket-jsonrpc
+
+given:
+  transport: websocket_jsonrpc
+
+steps:
+  - direction: server_to_client
+    expect:
+      jsonrpc:
+        sid: ""
+        op: HELLO
+        d:
+          rpcVersion: 1
+
+  - direction: client_to_server
+    jsonrpc:
+      sid: ""
+      op: IDENTIFY
+      d:
+        rpcVersion: 1
+
+  - direction: server_to_client
+    expect:
+      jsonrpc:
+        op: IDENTIFIED
+        sid:
+          type: string
+
+assertions:
+  - identified.sid != ""
+  - identified.d.negotiatedRpcVersion == 1
