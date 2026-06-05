@@ -7,7 +7,7 @@
 | 标记 | 对象 | 审核结论 | 后续动作 |
 |---|---|---|---|
 | `[REVIEW-OK]` | `stream` 公共数据面 | 文档明确 `stream` 只管 `streamId`、`seqId`、`cursor`、`ack/window/pause/resume/abort` 等公共数据与流控，不承载业务语义。 | 可作为 stream 基础协议和业务域引用依据。 |
-| `[REVIEW-OK]` | 业务域创建业务流 | `video.openStream`、`audio.startRecording`、`file.beginUpload`、`firmware.beginOta` 由业务域创建流，符合命名规范。 | 后续 domain YAML 不应注册常规 `stream.open`。 |
+| `[REVIEW-OK]` | 业务域创建业务流 | `video.openStream`、`audio.startRecording`、`file.beginUpload`、`firmware.beginUpdate` 由业务域创建流，符合命名规范。 | 后续 domain YAML 不应注册常规 `stream.open`。 |
 | `[REVIEW-FIX]` | `stream.open` 示例 | 正文仍出现 `stream.open` 示例和“不推荐”说明；作为最终协议时容易被误读为候选接口。 | 规范化阶段改成反例附录或删除，正式方法表不得包含 `stream.open`。 |
 | `[REVIEW-ASK]` | SDK/runtime 流控暴露层级 | 文档倾向 ack/window/pause/resume 由 SDK/runtime 自动处理，但是否允许业务调用方直接控制仍需确认。 | 确认后决定这些方法进入 public registry、internal registry，或仅作为 transport profile 行为。 |
 
@@ -17,7 +17,7 @@
 
 归属域：`stream`  
 
-适用范围：视频流、音频流、文件传输、OTA、日志导出、传感器/状态上报等所有流式数据传输场景。
+适用范围：视频流、音频流、文件传输、固件更新、日志导出、传感器/状态上报等所有流式数据传输场景。
 
 
 
@@ -69,7 +69,7 @@ file
   文件上传/下载，配置文件名、大小、hash 等。
 
 firmware
-  OTA 会话、manifest、批次、校验、安装、回滚等。
+  固件更新会话、manifest、批次、校验、安装、回滚等。
 
 stream
   统一的数据面模型与可选流控能力。
@@ -105,7 +105,7 @@ transport 负责“怎么搬运字节”。
 1. 不负责打开具体业务流；
 2. 不定义常规 stream.open；
 3. 不承载 video/audio/file/firmware 的业务参数；
-4. 不替代 video.openStream / audio.startRecording / file.beginUpload / firmware.beginOta；
+4. 不替代 video.openStream / audio.startRecording / file.beginUpload / firmware.beginUpdate；
 5. 不作为业务正常关闭入口；
 6. 不处理 codec、sampleRate、manifest、fileHash 等业务字段。
 ```
@@ -222,7 +222,7 @@ transport 负责“怎么搬运字节”。
 |停止音频录制|`audio.stopRecording`|负责写尾、生成文件或关闭流|
 |文件上传|`file.beginUpload`|返回 `uploadId` 和 `streamId`|
 |文件完成|`file.completeUpload`|校验 hash、落盘|
-|OTA 会话|`firmware.beginOta`|管理 manifest、批次、校验、安装|
+|固件更新会话|`firmware.beginUpdate`|管理 manifest、批次、校验、安装|
 |流数据标识|`stream`|`streamId / seqId / cursor`|
 |ACK / 窗口 / 暂停 / 恢复|`stream`|可选公开，高级流控或 SDK 内部使用|
 |异常中止|`stream.abort`|兜底释放，不作为正常关闭入口|
@@ -419,7 +419,7 @@ telemetry_sample
 |`video_chunk`|视频帧或视频编码数据分片|
 |`audio_chunk`|音频 PCM / 编码音频分片|
 |`file_chunk`|文件上传/下载分片|
-|`firmware_chunk`|OTA 固件分片|
+|`firmware_chunk`|固件更新分片|
 |`log_chunk`|日志导出分片|
 |`telemetry_sample`|传感器或状态周期数据|
 
@@ -610,7 +610,7 @@ telemetry_sample
 
 
 
-适用于文件上传、文件下载、OTA、日志导出。
+适用于文件上传、文件下载、固件更新、日志导出。
 
 
 
@@ -947,7 +947,7 @@ stream.abort
 ```Plain Text
 reliable_file
 recording_audio
-OTA
+固件更新
 文件下载/上传
 日志导出
 ```
@@ -1322,7 +1322,7 @@ telemetry:
 2. 正常视频关闭必须使用 video.closeStream；
 3. 正常音频录制停止必须使用 audio.stopRecording；
 4. 正常文件上传完成必须使用 file.completeUpload；
-5. 正常 OTA 取消必须使用 firmware.cancelOta；
+5. 正常固件更新取消必须使用 firmware.cancelUpdate；
 6. stream.abort 触发后，owner 业务域应收到通知并清理业务资源。
 ```
 
@@ -1647,7 +1647,7 @@ unsupported
   "cursor": 1048576,
   "timestampMs": 1710000000000,
   "payloadType": "firmware_chunk",
-  "otaSessionId": "ota_001",
+  "updateSessionId": "upd_001",
   "fileId": "app",
   "batchId": "batch_001",
   "chunkOffset": 1048576,
@@ -1659,15 +1659,15 @@ unsupported
 
 
 
-OTA 专属字段：
+固件更新专属字段：
 
 
 
 |字段|说明|
 |---|---|
-|`otaSessionId`|OTA 会话 ID|
-|`fileId`|OTA 包内文件 ID|
-|`batchId`|OTA 批次 ID|
+|`updateSessionId`|固件更新会话 ID|
+|`fileId`|固件更新包内文件 ID|
+|`batchId`|固件更新批次 ID|
 |`chunkOffset`|当前文件内偏移|
 |`chunkSize`|当前分片大小|
 |`crc32`|当前分片校验值|
@@ -1987,7 +1987,7 @@ JSON 协议中继续使用可读字符串。
 1. stream 可能承载高带宽数据，必须受权限控制；
 2. 高码率视频流不应默认允许在低带宽 transport 上启用；
 3. raw video 必须受 capability 限制；
-4. reliable_file / OTA 必须防止无限缓存；
+4. reliable_file / firmware.update 必须防止无限缓存；
 5. maxConcurrentStreams 必须由 capability 声明；
 6. stream.abort 必须通知 owner 业务域清理资源；
 7. stream stats 不应泄露敏感 payload 内容；
@@ -2044,7 +2044,7 @@ stream.flowControlChanged
 
 
 
-对于可靠文件/OTA，如果已有 SDK/runtime 自动 ACK，也可以先不把 `stream.ack` 暴露给普通业务调用方，但内部语义必须清楚。
+对于可靠文件/固件更新，如果已有 SDK/runtime 自动 ACK，也可以先不把 `stream.ack` 暴露给普通业务调用方，但内部语义必须清楚。
 
 
 
@@ -2120,7 +2120,7 @@ stream 域是公共流控层，不是业务流入口。
   video.openStream / video.closeStream
   audio.startRecording / audio.stopRecording
   file.beginUpload / file.completeUpload
-  firmware.beginOta / firmware.cancelOta
+  firmware.beginUpdate / firmware.cancelUpdate
 
 stream 域负责统一数据面和可选流控：
   streamId / seqId / cursor / payloadType / payload

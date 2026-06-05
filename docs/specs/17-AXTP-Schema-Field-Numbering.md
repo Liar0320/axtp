@@ -143,7 +143,7 @@ RPC Binary Header 已经携带 `requestId / methodOrEventId / statusCode / bodyE
 | Method Params | `<methodName>.params` | `audio.setAlgorithmConfig.params` |
 | Method Result | `<methodName>.result` | `audio.setAlgorithmConfig.result` |
 | Event Data | `<eventName>.data` | `audio.algorithmConfigChanged.data` |
-| Stream Profile Context | `stream.<profileName>.context` | `stream.firmware.ota.context` |
+| Stream Profile Context | `stream.<profileName>.context` | `stream.firmware.update.context` |
 
 ---
 

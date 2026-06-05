@@ -90,7 +90,7 @@ Frame Layer      → Header / Length / MessageId / Fragment / CRC
 Transport Layer  → USB HID / TCP / WebSocket JSON / future low-bandwidth profiles
 ```
 
-**Critical constraint**: `PayloadType` selects a parser only — it never encodes business semantics like VIDEO, OTA, FILE. Those belong in the Registry layer.
+**Critical constraint**: `PayloadType` selects a parser only — it never encodes business semantics like VIDEO, FIRMWARE_UPDATE, FILE. Those belong in the Registry layer.
 
 AXTP v1 has two active wire paths:
 

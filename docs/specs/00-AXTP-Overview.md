@@ -36,7 +36,7 @@ Transport Layer   USB HID / TCP / WebSocket
 | 层级 | 职责 | 不做的事 |
 |---|---|---|
 | Transport | 连接和字节传输 | 不理解业务方法 |
-| Frame | 边界、长度、分片、校验 | 不编码 VIDEO / OTA / FILE 等业务类型 |
+| Frame | 边界、长度、分片、校验 | 不编码 VIDEO / FIRMWARE_UPDATE / FILE 等业务类型 |
 | Payload | 选择 CONTROL / RPC / STREAM 解析器 | 不定义 methodId / eventId |
 | Registry | 定义 method / event / error / capability / schema | 不改变 Frame wire format |
 | Business | 实现设备业务语义 | 不直接修改 Frame Header |
@@ -49,9 +49,9 @@ Transport Layer   USB HID / TCP / WebSocket
 |---|---:|---|
 | CONTROL | `0x01` | 协议运行时信令：OPEN、ACCEPT、READY、HEARTBEAT、ACK、NACK、RESUME、CLOSE |
 | RPC | `0x02` | 业务控制面：request、response、event、batch |
-| STREAM | `0x03` | 业务数据面：OTA chunk、文件块、视频帧、音频帧、日志流 |
+| STREAM | `0x03` | 业务数据面：固件更新数据块、文件块、视频帧、音频帧、日志流 |
 
-PayloadType 只选择一级 parser，不表达业务类型。`VIDEO` / `OTA` / `FILE` 等业务语义属于 Registry 层。
+PayloadType 只选择一级 parser，不表达业务类型。`VIDEO` / `FIRMWARE_UPDATE` / `FILE` 等业务语义属于 Registry 层。
 
 v1 Payload Header 规格：
 
@@ -112,8 +112,8 @@ Logical Client -> Logical Server: Request adopted business methods (op=7)
 AXTP 主要解决四类工程问题：
 
 1. **多传输协议不统一**：HID、TCP、WebSocket 共享 method / event / error registry。
-2. **Header 被业务污染**：Frame Header 只放 PayloadType，不放 VIDEO / AUDIO / OTA / FILE。
-3. **控制面与数据面混杂**：配置、查询、状态上报走 RPC；视频帧、OTA chunk、文件块走 STREAM。
+2. **Header 被业务污染**：Frame Header 只放 PayloadType，不放 VIDEO / AUDIO / FIRMWARE_UPDATE / FILE。
+3. **控制面与数据面混杂**：配置、查询、状态上报走 RPC；视频帧、固件更新数据块、文件块走 STREAM。
 4. **文本 RPC 与二进制 RPC 割裂**：JSON RPC 和 Binary RPC 是同一套 RPC 语义的不同编码。
 
 ---

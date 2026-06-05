@@ -1,6 +1,6 @@
 ---
 name: draft-business-protocol
-description: Stage 20 drafting skill for AXTP business protocol proposals. Use when rough product, architecture, legacy, or flow-gap requirements need a docs/protocol domain-feature draft, including method/event/schema/error/capability/profile candidates, JSON examples, stream or OTA flows, or protocol classification. Writes docs/protocol drafts only by default and must not write registry YAML or generated artifacts.
+description: Stage 20 drafting skill for AXTP business protocol proposals. Use when rough product, architecture, legacy, or flow-gap requirements need a docs/protocol domain-feature draft, including method/event/schema/error/capability/profile candidates, JSON examples, stream or firmware.update flows, or protocol classification. Writes docs/protocol drafts only by default and must not write registry YAML or generated artifacts.
 ---
 
 # Draft Business Protocol
@@ -35,7 +35,7 @@ docs/specs/14-AXTP-Profiles-Registry-Spec.md
 docs/specs/19-AXTP-Generator-v1实现规范.md
 ```
 
-For stream, OTA, transport-sensitive, HID media, or low-bandwidth work, also read:
+For stream, firmware.update, transport-sensitive, HID media, or low-bandwidth work, also read:
 
 ```text
 docs/specs/02-AXTP-Frame-and-Payload-Spec.md

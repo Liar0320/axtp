@@ -26,7 +26,7 @@
 | USB HID 高速或 TCP | 继续使用 Standard Framed |
 | WebSocket JSON 集成 | 继续使用 WebSocket Unframed JSON，RPC-only |
 | BLE/UART/HID-64 小 MTU | 使用独立 low-bandwidth profile，不在同一 session 中切换 |
-| 需要视频/OTA/文件连续数据 | 优先使用 Standard Framed；降级必须证明 MTU 和窗口策略可行 |
+| 需要视频/固件更新/文件连续数据 | 优先使用 Standard Framed；降级必须证明 MTU 和窗口策略可行 |
 
 ---
 
@@ -233,7 +233,7 @@ Compact 有两个版本边界：
 | BLE GATT | 低功耗降级 | 必须先协商 MTU，默认 ATT MTU 过小不适合 STREAM |
 | UART | 字节流降级 | 必须额外提供帧边界，不能裸跑无 Magic Compact |
 
-如果业务需要音视频或 OTA 等 STREAM 能力，应优先使用 `AXTP-USB-HID` 或 `AXTP-TCP` 的 Standard Framed 路径。
+如果业务需要音视频或固件更新等 STREAM 能力，应优先使用 `AXTP-USB-HID` 或 `AXTP-TCP` 的 Standard Framed 路径。
 
 ---
 

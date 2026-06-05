@@ -116,7 +116,7 @@ Transport
 | `Vm33ProProtocolParser` | 接收 AXTP JSON/Binary 或产品选定的 AXTP transport 输入，输出统一 request/event payload。 |
 | `Vm33ProSessionManager` | 处理 Hello/Identify/Identified、session 恢复、超时和关闭。 |
 | `Vm33ProMethodRouter` | 使用 generated registry 将 methodId / method name 映射到 handler。 |
-| `Vm33ProHandlerRegistry` | 支持按 domain.feature 注入 handler，例如 `network.wifi`、`video.rtsp`、`firmware.ota`。 |
+| `Vm33ProHandlerRegistry` | 支持按 domain.feature 注入 handler，例如 `network.wifi`、`video.rtsp`、`firmware.update`。 |
 | `Vm33LegacyBridge` | 只用于旧 VM33 fallback 或临时灰度，不作为新业务主路径。 |
 | `Vm33CapabilityProvider` | 基于已注册 handler 输出 `capability.supportedMethods`。 |
 
@@ -190,7 +190,7 @@ App 不应通过旧 VM33 `Config.Name` 猜测 AXTP capability；能力判断以 
 |---|---|---|
 | `Config.Set/Get:Wifi`、`Wifi.ScanWifi`、`Wifi.ConnectWifi` | `network.wifi` | VM33 Pro 新 Wi-Fi 能力走 AXTP `network.wifi` 草案/采纳流程。 |
 | `Config.Set/Get:APInfo`、`Wifi.OpenApService` | `network.ap` | SoftAP 新需求走 AXTP `network.ap`。 |
-| `Upgrade.Setup/Upgrade/Progress/CloudUpgrade` | `firmware.ota` | 新 OTA 不继承 multipart 旧形态，按 AXTP OTA/STREAM 设计。 |
+| `Upgrade.Setup/Upgrade/Progress/CloudUpgrade` | `firmware.update` | 新的固件更新不继承 multipart 旧形态，按 AXTP `firmware.update` + STREAM 设计。 |
 | `Rtsp.*` | `video.rtsp` | 新 RTSP 配置走 AXTP `video.rtsp`。 |
 | `InputSource.*` | `room.source` | 新输入源管理走 AXTP `room.source`。 |
 | `Meeting.*` | `room.schedule` | 新会议日程走 AXTP `room.schedule`。 |
@@ -241,7 +241,7 @@ VM33 Pro handler 注入建议固定为以下合同：
 建议按以下节奏推进：
 
 1. **Framework first**：先发布 VM33 Pro 协议解析、session、router、capability 和 handler 注入框架，不携带大规模业务迁移。
-2. **Business by business**：按业务价值逐个新增 AXTP 协议并注入，例如 Wi-Fi、RTSP、OTA、输入源、会议日程。
+2. **Business by business**：按业务价值逐个新增 AXTP 协议并注入，例如 Wi-Fi、RTSP、固件更新、输入源、会议日程。
 3. **Dual-stack window**：App 和设备双栈运行一段时间，记录差异和 fallback。
 4. **Deprecation**：确认 App 覆盖率和固件覆盖率后，标记旧 VM33 业务逻辑 deprecated。
 5. **Removal**：到达版本边界后取消旧业务逻辑。

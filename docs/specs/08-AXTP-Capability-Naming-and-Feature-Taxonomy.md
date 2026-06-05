@@ -66,7 +66,7 @@ method 才表达具体动作、配置、状态和事件。
 network.wifi
 video.framing
 audio.algorithm
-firmware.ota
+firmware.update
 log.export
 stream.flowControl
 ```
@@ -169,8 +169,8 @@ network.wifiStateChanged
 network.getApState
 network.apStateChanged
 
-firmware.getOtaState
-firmware.otaStateChanged
+firmware.getUpdateState
+firmware.updateStateChanged
 ```
 
 ### 3.3 动作型 Feature
@@ -198,7 +198,7 @@ network.disconnectWifi
 
 camera.triggerAutoFocus
 
-firmware.installOta
+firmware.installUpdate
 
 storage.formatSdCard
 
@@ -287,7 +287,7 @@ firmware.updateState
 ```text
 video.framing
 network.ap
-firmware.ota
+firmware.update
 ```
 
 字段和状态放到方法或参数中：
@@ -296,7 +296,7 @@ firmware.ota
 video.getFramingMode
 video.setFramingConfig
 network.getApState
-firmware.getOtaState
+firmware.getUpdateState
 ```
 
 ### 4.2 不要把 Codec 当 Feature
@@ -337,7 +337,7 @@ stream.previewStream
 
 ```text
 file.transfer
-firmware.ota
+firmware.update
 video.stream
 audio.recording
 log.stream
@@ -490,7 +490,7 @@ file.storage
 
 ```text
 firmware.info
-firmware.ota
+firmware.update
 firmware.updatePolicy
 ```
 
@@ -651,8 +651,8 @@ network.getWifiState
 video.setFramingMode
   capability: video.framing
 
-firmware.beginOta
-  capability: firmware.ota
+firmware.beginUpdate
+  capability: firmware.update
 ```
 
 新增方法应优先使用本规范模板。已有 stable 方法如果名称不完全符合模板，可以保留 wire 兼容；新版本可增加更清晰的 alias 方法，并在 legacy / compatibility 文档中说明映射。
@@ -677,12 +677,12 @@ domain.featureExportProgressReported
 ```text
 network.wifiConfigChanged
 network.wifiStateChanged
-firmware.otaStateChanged
-firmware.otaProgressReported
+firmware.updateStateChanged
+firmware.updateProgressReported
 log.exportProgressReported
 ```
 
-已 stable 的旧事件名可以保留；新增 OTA、导出、流状态事件优先使用推荐模板。
+已 stable 的旧事件名可以保留；新增固件更新、导出、流状态事件优先使用推荐模板。
 
 ### 6.4 ErrorCode、MVP Profile 与 Legacy Mapping
 
@@ -706,13 +706,13 @@ legacy command -> domain.feature -> method/event -> schema adapter
 |---|---|---|---|---|---|
 | `network.softAp` | `network.ap` | SoftAP 是 AP 工作模式；AP 能力还包含 config/state/client。 | draft 可直接迁移，或保留 alias 一个版本。 | `network.getApInfo` 可演进为 `network.getApState` / `network.getApConfig`。 | `network.apInfoChanged` 可演进为 `network.apStateChanged` / `network.apConfigChanged`。 |
 | `stream.hidMedia` | `video.stream` / `audio.recording` / `stream.flowControl` | HID 是 transport，media 是业务类型；stream 域不承担业务分类。 | draft 可迁移；如保留，只作为 profile 兼容说明。 | `stream.open` 迁移到 `video.openStream`、`audio.openRecordingStream` 或其他业务建流方法。 | `stream.opened`、`stream.error` 迁移到业务域 stream state/error 事件；公共流控错误保留在 stream/control 层。 |
-| `stream.open` | 业务域 open stream 方法 | 常规 `stream.open` 会让 stream 域承载业务分类。 | draft 不建议晋升为 Core/MVP；如保留，限定为 P1 vendor/private 通用建流。 | `video.openStream`、`log.openStream`、`file.beginTransfer`、`firmware.beginOta`。 | 业务域 `streamStateChanged`。 |
+| `stream.open` | 业务域 open stream 方法 | 常规 `stream.open` 会让 stream 域承载业务分类。 | draft 不建议晋升为 Core/MVP；如保留，限定为 P1 vendor/private 通用建流。 | `video.openStream`、`log.openStream`、`file.beginTransfer`、`firmware.beginUpdate`。 | 业务域 `streamStateChanged`。 |
 | `display.brightnessMin` | `display.brightness` | min 是 brightness capability schema 字段，不是独立 feature。 | 未采纳字段不得生成；后续 display 草案应收敛到 schema。 | 待 display 草案定义。 | 待 display 草案定义。 |
 | `display.brightnessMax` | `display.brightness` | max 是 brightness capability schema 字段，不是独立 feature。 | 未采纳字段不得生成；后续 display 草案应收敛到 schema。 | 同上。 | 同上。 |
 | `display.brightnessStep` | `display.brightness` | step 是 brightness capability schema 字段，不是独立 feature。 | 未采纳字段不得生成；后续 display 草案应收敛到 schema。 | 同上。 | 同上。 |
-| `firmware.begin` / `firmware.end` / `firmware.verify` / `firmware.apply` | `firmware.beginOta` / `firmware.cancelOta` / `firmware.verifyOtaFiles` / `firmware.installOta` | 旧名不作为当前生成合同；新模板应显式绑定 OTA feature。 | 待 `firmware.ota` 草案采纳后才可生成。 | 待 `firmware.ota` 草案定义。 | 待 `firmware.ota` 草案定义。 |
-| `firmware.updateProgress` | `firmware.otaProgressReported` | update 是泛词，progress reported 更明确。 | 待 `firmware.ota` 草案采纳后才可生成。 | 待 `firmware.ota` 草案定义。 | 待 `firmware.ota` 草案定义。 |
-| `firmware.updateCompleted` / `firmware.updateFailed` | `firmware.otaStateChanged` / `firmware.otaResultReported` | completed/failed 是 OTA 状态或结果。 | 待 `firmware.ota` 草案采纳后才可生成。 | 待 `firmware.ota` 草案定义。 | 待 `firmware.ota` 草案定义。 |
+| `firmware.begin` / `firmware.end` / `firmware.verify` / `firmware.apply` | `firmware.beginUpdate` / `firmware.cancelUpdate` / `firmware.verifyUpdatePackage` / `firmware.installUpdate` | 旧名不作为当前生成合同；新模板应显式绑定 `firmware.update` feature。 | 待 `firmware.update` 草案采纳后才可生成。 | 待 `firmware.update` 草案定义。 | 待 `firmware.update` 草案定义。 |
+| `firmware.updateProgress` | `firmware.updateProgressReported` | progress reported 更符合周期性上报事件模板。 | 待 `firmware.update` 草案采纳后才可生成。 | 待 `firmware.update` 草案定义。 | 待 `firmware.update` 草案定义。 |
+| `firmware.updateCompleted` / `firmware.updateFailed` | `firmware.updateStateChanged` / `firmware.updateResultReported` | completed/failed 是固件更新状态或结果。 | 待 `firmware.update` 草案采纳后才可生成。 | 待 `firmware.update` 草案定义。 | 待 `firmware.update` 草案定义。 |
 
 ---
 

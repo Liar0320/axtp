@@ -163,7 +163,7 @@ session runtime
 ACK/NACK scheduling
 business handler
 device driver calls
-OTA state machine
+firmware.update state machine
 media encoder/decoder
 ```
 
@@ -693,7 +693,7 @@ node dist/cli.js generate-registry --spec ..
 - 不得在 core registry 与 domain YAML 中重复定义同一协议事实。
 - 不得复用 stable/deprecated wire value 表示新语义。
 - 新增 method/event 必须显式填写 `bitOffset`。
-- Stream/OTA 校验字段优先使用 `verifyType` / `verifyValue`。
+- Stream/firmware.update 校验字段优先使用 `verifyType` / `verifyValue`。
 - Stream Profile 不进入 STREAM header；由 RPC 建流绑定到 `streamId`。
 
 ---
@@ -901,7 +901,7 @@ legacy adapter table generation
 业务 handler 自动实现
 transport runtime
 media payload codec
-OTA flash driver
+firmware.update flash driver
 device-specific policy engine
 ```
 

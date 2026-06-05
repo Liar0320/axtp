@@ -111,6 +111,6 @@ refreshed protocol/axtp.protocol.yaml + generated artifacts
 - `network/network.wifi.md`
 - `network/network.ap.md`
 - `network/network.ip.md`
-- `firmware/firmware.ota.md`
+- `firmware/firmware.update.md`
 - `camera/camera.focus.md`
 - `audio/audio.recording.md`

@@ -438,14 +438,14 @@ WebSocket text message
 
 WebSocketJsonRpc 不走 AX Standard Frame、CRC 或 message fragmentation。
 
-## 7. OTA / STREAM 怎么用
+## 7. 固件更新 / STREAM 怎么用
 
-当前 generated 协议没有已采纳 OTA 控制面方法。OTA 不应该把固件块塞进普通 RPC body；需要做 OTA 时，先完成 `docs/protocol/firmware/firmware.ota.md` 的评审采纳，再由 Generator 生成正式 method/event/profile。
+当前 generated 协议没有已采纳的固件更新控制面方法。固件更新不应该把固件块塞进普通 RPC body；需要做固件更新时，先完成 `docs/protocol/firmware/firmware.update.md` 的评审采纳，再由 Generator 生成正式 method/event/profile。
 
 采纳后的推荐形态应保持：
 
 ```text
-RPC <firmware OTA begin method>
+RPC <firmware.update begin method>
   -> 设备返回升级上下文、建议 chunkSize、可能的 stream 参数
 
 STREAM chunks
@@ -454,8 +454,8 @@ STREAM chunks
   -> cursor:uint64 = byteOffset
   -> data(N)
 
-RPC <firmware OTA commit/verify/install methods>
-RPC Event <firmware OTA progress/state/result events>
+RPC <firmware.update commit/verify/install methods>
+RPC Event <firmware.update progress/state/result events>
 ```
 
 Wire 形态：
@@ -463,7 +463,7 @@ Wire 形态：
 ```text
 Control plane:
   PayloadType = RPC
-  methodId = 已采纳 OTA method
+  methodId = 已采纳 `firmware.update` method
 
 Data plane:
   PayloadType = STREAM
@@ -491,7 +491,7 @@ Data plane:
 | AP 信息查询 | 待 `network.softAp` 或相关草案评审采纳 | RPC over `AXTP-USB-HID` |
 | AP 设置 | `network.ap` 草案，评审后采纳 | RPC over `AXTP-USB-HID` |
 | Wi-Fi 设置写入 | `network.wifi` 草案，评审后采纳 | RPC over `AXTP-USB-HID` |
-| OTA | `firmware.ota` 草案评审后采纳，控制面 RPC + STREAM | Standard Framed HID |
+| 固件更新 | `firmware.update` 草案评审后采纳，控制面 RPC + STREAM | Standard Framed HID |
 | audio/video | 业务域建流草案评审后采纳，数据面 STREAM | Standard Framed HID |
 
 HID audio/video 的关键点：
@@ -523,7 +523,7 @@ RPC/Event
 |---|---|
 | 时间同步策略 | 查 `docs/protocol/system/system.time.md`，确认是否复用或补草案 |
 | 篮球进球事件通知 | 新建或更新合适 domain.feature 草案，明确 event name、payload、触发条件 |
-| 设备升级 | 先评审/采纳 `firmware.ota` 或 VM33 Pro 专属新增草案，再生成实现 |
+| 设备升级 | 先评审/采纳 `firmware.update` 或 VM33 Pro 专属新增草案，再生成实现 |
 | 设备信息查询 | 先评审/采纳 `device.info` 或 VM33 Pro 专属新增草案，再生成实现 |
 
 VM33 迁移流程：
@@ -728,7 +728,7 @@ generators/src/**
 
 ```text
 PayloadType = VIDEO
-PayloadType = OTA
+PayloadType = FIRMWARE_UPDATE
 Header.field = firmwareType
 Header.field = windowMode
 ```

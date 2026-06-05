@@ -73,7 +73,7 @@ HTTP/WebSocket 写一套方法
 这些方式都没有统一的 `eventId`、event schema、订阅关系和触发条件。现在设备需要主动上报的场景越来越多：
 
 - 篮球进球事件。
-- OTA 进度和结果。
+- 固件更新进度和结果。
 - AP/Wi-Fi 状态变化。
 - 显示窗口状态变化。
 - 流打开、关闭、异常。
@@ -100,7 +100,7 @@ AXTP 的改造重点不是“文档写得更漂亮”，而是让协议事实可
 - HID 大 report 音视频/音频通道。
 - TCP/局域网直连。
 - WebSocket 上位机和云端控制。
-- OTA、文件、日志、媒体流等连续数据。
+- 固件更新、文件、日志、媒体流等连续数据。
 - 多设备、多型号、多能力裁剪。
 
 如果没有统一的协议骨架，每条新链路都会重新设计 request、event、stream、error、capability。AXTP 把这些能力拆成通用层，业务只扩展 Registry，不扩展 Header。
@@ -172,7 +172,7 @@ Footer:    CRC16(2), covers Header(12B) + Payload(N)
 | `FrameCount` | 1B | 分片总数，未分片为 1 |
 | `CRC16` | 2B | CRC16-CCITT-FALSE |
 
-多字节整数在线格式中使用 Little-Endian。Frame Header 不出现 `VIDEO`、`OTA`、`FILE`、`Config` 等业务字段。
+多字节整数在线格式中使用 Little-Endian。Frame Header 不出现 `VIDEO`、`FIRMWARE_UPDATE`、`FILE`、`Config` 等业务字段。
 
 ### 3.3 Payload 如何设计
 
@@ -182,7 +182,7 @@ AXTP 顶层只有三种 Payload：
 |---|---|---|
 | CONTROL | 运行时控制 | OPEN、ACCEPT、HEARTBEAT、ACK、NACK、CLOSE |
 | RPC | 业务控制面 | Hello、Identify、Request、Response、Event |
-| STREAM | 连续数据面 | OTA chunk、文件块、日志流、音频帧、视频帧 |
+| STREAM | 连续数据面 | 固件更新数据块、文件块、日志流、音频帧、视频帧 |
 
 #### CONTROL Payload
 
@@ -245,7 +245,7 @@ STREAM Header 固定 16B，不写业务类型。业务含义由 RPC 建流时绑
 
 | 场景 | 控制面 | 数据面 |
 |---|---|---|
-| OTA | `firmware.ota` 草案采纳后的业务建流方法返回 stream 相关参数 | STREAM chunk，`cursor=byteOffset` |
+| 固件更新 | `firmware.update` 草案采纳后的业务建流方法返回 stream 相关参数 | STREAM chunk，`cursor=byteOffset` |
 | HID audio/video | 业务域采纳后的建流方法绑定 audio/video profile | STREAM frame，`cursor=timestampUs` 或业务约定游标 |
 | 文件 | file transfer 草案/采纳后的 begin/end 方法 | STREAM chunk |
 | 日志 | log stream 草案/采纳后的 start/stop 方法 | STREAM record/chunk |
@@ -262,7 +262,7 @@ STREAM Header 固定 16B，不写业务类型。业务含义由 RPC 建流时绑
 
 选择原则：
 
-- 需要 OTA、音视频、文件、日志等连续数据，优先选 Standard Framed。
+- 需要固件更新、音视频、文件、日志等连续数据，优先选 Standard Framed。
 - 浏览器、云端、轻量 RPC 控制，优先选 WebSocket Unframed JSON。
 - HID/TCP 上如果需要调试便利，可以先用 framed JSON RPC；量产或低资源路径再切 Binary RPC/TLV。
 - BLE/UART/小 report HID 不新增业务 PayloadType，只通过低带宽降级 profile 改外层 framing、MTU 和确认策略。
@@ -555,8 +555,8 @@ main
 | 阶段 | 时间节点 | 业务驱动 | 关键任务 | Owner 角色 | 输出物 |
 |---|---|---|---|---|---|
 | P0 | T0 - T+1 周 | 协议文档和研发共识 | README、How To Use、Kickoff、评审流程固化 | 架构、协议维护者 | 文档入口、流程说明 |
-| P0 | T0 - T+2 周 | NA20 + 大屏 + NT10 上位机适配 | 明确 HID audio/video 走 `AXTP-USB-HID` + `stream.open`/STREAM；梳理 AP 设置、Wi-Fi 写入、OTA、设备信息查询草案 | 架构、固件、上位机、测试 | `network.*`、`firmware.ota`、`device.info`、`stream.hidMedia` 评审清单 |
-| P1 | T+2 - T+4 周 | NA20/NT10 业务联调 | 已采纳 `audio.*` 方法、AP/Wi-Fi 设置草案、OTA STREAM 草案、HID media profile 草案联调 | 固件、上位机、SDK/工具、测试 | 端到端测试记录、必要协议草案/采纳 PR |
+| P0 | T0 - T+2 周 | NA20 + 大屏 + NT10 上位机适配 | 明确 HID audio/video 走 `AXTP-USB-HID` + `stream.open`/STREAM；梳理 AP 设置、Wi-Fi 写入、固件更新、设备信息查询草案 | 架构、固件、上位机、测试 | `network.*`、`firmware.update`、`device.info`、`stream.hidMedia` 评审清单 |
+| P1 | T+2 - T+4 周 | NA20/NT10 业务联调 | 已采纳 `audio.*` 方法、AP/Wi-Fi 设置草案、firmware.update STREAM 草案、HID media profile 草案联调 | 固件、上位机、SDK/工具、测试 | 端到端测试记录、必要协议草案/采纳 PR |
 | P1 | T+3 - T+5 周 | VM33 Pro 新版本协议适配 | 老协议保留；筛选新协议配置方案：时间同步、篮球进球事件、设备升级、设备信息查询 | 业务负责人、固件、上位机、架构 | VM33 新旧协议映射表、草案评审结论 |
 | P1 | T+4 - T+6 周 | UXPlay 控制方案 | 设计设置投屏密码、控制窗口大小、显示状态等 domain.feature 草案 | 上位机、设备端、架构、测试 | UXPlay 控制草案、评审问题清单 |
 | P2 | T+5 - T+8 周 | NearHub Launcher 与后台交互通用化 | 梳理 Launcher 设备管理命令，规整后台交互逻辑，定义可复用 method/event/schema | 后台、Launcher、架构、测试 | Launcher 通用化草案、兼容策略 |
@@ -573,7 +573,7 @@ main
 |---|---|---|---|
 | AP 设置 | `network.ap` / `network.softAp` 草案或采纳 | RPC over HID/TCP | 当前已有 `network.getApInfo` 和 `network.apInfoChanged` draft |
 | Wi-Fi 设置写入 | `network.wifi` 草案 | RPC over HID/TCP | 涉及密码、安全类型、连接结果 event |
-| OTA 固件升级 | `firmware.ota` | RPC + STREAM over HID/TCP | 等草案采纳后才进入 generated contract |
+| 固件更新 | `firmware.update` | RPC + STREAM over HID/TCP | 等草案采纳后才进入 generated contract |
 | 设备信息查询 | `device.info` | RPC | 等草案采纳后才进入 generated contract |
 | HID audio/video | 业务域 media/stream 草案 | `AXTP-USB-HID` + STREAM | 不把旧 `stream.open` / HID media draft 当作当前生成协议 |
 
@@ -587,7 +587,7 @@ main
 |---|---|
 | 时间同步策略 | 检查 `system.time` 草案，确认是否采纳为 method/event |
 | 篮球进球事件通知 | 先做业务草案，确认 domain 归属、event schema 和触发条件 |
-| 设备升级 | 优先复用 `firmware.ota` |
+| 设备升级 | 优先复用 `firmware.update` |
 | 设备信息查询 | 先评审 `device.info` 草案；采纳前继续走 VM33 旧协议 |
 
 要求：VM33 旧协议映射必须有旧 method、payload、status 证据，不能把 TBD 写进 YAML。

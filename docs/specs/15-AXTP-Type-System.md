@@ -259,9 +259,9 @@ fields:
  | `requestId` | `uint32` | RPC 请求编号 |
  | `messageId` | `uint16` / `uint8` | Frame 层消息编号：Standard=uint16，Compact=uint8 |
  | `streamId` | `uint32` | 流编号 |
- | `transferId` | `uint32` | 文件 / OTA 传输编号 |
+ | `transferId` | `uint32` | 文件 / 固件更新传输编号 |
  | `seqId` | `uint32` | Stream 分块序号 |
- | `offset` | `uint64` | 文件 / OTA 偏移 |
+ | `offset` | `uint64` | 文件 / 固件更新偏移 |
  | `timestampMs` | `uint64` | 毫秒时间戳 |
  | `durationMs` | `uint32` | 持续时间 |
  | `sizeBytes` | `uint64` | 对象大小 |
@@ -361,7 +361,7 @@ CmdValue → methodId
 旧 payload 固定字段 → AXTP object schema
 旧 byte flag → enum / bitmap
 旧不定长数据 → bytes / string
-旧升级块 → STREAM OTA data
+旧升级块 → STREAM firmware.update data
 ```
 
 ---

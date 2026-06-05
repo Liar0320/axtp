@@ -1,6 +1,6 @@
 ---
 name: axtp-protocol-workflow
-description: Stage 00 router for AXTP protocol lifecycle work. Use when the user asks to add, change, amend, migrate, adopt, generate, or implement an AXTP business method, event, schema/type, error, capability, profile, stream/OTA flow, scenario interaction flow, UI-prototype-driven protocol plan, or legacy mapping but has not specified the exact stage. Routes business scenarios to plan-protocol-flow, rough requirements to draft-business-protocol, reviewed drafts to adopt-protocol-draft, already-adopted semantic changes to amend-adopted-protocol, and YAML-to-artifact refresh to generate-axtp-protocol.
+description: Stage 00 router for AXTP protocol lifecycle work. Use when the user asks to add, change, amend, migrate, adopt, generate, or implement an AXTP business method, event, schema/type, error, capability, profile, stream/firmware.update flow, scenario interaction flow, UI-prototype-driven protocol plan, or legacy mapping but has not specified the exact stage. Routes business scenarios to plan-protocol-flow, rough requirements to draft-business-protocol, reviewed drafts to adopt-protocol-draft, already-adopted semantic changes to amend-adopted-protocol, and YAML-to-artifact refresh to generate-axtp-protocol.
 ---
 
 # AXTP Protocol Workflow

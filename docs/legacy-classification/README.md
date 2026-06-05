@@ -65,7 +65,7 @@ CSV 明细：`docs/legacy-classification/legacy-protocol-classification.csv`
 | audio.algorithm | 36 |
 | video.framing | 22 |
 | vendor.genericConfig | 22 |
-| firmware.ota | 20 |
+| firmware.update | 20 |
 | network.wifi | 20 |
 | output.layout | 20 |
 | audio.volume | 16 |
@@ -171,18 +171,18 @@ CSV 明细：`docs/legacy-classification/legacy-protocol-classification.csv`
 
 | Source | File | Line | Type | Legacy Wire | Class | Method | Event | Config Name | Capability | AXTP Method | AXTP Event | Protocol Doc | Confidence |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 41 | command | AlphaUpgradeInfo |  | AlphaUpgradeInfo |  |  | firmware.ota | firmware.beginOta |  | docs/protocol/firmware/firmware.ota.md | high |
-| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 42 | command | AlphaUpgradeData |  | AlphaUpgradeData |  |  | firmware.ota | firmware.commitOtaBatch |  | docs/protocol/firmware/firmware.ota.md | high |
+| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 41 | command | AlphaUpgradeInfo |  | AlphaUpgradeInfo |  |  | firmware.update | firmware.beginUpdate |  | docs/protocol/firmware/firmware.update.md | high |
+| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 42 | command | AlphaUpgradeData |  | AlphaUpgradeData |  |  | firmware.update | firmware.commitUpdateBatch |  | docs/protocol/firmware/firmware.update.md | high |
 | axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 43 | command | AlphaDeviceInfo |  | AlphaDeviceInfo |  |  | device.identity | device.setIdentityConfig |  | docs/protocol/device/device.identity.md | high |
 | axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 44 | command | AlphaDeviceType |  | AlphaDeviceType |  |  | device.identity | device.setIdentityConfig |  | docs/protocol/device/device.identity.md | high |
 | axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 45 | command | BetaDeviceReset |  | BetaDeviceReset |  |  | system.initialization | system.reset |  | docs/protocol/system/system.initialization.md | medium |
 | axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 46 | command | BetaDeviceInfo |  | BetaDeviceInfo |  |  | device.identity | device.setIdentityConfig |  | docs/protocol/device/device.identity.md | high |
-| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 47 | command | BetaStartUpgrade |  | BetaStartUpgrade |  |  | firmware.ota | firmware.beginOta |  | docs/protocol/firmware/firmware.ota.md | high |
-| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 48 | command | BetaStopUpgrade |  | BetaStopUpgrade |  |  | firmware.ota | firmware.cancelOta |  | docs/protocol/firmware/firmware.ota.md | high |
-| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 49 | command | BetaUpgradeInfo |  | BetaUpgradeInfo |  |  | firmware.ota | firmware.beginOta |  | docs/protocol/firmware/firmware.ota.md | high |
-| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 50 | command | BetaUpgradeData |  | BetaUpgradeData |  |  | firmware.ota | firmware.commitOtaBatch |  | docs/protocol/firmware/firmware.ota.md | high |
-| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 51 | command | BetaUpgradeInfoEx |  | BetaUpgradeInfoEx |  |  | firmware.ota | firmware.beginOta |  | docs/protocol/firmware/firmware.ota.md | high |
-| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 52 | command | BetaUpgradeDataEx |  | BetaUpgradeDataEx |  |  | firmware.ota | firmware.commitOtaBatch |  | docs/protocol/firmware/firmware.ota.md | high |
+| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 47 | command | BetaStartUpgrade |  | BetaStartUpgrade |  |  | firmware.update | firmware.beginUpdate |  | docs/protocol/firmware/firmware.update.md | high |
+| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 48 | command | BetaStopUpgrade |  | BetaStopUpgrade |  |  | firmware.update | firmware.cancelUpdate |  | docs/protocol/firmware/firmware.update.md | high |
+| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 49 | command | BetaUpgradeInfo |  | BetaUpgradeInfo |  |  | firmware.update | firmware.beginUpdate |  | docs/protocol/firmware/firmware.update.md | high |
+| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 50 | command | BetaUpgradeData |  | BetaUpgradeData |  |  | firmware.update | firmware.commitUpdateBatch |  | docs/protocol/firmware/firmware.update.md | high |
+| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 51 | command | BetaUpgradeInfoEx |  | BetaUpgradeInfoEx |  |  | firmware.update | firmware.beginUpdate |  | docs/protocol/firmware/firmware.update.md | high |
+| axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 52 | command | BetaUpgradeDataEx |  | BetaUpgradeDataEx |  |  | firmware.update | firmware.commitUpdateBatch |  | docs/protocol/firmware/firmware.update.md | high |
 | axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 53 | command | CommonSetVideoMode |  | CommonSetVideoMode |  |  | video.framing | video.setFramingMode |  | docs/protocol/video/video.framing.md | medium |
 | axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 54 | command | CommonGetVideoMode |  | CommonGetVideoMode |  |  | video.framing | video.getFramingMode |  | docs/protocol/video/video.framing.md | medium |
 | axdp_hid | docs/legacy-protocols/AXDP源码协议扫描清单.md | 55 | command | CommonGetPeopleNumber |  | CommonGetPeopleNumber |  |  | video.framing | video.getFramingConfig |  | docs/protocol/video/video.framing.md | medium |

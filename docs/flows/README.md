@@ -46,3 +46,5 @@ docs/business/<requirement>.md 或业务场景 / UI 原型 / 用户 story
 
 - [Audio Algorithm Level Control](audio-algorithm-level-control.md)：App UI 中的音频算法强度滑条和恢复默认流程，复用 `audio.algorithm`。
 - [Cast RX/TX Pairing](cast-rxtx-paring.md)：NA20 接收端 AP 信息写入 NT10 发射端 Wi-Fi STA 配置的自动配对流程，依赖 `network.ap` / `network.wifi` 草案细化。
+- [Device Firmware Update](device-firmware-update.md)：PC 上位机通过 `firmware.update` 为直连设备执行单 `.bin` / 多 `.bin` 固件升级的流程，依赖 `firmware.update` / `firmware.info` 草案采纳。
+- [NA20/NT10 Device Streaming Audio And Video](device-streaming-audio-video.md)：NA20 接收 NT10 H.264/AAC 投屏流后，经 USB HID/AXTP STREAM 转发给上位机播放的音频和视频交互流程。

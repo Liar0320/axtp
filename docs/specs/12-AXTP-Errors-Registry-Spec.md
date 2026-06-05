@@ -85,7 +85,7 @@ errors:
 | `0x0100-0x01FF` | device | 设备基础错误 |
 | `0x0200-0x02FF` | capability | 能力查询与协商错误 |
 | `0x0300-0x03FF` | system | 系统级错误 |
-| `0x0400-0x04FF` | firmware | 固件 / OTA 错误 |
+| `0x0400-0x04FF` | firmware | 固件更新错误 |
 | `0x0500-0x05FF` | stream | STREAM session、seq、resume、CRC |
 | `0x0600-0x15FF` | business domains | 其他业务域错误，按 09《AXTP Protocol Definition Mapping Spec》§9 的 Domain Registry 高字节分段 |
 | `0x7000-0x7EFF` | vendor | 厂商扩展 |
@@ -149,7 +149,7 @@ Legacy Adapter 必须把旧状态码映射到 `errors[].code`，映射表作为 
 - 已发布为 `stable` 的 ErrorCode 不允许改变语义；可新增、废弃、保留，但不得复用已发布编号
 - ErrorCode 只表达机器可判断的错误类别；详细错误信息通过 RPC `status.msg / status.details`、Control `errorDetail`、厂商 `vendorErrorCode / vendorErrorMessage`、legacyStatus、traceId 等字段携带
 - `0x0000 = SUCCESS`，所有 Response / ACK 成功时必须使用该值
-- Control、RPC、Stream、Capability、OTA、File 等错误统一进入 ErrorCode Registry，不各自定义局部状态码
+- Control、RPC、Stream、Capability、Firmware Update、File 等错误统一进入 ErrorCode Registry，不各自定义局部状态码
 - ErrorCode 使用 `uint16`，字节序 Little-Endian
 
 ---
@@ -162,7 +162,7 @@ Legacy Adapter 必须把旧状态码映射到 `errors[].code`，映射表作为 
 | `0x0100-0x01FF` | Device | 设备状态、系统资源、电源、存储等错误 |
 | `0x0200-0x02FF` | Capability | 能力发现、协商、不支持错误 |
 | `0x0300-0x03FF` | System | 系统级错误 |
-| `0x0400-0x04FF` | Firmware / OTA | 固件升级错误 |
+| `0x0400-0x04FF` | Firmware Update | 固件升级错误 |
 | `0x0500-0x05FF` | Stream | Stream 数据面、分块、窗口、续传错误 |
 | `0x0600-0x06FF` | Display | 显示错误 |
 | `0x0700-0x07FF` | Camera | 摄像头错误 |
@@ -310,7 +310,7 @@ Legacy Adapter 必须把旧状态码映射到 `errors[].code`，映射表作为 
 
 ---
 
-### 11. Firmware / OTA 错误码
+### 11. Firmware Update 错误码
 
 | ErrorCode | 名称 | 说明 | MVP |
 |---:|---|---|---|
@@ -637,7 +637,7 @@ Stream 错误通过两种方式上报：
 | 错误类型 | 上报方式 |
 |---|---|
 | 传输层问题（CRC 错误、seqId 不连续、streamId 不存在） | CONTROL NACK，`reasonCode` 使用 Stream 类错误码 |
-| 业务层问题（OTA sha256 不匹配、视频帧解码失败） | RPC Event `stream.error`，`errorCode` 使用对应业务类错误码 |
+| 业务层问题（固件更新 sha256 不匹配、视频帧解码失败） | RPC Event `stream.error`，`errorCode` 使用对应业务类错误码 |
 
 Stream 错误码使用规则：
 - `STREAM_NOT_FOUND (0x0501)` → streamId 不存在时的 NACK

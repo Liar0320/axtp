@@ -203,7 +203,7 @@ Capability 是对设备能力、协议能力、传输能力和业务功能的声
 | 机制 | 职责 |
 | --- |---|
 | `CONTROL OPEN / ACCEPT` | 协议运行时参数协商（protocolVersion、maxFrameSize、maxPayloadSize、mtu、supportedPayloadTypes、supportedRpcEncodings、heartbeatIntervalMs、ackMode、windowSize） |
-| `RPC capability.*` | 业务能力查询（display brightness、firmware OTA、video stream、methodId 支持、eventId 支持、文件类型） |
+| `RPC capability.*` | 业务能力查询（display brightness、firmware.update、video stream、methodId 支持、eventId 支持、文件类型） |
 
 规则：
 - 影响 Frame/Control/RPC/Stream Parser 工作方式的能力必须在 CONTROL OPEN 阶段协商
@@ -236,7 +236,7 @@ CapabilityId 使用 `uint16`，按 09《AXTP Protocol Definition Mapping Spec》
 0x0100-0x01FF  设备基础能力
 0x0200-0x02FF  能力查询与协商能力
 0x0300-0x03FF  系统能力
-0x0400-0x04FF  固件 / OTA 能力
+0x0400-0x04FF  固件 / 固件更新能力
 0x0500-0x05FF  STREAM 能力
 0x0600-0x06FF  显示能力
 0x0700-0x07FF  摄像头能力
@@ -424,15 +424,15 @@ bool isCapabilitySupported(const uint8_t* bitmask, uint8_t maskLen, uint8_t bitO
 
 ---
 
-### 9. 固件 / OTA 能力注册表
+### 9. 固件 / 固件更新能力注册表
 
 | capabilityId | name | 类型 | 状态 | 说明 |
 |---:| --- |---| --- |---|
-| `0x0401` | `firmware.ota` | object | mvp | 支持基于 STREAM 的 OTA |
+| `0x0401` | `firmware.update` | object | mvp | 支持基于 STREAM 的固件更新 |
 | `0x0402` | `firmware.info` | object | draft | 固件信息能力 |
 | `0x0403` | `firmware.updatePolicy` | object | draft | 固件更新策略能力 |
 
-#### 9.1 OTA verify algorithm bitmap
+#### 9.1 Firmware update verify algorithm bitmap
 
 | Bit | 算法 |
 |---:| --- |
@@ -461,7 +461,7 @@ Stream Profile 是具体可建流协议档案，存在于 Registry/Capability/St
 
 | profileId | Profile |
 |---:| --- |
-| `0x0401` | `firmware.ota` |
+| `0x0401` | `firmware.update` |
 | `0x1002` | `file.transfer` |
 | `0x1101` | `log.stream` |
 | `0x0801` | `video.stream` |
@@ -740,7 +740,7 @@ Stream Profile 是具体可建流协议档案，存在于 Registry/Capability/St
     "event": true
   },
   "stream": {
-    "profile": ["firmware.ota"],
+    "profile": ["firmware.update"],
     "maxChunkSize": 48,
     "resume": true,
     "chunkCrc32": true
@@ -760,7 +760,7 @@ v2/P1 推荐返回摘要（复杂能力通过 `capability.getDomainRegistry` 查
 capability.getRegistry.result
   protocol.payload.control / protocol.payload.rpc / protocol.payload.stream
   stream.profile
-  firmware.ota / display.brightness
+  firmware.update / display.brightness
 ```
 
 ---
@@ -810,15 +810,15 @@ capability.getRegistry.result
 | 老协议能力 | AXTP capability | 说明 |
 | --- |---| --- |
 | `CmdValue 0xC0021 exists` | `video.supported = true` | 支持视频模式设置 |
-| `AlphaUpgradeInfo exists` | `firmware.ota = true` | 支持基于 STREAM 的 OTA |
+| `AlphaUpgradeInfo exists` | `firmware.update = true` | 支持基于 STREAM 的固件更新 |
 | `FeatureBitmap.bit0` | `display.brightness = true` | 支持亮度 |
-| `FeatureBitmap.bit1` | `firmware.ota.resumeSupported = true` | 支持续传字段 |
+| `FeatureBitmap.bit1` | `firmware.update.resumeSupported = true` | 支持续传字段 |
 
 legacyMapping 字段：
 
 ```yaml
 - id: 0x0401
-  name: firmware.ota
+  name: firmware.update
   domain: firmware
   type: bool
   status: mvp

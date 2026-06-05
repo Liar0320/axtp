@@ -160,7 +160,7 @@ MVP 文档中的表格用于阅读和审查，最终实现以 `registry/**/*.yam
 旧 Payload -> AXTP TLV body 或 legacy bytes（bodyEncoding = RAW_BYTES）
 旧 status -> AXTP errorCode
 旧设备能力表 -> AXTP capability
-旧 OTA chunk -> AXTP STREAM OTA
+旧固件更新数据块 -> AXTP STREAM 固件更新
 ```
 
 对于复杂旧结构，可先使用 `bodyEncoding = RAW_BYTES`，但必须在 Registry 中声明 legacyMapping。
@@ -176,7 +176,7 @@ MVP 文档中的表格用于阅读和审查，最终实现以 `registry/**/*.yam
 | Control | OPEN / ACCEPT / HEARTBEAT / HEARTBEAT_ACK / ACK / NACK / CLOSE / CLOSE_ACK | RESUME / SESSION_RESET / WINDOW_UPDATE 高级策略 |
 | RPC Encoding | JSON / BINARY 必须覆盖当前正式路径 | CBOR / MessagePack |
 | RPC Op | HELLO / IDENTIFY / IDENTIFIED / EVENT / REQUEST / REQUEST_RESPONSE | BATCH |
-| Stream Profile | firmware.ota 必须，file/log 建议 | video/audio/kvm/sensor |
+| Stream Profile | firmware.update 必须，file/log 建议 | video/audio/kvm/sensor |
 | Type System | uint / bool / enum / bitmap / string / bytes | nested object 高级约束 |
 | TLV | short TLV 必须，extended length 建议 | packed array 高级优化 |
 | Registry | Method/Event/Error/Capability | 完整业务全集 |
@@ -243,7 +243,7 @@ Compact / HID-64 / BLE / UART 不作为当前 MVP 必选实现，进入 18《AXT
 | Opcode | Name | 延后原因 |
 | ---: | --- | --- |
 | `0x03` | `READY` | 三步协商预留，当前版本不实现；收到时必须忽略 |
-| `0x08` | `RESUME` | 断点恢复可先由业务层 OTA resume 覆盖 |
+| `0x08` | `RESUME` | 断点恢复可先由业务层 firmware.update resume 覆盖 |
 | `0x09` | `RESUME_ACK` | 同上 |
 | `0x0C` | `SESSION_RESET` | 可先使用 CLOSE + OPEN 重建 |
 | `0x0D` | `WINDOW_UPDATE` | 第一版可使用固定窗口 |
@@ -413,13 +413,13 @@ Stream Profile 是可建流协议档案，不是 STREAM 数据包字段。Profil
 
 | profileId | Name | Domain | MVP | 默认 cursorUnit | 默认可靠性 |
 |---:| --- |---| --- |---| --- |
-| `0x0401` | `firmware.ota` | firmware | 必须 | `byteOffset` | reliable |
+| `0x0401` | `firmware.update` | firmware | 必须 | `byteOffset` | reliable |
 | `0x1002` | `file.transfer` | file | 延后 | `byteOffset` | reliable |
 | `0x1101` | `log.stream` | log | 延后 | `timestampUs` | best_effort |
 | `0x0801` | `video.stream` | video | 延后 | `timestampUs` | best_effort |
 | `0x0902` | `audio.recording` | audio | 延后 | `timestampUs` | best_effort |
 
-#### 11.2 OTA Stream MVP Metadata
+#### 11.2 Firmware Update Stream MVP Metadata
 
 | fieldId | Name | Type | 说明 |
 |---:| --- |---| --- |
@@ -511,7 +511,7 @@ AudioAlgorithmConfigChangedEvent
 
 ### 15. 老协议兼容 MVP
 
-最小兼容目标：旧 CmdValue 可以映射到 AXTP methodId；旧 Payload 可以作为 RAW_BYTES body 传输；旧返回码可以映射到 AXTP errorCode；旧设备能力可以映射到 AXTP capability；旧 OTA 流程可以映射到 firmware.* + STREAM OTA。
+最小兼容目标：旧 CmdValue 可以映射到 AXTP methodId；旧 Payload 可以作为 RAW_BYTES body 传输；旧返回码可以映射到 AXTP errorCode；旧设备能力可以映射到 AXTP capability；旧固件更新流程可以映射到 firmware.* + STREAM 固件更新。
 
 每个从旧协议迁移的方法都应声明：
 
@@ -529,6 +529,6 @@ legacyMapping:
 | oldName | oldCmdValue | AXTP methodName | AXTP methodId | MVP |
 | --- |---:| --- |---:| --- |
 | `BetaDeviceInfo` | `0xB0002` | 待 `device.info` 采纳后确认 | 待分配或保留旧值 | 未采纳 |
-| `AlphaUpgradeInfo` | `0xA0001` | 待 `firmware.ota` 采纳后确认 | 待分配或保留旧值 | 未采纳 |
+| `AlphaUpgradeInfo` | `0xA0001` | 待 `firmware.update` 采纳后确认 | 待分配或保留旧值 | 未采纳 |
 
 AXTP `methodId` 固定为 uint16，旧 CmdValue 可能超过 uint16，不得直接作为 methodId。旧 CmdValue 必须保存在 legacyMapping 中，并唯一映射到 AXTP MethodId。

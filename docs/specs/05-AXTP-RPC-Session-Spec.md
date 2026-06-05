@@ -500,7 +500,7 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 
 格式：`domain.objectChanged / domain.actionCompleted / domain.actionFailed / domain.error`
 
-示例：`audio.algorithmConfigChanged / firmware.otaStateChanged / stream.errorReported`
+示例：`audio.algorithmConfigChanged / firmware.updateStateChanged / stream.errorReported`
 
 ### 14.3 与 Binary methodId/eventId 的映射
 
@@ -557,7 +557,7 @@ APP_READY 后，v1 Core 不强制任何业务 method。客户端以当前产品 
 低频状态变化（亮度变化、固件进度、设备状态）：
   RPC Event (op=6)
 
-高频连续数据（视频帧、音频帧、传感器采样、OTA 数据块）：
+高频连续数据（视频帧、音频帧、传感器采样、固件更新数据块）：
   RPC 控制面（Request op=7）+ STREAM 数据面
 ```
 
@@ -630,8 +630,8 @@ MVP 阶段设备可采用"全量广播模式"：忽略 `eventMasks`，只要 App
 ## 17. RPC 与 STREAM 的协作
 
 ```text
-OTA（待 firmware.ota 草案采纳）:
-  RPC 已采纳建流方法 → 返回 streamId, profile=firmware.ota
+固件更新（待 `firmware.update` 草案采纳）:
+  RPC 已采纳建流方法 → 返回 streamId, profile=firmware.update
   STREAM packet: streamId/seqId/cursor/data
   RPC 已采纳校验方法 → 校验固件
   RPC 已采纳安装方法 → 应用固件

@@ -476,7 +476,7 @@ SESSION_RESET 用于强制重置会话（协议状态机异常、连续解析失
 
 ## 16. WINDOW_UPDATE（P1）
 
-用于 STREAM OTA/FILE/LOG 等高吞吐场景的流控。字段：`targetType(0x20)`, `streamId(0x15)`, `seqId(0x16)`, `windowSize(0x0C)`, `offset(0x17)`。
+用于 STREAM firmware.update/file.transfer/log 等高吞吐场景的流控。字段：`targetType(0x20)`, `streamId(0x15)`, `seqId(0x16)`, `windowSize(0x0C)`, `offset(0x17)`。
 
 ---
 

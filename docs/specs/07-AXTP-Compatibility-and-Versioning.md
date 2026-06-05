@@ -7,7 +7,7 @@
 
 版本：v1.0.0-rc1
 状态：AXTP v1 Core Freeze Candidate
-适用范围：AXTP v1 wire format freeze 规则、版本策略、USB HID、TCP、WebSocket JSON、旧 AXDP/Alpha/Beta/Common/CmdValue 类协议、旧 JSON-RPC/二进制 RPC/OTA/RawStream/LogStream 协议迁移
+适用范围：AXTP v1 wire format freeze 规则、版本策略、USB HID、TCP、WebSocket JSON、旧 AXDP/Alpha/Beta/Common/CmdValue 类协议、旧 JSON-RPC/二进制 RPC/固件更新/RawStream/LogStream 协议迁移
 
 ---
 
@@ -28,7 +28,7 @@
 ```text
 1. 判断入口：旧协议 sniffing、独立端口、URL path 或 transport profile。
 2. 映射控制面：旧 CmdValue / JSON method -> AXTP methodId。
-3. 映射数据面：OTA / file / media chunk -> RPC 建流 + STREAM data。
+3. 映射数据面：firmware.update / file.transfer / media stream 数据块 -> RPC 建流 + STREAM data。
 4. 映射状态：旧 status/error -> AXTP ErrorCode 或 RPC Response status。
 5. 映射能力：旧 capability bits -> domain.feature capability 或 supportedMethods bitmap。
 6. 固化事实：长期事实进入 registry YAML，临时兼容进入 legacy_mapping.yaml。
@@ -142,7 +142,7 @@
 旧 HID / BLE / UART 协议如何接入 AXTP？
 旧 CmdValue 如何映射为 AXTP methodId？
 旧 JSON-RPC / BinaryRPC 如何映射为 AXTP RPC？
-旧 Firmware / OTA / RawStream / LogStream 如何映射为 AXTP STREAM？
+旧 Firmware Update / RawStream / LogStream 如何映射为 AXTP STREAM？
 旧状态码如何映射为 AXTP ErrorCode？
 旧能力表如何映射为 AXTP Capability Registry？
 旧设备如何在不大改固件的情况下逐步兼容 AXTP？
@@ -184,14 +184,14 @@ AXTP v1 只保留三类顶层 PayloadType：
 |---:| --- |---|
 | `0x01` | `CONTROL` | 旧连接控制、ACK、NACK、心跳、恢复 |
 | `0x02` | `RPC` | 旧 JSON-RPC、BinaryRPC、CmdValue 命令 |
-| `0x03` | `STREAM` | 旧 OTA、文件块、日志流、RawStream、HID Raw |
+| `0x03` | `STREAM` | 旧固件更新数据块、文件块、日志流、RawStream、HID Raw |
 
 旧协议中的业务类型不得继续膨胀为新的顶层 PayloadType。
 
 例如：
 
 ```text
-旧 Firmware Payload    -> AXTP STREAM / RPC 建流 profile = firmware.ota
+旧 Firmware Payload    -> AXTP STREAM / RPC 建流 profile = firmware.update
 旧 RawStream Payload   -> AXTP STREAM / RPC 建流 profile = media.video、sensor.sample 或 legacy.tunnel
 旧 LogStream Payload   -> AXTP STREAM / RPC 建流 profile = log.realtime 或 log.bundle
 旧 BinaryRPC Payload   -> AXTP RPC / rpcEncoding = BINARY
@@ -442,9 +442,9 @@ common.setVideoMode
 推荐示例：
 
 ```text
-firmware.getOtaCapabilities
-firmware.beginOta
-firmware.verifyOtaFiles
+firmware.getUpdateCapabilities
+firmware.beginUpdate
+firmware.verifyUpdatePackage
 device.getState
 video.setFramingConfig
 audio.setAlgorithmConfig
@@ -475,7 +475,7 @@ legacy:
 | Digital Signage | `signage.*` | 数字标牌播放列表、播放计划、媒体、外观、播放状态 |
 | Factory / Production Test | `diagnostic.*` | 产测、自检、报告、指标 |
 | HID Raw / KVM | `input.*` + `profile=control.hid_raw` | 低频走 RPC，高频走 STREAM |
-| OTA Chunk | `firmware.*` + `profile=firmware.ota` | 控制面 RPC，数据面 STREAM |
+| 固件更新 Chunk | `firmware.*` + `profile=firmware.update` | 控制面 RPC，数据面 STREAM |
 | Log Stream | `log.*` + `profile=log.realtime` | 控制面 RPC，数据面 STREAM |
 | File Transfer | `file.*` + `profile=file.upload/file.download` | 控制面 RPC，数据面 STREAM |
 | Vendor Private | `vendor.*` | 厂商扩展 |
@@ -647,7 +647,7 @@ payloadType = STREAM
 
 ---
 
-## 8. 旧 Firmware / OTA 协议迁移
+## 8. 旧 Firmware Update 协议迁移
 
 ### 8.1 迁移目标
 
@@ -672,8 +672,8 @@ chunkCrc32
 AXTP 的迁移目标：
 
 ```text
-RPC 控制 OTA 流程
-STREAM 承载 OTA chunk
+RPC 控制固件更新流程
+STREAM 承载固件更新数据块
 CONTROL ACK/NACK 负责可靠传输
 CRC32 / SHA256 负责 chunk 或镜像级完整性
 ```
@@ -682,32 +682,32 @@ CRC32 / SHA256 负责 chunk 或镜像级完整性
 
 | 旧语义 | AXTP method | PayloadType |
 | --- |---| --- |
-| firmware.begin / upgrade.start | `firmware.beginOta`（候选，待草案采纳） | RPC |
-| firmware.write / writeChunk | `STREAM OTA chunk` | STREAM |
-| firmware.end | `firmware.commitOtaBatch` 或 `firmware.cancelOta`（候选，待草案采纳） | RPC |
-| firmware.verify | `firmware.verifyOtaFiles`（候选，待草案采纳） | RPC |
-| firmware.apply | `firmware.installOta`（候选，待草案采纳） | RPC |
-| firmware.abort | `firmware.cancelOta`（候选，待草案采纳） | RPC |
-| firmware.resume | `firmware.resumeOta`（候选，待草案采纳） | RPC |
-| firmware.getProgress | `firmware.getOtaTransferState`（候选，待草案采纳） | RPC |
+| firmware.begin / upgrade.start | `firmware.beginUpdate`（候选，待草案采纳） | RPC |
+| firmware.write / writeChunk | `STREAM 固件更新数据块` | STREAM |
+| firmware.end | `firmware.commitUpdateBatch` 或 `firmware.cancelUpdate`（候选，待草案采纳） | RPC |
+| firmware.verify | `firmware.verifyUpdatePackage`（候选，待草案采纳） | RPC |
+| firmware.apply | `firmware.installUpdate`（候选，待草案采纳） | RPC |
+| firmware.abort | `firmware.cancelUpdate`（候选，待草案采纳） | RPC |
+| firmware.resume | `firmware.resumeUpdate`（候选，待草案采纳） | RPC |
+| firmware.getProgress | `firmware.getUpdateTransferState`（候选，待草案采纳） | RPC |
 
-### 8.3 OTA Chunk 字段映射
+### 8.3 旧固件更新 Chunk 字段映射
 
 AXTP v1 STREAM Header 固定 16B，只含 `streamId / seqId / cursor`，不携带业务字段。
-旧 OTA 字段按以下规则分流：
+旧固件更新字段按以下规则分流：
 
 | 旧字段 | AXTP 字段 | 位置 | 说明 |
 | --- |---| --- | --- |
-| `transferId` | `streamId` | STREAM Header（wire） | 由已采纳 OTA 建流 Response 分配，绑定到 Stream Context |
+| `transferId` | `streamId` | STREAM Header（wire） | 由已采纳固件更新建流响应 分配，绑定到 Stream Context |
 | `seqId` | `seqId` | STREAM Header（wire） | uint32，从 0 开始，自然回绕 |
 | `offset` | `cursor` | STREAM Header（wire） | cursorUnit=byteOffset，见 06《Stream Spec》§3.2 |
-| `totalLength` | `totalSize` | 已采纳 OTA 建流 params（RPC 控制面） | 不在 STREAM Header 中 |
+| `totalLength` | `totalSize` | 已采纳固件更新建流参数（RPC 控制面） | 不在 STREAM Header 中 |
 | `chunkLength` | 派生值 | `Frame.payloadLength - 16`（Frame Header） | 不在 STREAM Header 中，接收端从帧长度反推 |
 | `chunkCrc32` | 可选 | profile trailer 或 CONTROL ACK/NACK body | 不在 STREAM Header 中 |
-| `imageType` | `imageType` | 已采纳 OTA 建流 params（RPC 控制面） | 不在 STREAM Header 中 |
-| `sha256` | `verifyValue` | 已采纳 OTA 建流 params + 校验方法（RPC 控制面） | 不在 STREAM Header 中 |
+| `imageType` | `imageType` | 已采纳固件更新建流参数（RPC 控制面） | 不在 STREAM Header 中 |
+| `sha256` | `verifyValue` | 已采纳固件更新建流参数 + 校验方法（RPC 控制面） | 不在 STREAM Header 中 |
 
-### 8.4 OTA ACK/NACK 映射
+### 8.4 旧固件更新 ACK/NACK 映射
 
 旧 ACK/NACK 映射为 AXTP Control：
 
@@ -948,7 +948,7 @@ AXTP 拆成两类能力：
 | --- |---|
 | 支持命令列表 | generated registry 或后续已采纳的 capability 查询方法 |
 | 支持事件列表 | `supportedEvents` |
-| 支持升级 | `firmware.ota` |
+| 支持升级 | `firmware.update` |
 | 支持断点续传 | `firmware.resume` |
 | 支持亮度范围 | `display.brightnessMin / display.brightnessMax / display.brightnessStep` |
 | 支持视频模式 | `video.modes` |
@@ -1341,7 +1341,7 @@ payload 格式
 所属设备族
 是否高频
 是否大块数据
-是否用于 OTA / 日志 / 产测
+是否用于固件更新 / 日志 / 产测
 ```
 
 ### 20.2 Phase 1：Adapter 骨架
@@ -1497,8 +1497,8 @@ public:
 | 后续已采纳 capability 查询方法 | 旧能力表转换 intake |
 | `display.getBrightness` | 旧亮度查询 intake，待 display 草案采纳 |
 | `display.setBrightness` | 旧亮度设置 intake，待 display 草案采纳 |
-| `firmware.beginOta` | 旧 OTA 控制面 intake，待 firmware.ota 草案采纳 |
-| `firmware.verifyOtaFiles` | 旧 OTA 校验 intake，待 firmware.ota 草案采纳 |
+| `firmware.beginUpdate` | 旧固件更新控制面 intake，待 firmware.update 草案采纳 |
+| `firmware.verifyUpdatePackage` | 旧固件更新校验入口，待 firmware.update 草案采纳 |
 | `IDENTIFY.eventMasks` | 验证初始事件订阅 |
 | `REIDENTIFY.eventMasks` | 验证事件订阅更新 |
 
@@ -1506,7 +1506,7 @@ public:
 
 | profileName | 说明 |
 | --- |---|
-| `firmware.ota` | 固件 chunk |
+| `firmware.update` | 固件 chunk |
 | `log.realtime` | 可选，调试阶段建议支持 |
 | `control.hid_raw` | 可选，仅当已采纳 profile 包含 HID Raw / KVM |
 
@@ -1542,7 +1542,7 @@ axtp_device_get_info_response.hex
 legacy_display_brightness_set_request.hex
 axtp_display_brightness_set_request.hex
 legacy_status_to_axtp_error.json
-legacy_ota_chunk_to_axtp_stream.hex
+legacy_upd_chunk_to_axtp_stream.hex
 legacy_event_to_axtp_event.hex
 ```
 
@@ -1586,7 +1586,7 @@ AXTP 请求 -> 旧请求
 | `02-AXTP-Frame-and-Payload-Spec.md` | 定义 Frame / PayloadType / Profile |
 | `04-AXTP-Control-Session-Spec.md` | 定义 OPEN / ACK / NACK / RESUME |
 | `05-AXTP-RPC-Session-Spec.md` | 定义 RPC request/response/event 映射 |
-| `06-AXTP-Stream-Spec.md` | 定义 OTA / File / Log / Media 数据面 |
+| `06-AXTP-Stream-Spec.md` | 定义 firmware.update / file.transfer / log / media 数据面 |
 | `15-AXTP-Type-System.md` | 定义基础类型 |
 | `16-AXTP-TLV-Schema-Encoding.md` | 定义 TLV body 映射 |
 | `17-AXTP-Schema-Field-Numbering.md` | 定义 schema-local fieldId 规则 |
@@ -1609,7 +1609,7 @@ AXTP 请求 -> 旧请求
 | 旧状态码 | 写入 legacy error mapping，稳定后映射到 `errors[].code` |
 | 旧事件名 / 旧推送格式 | 写入 legacy event mapping，稳定后映射到 `events[]` |
 | 旧能力表 / Feature bitmap | 写入 legacy capability mapping；完整 Capability Model 仍属于 v2/P1 |
-| 旧 OTA / RawStream 字节流 | 映射到 RPC 建流 + STREAM profile，不得新增 PayloadType |
+| 旧固件更新 / RawStream 字节流 | 映射到 RPC 建流 + STREAM profile，不得新增 PayloadType |
 
 ---
 
@@ -1623,7 +1623,7 @@ AXTP 老协议迁移的核心不是把旧协议逐字节搬进新协议，而是
 旧 Status          -> AXTP ErrorCode
 旧 Event           -> AXTP EventId
 旧 Capability      -> AXTP Capability Registry
-旧 Firmware Chunk  -> AXTP STREAM + profile=firmware.ota
+旧 Firmware Chunk  -> AXTP STREAM + profile=firmware.update
 旧 RawStream       -> AXTP STREAM + profile=media.video / sensor.sample / control.hid_raw
 旧 LogStream       -> AXTP STREAM + profile=log.realtime
 ```

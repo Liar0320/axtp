@@ -64,7 +64,7 @@ Transport  USB HID / TCP / WebSocket / future low-bandwidth paths
 | `AXTP-WS-JSON` | WebSocket JSON message | RPC JSON only |
 | `AXTP-WS-CLOUD-REVERSE` | WebSocket JSON message | RPC JSON only |
 
-业务类型不要进入 Frame Header 或顶层 PayloadType。比如 OTA、音视频、日志和文件块应通过 RPC 建立业务语义，再用 STREAM 承载连续数据。
+业务类型不要进入 Frame Header 或顶层 PayloadType。比如固件更新、音视频、日志和文件块应通过 RPC 建立业务语义，再用 STREAM 承载连续数据。
 
 ## Protocol Lifecycle
 

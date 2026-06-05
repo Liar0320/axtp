@@ -40,7 +40,7 @@ protocol/axtp.protocol.yaml
 docs/generated/protocol.md
 ```
 
-For stream, OTA, transport-sensitive, or low-bandwidth changes, also read specs 02-06 and 18.
+For stream, firmware.update, transport-sensitive, or low-bandwidth changes, also read specs 02-06 and 18.
 
 ## Workflow
 

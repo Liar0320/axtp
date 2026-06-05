@@ -41,7 +41,7 @@ docs/generated/protocol.md
 protocol/axtp.protocol.yaml
 ```
 
-For stream, OTA, transport-sensitive, or low-bandwidth features, also read specs 02-06 and 18. For legacy adoption, read cited legacy evidence under `docs/legacy-protocols/**`, `docs/migration/**`, or `registry/legacy/legacy_mapping.yaml` if it already exists.
+For stream, firmware.update, transport-sensitive, or low-bandwidth features, also read specs 02-06 and 18. For legacy adoption, read cited legacy evidence under `docs/legacy-protocols/**`, `docs/migration/**`, or `registry/legacy/legacy_mapping.yaml` if it already exists.
 
 ## Workflow
 

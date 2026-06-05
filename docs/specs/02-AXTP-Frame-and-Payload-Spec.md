@@ -65,14 +65,14 @@ Standard Framed 模式中，Frame Header 的 `PayloadType` 固定为三类：
 |---:|---|---|
 | `0x01` | `CONTROL` | 协议运行时信令：OPEN、ACCEPT、HEARTBEAT、ACK、NACK、CLOSE |
 | `0x02` | `RPC` | 结构化业务控制面：Hello、Identify、Request、Response、Event |
-| `0x03` | `STREAM` | 连续数据面：视频帧、音频帧、OTA chunk、文件块 |
+| `0x03` | `STREAM` | 连续数据面：视频帧、音频帧、固件更新数据块、文件块 |
 
 PayloadType 只选择一级 parser，不表达具体业务类型：
 
 ```text
 正确：PayloadType = RPC,    methodId = 已采纳业务方法
 正确：PayloadType = STREAM, streamId = 已采纳建流方法返回的 streamId
-错误：PayloadType = VIDEO / OTA / FILE
+错误：PayloadType = VIDEO / FIRMWARE_UPDATE / FILE
 ```
 
 ---

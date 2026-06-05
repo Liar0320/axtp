@@ -95,7 +95,7 @@ AXTP v1 Core 只定义三类顶层 PayloadType：
 |---|---|
 | CONTROL | OPEN / ACCEPT、心跳、ACK/NACK、关闭、恢复等协议运行时信令 |
 | RPC | Hello / Identify / Request / Response / Event 等结构化业务控制面 |
-| STREAM | OTA、文件、日志、音视频、传感器等长生命周期数据面 |
+| STREAM | 固件更新、文件、日志、音视频、传感器等长生命周期数据面 |
 
 具体 wire format 见 02《AXTP Frame and Payload Spec》。
 

@@ -200,7 +200,7 @@ EVENT:
 | `0x0100-0x01FF` | `device.*` | 设备基础信息与生命周期 | 是 |
 | `0x0200-0x02FF` | `capability.*` | 能力查询与能力协商 | 是 |
 | `0x0300-0x03FF` | `system.*` | 系统控制：重启、时间、重置、功耗 | 是 |
-| `0x0400-0x04FF` | `firmware.*` | OTA / 固件升级控制面 | 是 |
+| `0x0400-0x04FF` | `firmware.*` | 固件更新 / 固件升级控制面 | 是 |
 | `0x0500-0x05FF` | `stream.*` | STREAM 控制面 | 是 |
 | `0x0600-0x06FF` | `display.*` | 显示控制：亮度、分辨率、旋转、布局、输入源 | 是 |
 | `0x0700-0x07FF` | `camera.*` | 摄像头：变焦、追踪、镜像、帧率、图像参数 | 可选 |
@@ -345,20 +345,20 @@ priority: P0
 
 #### 6.4 firmware.*
 
-固件升级候选方案采用 RPC 控制面 + STREAM OTA 数据面；正式方法必须等待 `firmware.ota` 草案采纳。
+固件升级候选方案采用 RPC 控制面 + STREAM 固件更新数据面；正式方法必须等待 `firmware.update` 草案采纳。
 
 | methodId | methodName | 状态 | MVP | 说明 |
 |---:|---|---|---:|---|
-| `0x0401` | `firmware.getOtaCapabilities` | draft | 否 | 获取 OTA 能力 |
-| `0x0402` | `firmware.beginOta` | draft | 否 | 开始 OTA |
-| `0x0403` | `firmware.commitOtaBatch` | draft | 否 | 提交 OTA 数据批次 |
-| `0x0404` | `firmware.verifyOtaFiles` | draft | 否 | 校验 OTA 文件 |
-| `0x0405` | `firmware.installOta` | draft | 否 | 安装 OTA |
-| `0x0406` | `firmware.cancelOta` | draft | 否 | 取消 OTA |
-| `0x0407` | `firmware.rollbackOta` | draft | 否 | 回滚 OTA |
-| `0x0408` | `firmware.getOtaState` | draft | 否 | 获取 OTA 状态 |
-| `0x0409` | `firmware.getOtaTransferState` | draft | 否 | 获取 OTA 传输状态 |
-| `0x040A` | `firmware.confirmOta` | draft | 否 | 确认 OTA 结果 |
+| `0x0401` | `firmware.getUpdateCapabilities` | draft | 否 | 获取固件更新能力 |
+| `0x0402` | `firmware.beginUpdate` | draft | 否 | 开始固件更新 |
+| `0x0403` | `firmware.commitUpdateBatch` | draft | 否 | 提交固件更新数据批次 |
+| `0x0404` | `firmware.verifyUpdatePackage` | draft | 否 | 校验固件更新包 |
+| `0x0405` | `firmware.installUpdate` | draft | 否 | 安装固件更新 |
+| `0x0406` | `firmware.cancelUpdate` | draft | 否 | 取消固件更新 |
+| `0x0407` | `firmware.rollbackUpdate` | draft | 否 | 回滚固件更新 |
+| `0x0408` | `firmware.getUpdateState` | draft | 否 | 获取固件更新状态 |
+| `0x0409` | `firmware.getUpdateTransferState` | draft | 否 | 获取固件更新传输状态 |
+| `0x040A` | `firmware.confirmUpdate` | draft | 否 | 确认固件更新结果 |
 
 #### 6.5 stream.*
 
@@ -628,7 +628,7 @@ priority: P0
 |---|---:|---|---|---|---|
 | AXDP_HID | `0xB0002` | BetaDeviceInfo | `device.getInfo` | 未采纳 | 待 device 草案采纳后才可登记 |
 | AXDP_HID | `0xC0021` | CommonSetVideoMode | `video.setFramingConfig` | 未采纳 | 待 video.framing 草案采纳后才可登记 |
-| AXDP_HID | `0xA0001` | AlphaUpgradeInfo | `firmware.getOtaCapabilities` | 未采纳 | 待 firmware.ota 草案采纳后才可登记 |
+| AXDP_HID | `0xA0001` | AlphaUpgradeInfo | `firmware.getUpdateCapabilities` | 未采纳 | 待 firmware.update 草案采纳后才可登记 |
 | AXDP_HID | `0xB0042` | BetaBrightnessSet | `display.setBrightness` | 未采纳 | 待 display 草案采纳后才可登记 |
 
 未批准或缺少具体 CmdValue 的旧协议命令不得写入本表；应先按 08 的 domain-feature 规则完成分类，再在 `registry/legacy/legacy_mapping.yaml` 中登记确定的映射。
