@@ -16,6 +16,11 @@
 | `[REVIEW-FIX]` | 文档语气 | 已移除 intake/任务说明式语气，改为规范正文。 | 无。 |
 | `[REVIEW-FIX]` | `stream.open` 边界 | 本文正式方法表不包含常规 `stream.open`。现有 registry 中的 `stream.open` 只能作为历史 HID media draft 处理，后续应 deprecated、改名为 vendor/debug 接口，或迁移到业务域方法。 | registry 同步时处理。 |
 | `[REVIEW-ASK]` | AXDP `CommonGetStreamMediaStatus` | 暂映射到 `video.getStreamState`；若旧字段只描述底层传输窗口/缓冲，则改映射到 `stream.getState`。 | 需要确认 legacy 返回字段。 |
+| `[REVIEW-DRAFT]` | NA20/NT10 `wireless_cast` source | 根据 `docs/flows/device-streaming-audio-video.md` 增补无线投屏接收源，NA20 可把 NT10 H.264 视频经 USB HID/AXTP STREAM 输出给 Host。 | 采纳前确认 source 命名和 NT10 断连状态。 |
+| `[REVIEW-OK]` | H.264 封装 | NA20 到 Host 的 H.264 使用 Annex-B，SPS/PPS 随关键帧发送。 | 采纳时固定 `codecConfig.format=annexb` 和 `parameterSetsInKeyFrame=true`。 |
+| `[REVIEW-DRAFT]` | A/V sync metadata | 音视频同步同时使用 NT10 源媒体时间戳和 NA20 接收时钟；`cursor/timestampUs` 默认绑定 NT10 源媒体时钟。 | 采纳前与 `audio.stream` 草案统一 `clockDomain`、`receiverClockDomain` 字段。 |
+| `[REVIEW-OK]` | 独立 cast session domain | 不治理独立 `cast` / `cast.streaming` domain；`castSessionId` 只作为 video/audio 透明关联字段。 | 采纳时不得新增 `cast` domain YAML。 |
+| `[REVIEW-OK]` | NT10 推流触发/控制 | 主流程中 NT10 接入 NA20 后自动开始无线推流；`video.startStreamSource` / `video.stopStreamSource` 只作为可选 source proxy control，NA20 与 NT10 之间的实现看设备。 | 采纳前确认 optional methods 是否进入 `video.stream` MVP 或 deferred。 |
 
 ## 1. 分层边界
 
@@ -52,6 +57,7 @@ AXTP 视频流分为三层：
 | 正常关闭视频业务流 | `video.closeStream` | 停止 encoder/pipeline，释放视频资源，关闭对应 Stream Context。 |
 | STREAM 数据面 | `PayloadType = STREAM` | 固定 16B header：`streamId:uint32`、`seqId:uint32`、`cursor:uint64`。 |
 | 视频 chunk 元数据 | video payload envelope | `frameId`、`frameOffset`、`keyFrame`、`frameStart`、`frameEnd` 放在 video payload 内，不放进公共 STREAM header。 |
+| 音视频同步元数据 | video stream context / event | `syncGroupId`、`castSessionId`、`clockDomain`、`timestampBaseUs` 属于建流控制面或状态事件，不进入 16B STREAM header。 |
 | 公共流控 | `stream` 域 | ACK、window、pause、resume、stats、abort 面向 runtime/SDK 或高级工具。 |
 | 异常释放 | `stream.abort` | 兜底释放接口，不作为业务正常关闭入口。 |
 
@@ -75,6 +81,9 @@ AXTP 视频流分为三层：
 | `video.requestKeyFrame` | MVP | 请求编码器输出关键帧，用于丢包/解码失败重同步。 | `video.stream` |
 | `video.getStreamConfig` | P1 | 查询已打开流或默认流配置。 | `video.stream` |
 | `video.setStreamConfig` | P1 | 修改已打开流的可变配置，例如码率、帧率。 | `video.stream` |
+| `video.startStreamSource` | Optional | 请求设备准备、重启或显式启动视频源；NA20/NT10 主流程中 NT10 接入 NA20 后会自动开始 `wireless_cast` 推流。 | `video.stream` |
+| `video.stopStreamSource` | Optional | 请求设备停止视频源，例如通过 NA20 触发 NT10 停止 `wireless_cast` 推流。 | `video.stream` |
+| `video.getStreamSourceState` | Optional | 查询视频源自身状态，不替代已打开 stream 的 `video.getStreamState`。 | `video.stream` |
 
 ### 2.2 Video 域事件
 
@@ -82,6 +91,7 @@ AXTP 视频流分为三层：
 |---|---|---|---|
 | `video.streamStateChanged` | MVP | 视频流生命周期或错误状态变化。 | 状态变化使用 `Changed`。 |
 | `video.streamStatsReported` | MVP | 周期性上报视频流统计。 | 周期统计使用 `Reported`，不使用 `Changed`。 |
+| `video.streamSourceStateChanged` | Optional | 视频源生命周期变化，例如 `wireless_cast` source 从 idle 进入 receiving。 | 只描述 source，不承载视频帧。 |
 
 ### 2.3 Stream 域公共接口
 
@@ -166,6 +176,11 @@ Profile 规则：
         "sourceId": "mixed",
         "type": "composition",
         "label": "Mixed Output"
+      },
+      {
+        "sourceId": "wireless_cast",
+        "type": "wireless_cast",
+        "label": "Wireless Cast Video"
       }
     ],
     "streams": ["main", "sub"],
@@ -200,6 +215,14 @@ Profile 规则：
     "supportsRuntimeConfig": true,
     "runtimeConfigFields": ["bitrateKbps", "frameRate", "gop"],
     "supportsStats": true,
+    "supportsSyncGroup": true,
+    "syncFields": ["syncGroupId", "castSessionId", "clockDomain", "timestampBaseUs", "receiverClockDomain"],
+    "timestampSources": ["nt10_media_clock", "na20_receive_clock"],
+    "supportsReceiverTimestamp": true,
+    "sourceControl": {
+      "supported": true,
+      "methods": ["video.startStreamSource", "video.stopStreamSource", "video.getStreamSourceState"]
+    },
     "flowControlManagedByRuntime": true
   }
 }
@@ -210,12 +233,16 @@ Profile 规则：
 | 字段 | 说明 |
 |---|---|
 | `sources` | 可作为 `video.openStream.params.source` 的视频源。 |
+| `sources[].type=wireless_cast` | 设备从无线投屏接收链路获得的视频源，例如 NA20 接收 NT10 推流后转给 Host。 |
 | `streams` | 同一 source 的码流档位，例如 `main` / `sub`。 |
 | `streamProfiles` | 正式 Stream Profile registry name。 |
 | `profileAliases` | legacy 或 intake 名称到正式 profile 的归一化映射。 |
 | `preferredChunkSize` | 推荐每个 STREAM payload 中 video data 的大小，不含 AXTP 16B STREAM header。 |
 | `maxChunkSize` | 单个 STREAM payload 中 video data 的最大值。 |
 | `flowControlManagedByRuntime` | 为 true 时，普通业务 App 不需要直接调用 stream 流控方法。 |
+| `supportsSyncGroup` / `syncFields` | 表示是否可把 video stream 与 audio stream 绑定到同一同步组。 |
+| `timestampSources` | 表示可用于同步和诊断的时钟来源；投屏场景为 NT10 源媒体时钟和 NA20 接收时钟。 |
+| `sourceControl` | 可选源控制能力；用于通过 NA20 请求 NT10 开始或停止 `wireless_cast` 推流，NA20 与 NT10 之间的实现不进入 AXTP wire。 |
 
 ## 5. video.openStream
 
@@ -281,7 +308,32 @@ Profile 规则：
 }
 ```
 
-### 5.4 返回
+### 5.4 NA20/NT10 投屏 H.264 请求
+
+下面示例来自 `docs/flows/device-streaming-audio-video.md`。`source=wireless_cast` 表示 NA20 已从 NT10 的无线投屏链路接收到视频，Host 请求 NA20 通过 AXTP STREAM 输出 H.264。
+
+```json
+{
+  "method": "video.openStream",
+  "params": {
+    "source": "wireless_cast",
+    "stream": "main",
+    "codec": "h264",
+    "width": 1920,
+    "height": 1080,
+    "frameRate": 30,
+    "bitrateKbps": 4096,
+    "gop": 30,
+    "chunkSizeHint": 65536,
+    "streamProfile": "media.video",
+    "syncGroupId": "cast_001"
+  }
+}
+```
+
+`syncGroupId` 可由 Host 指定，也可省略并由设备返回。`castSessionId` 仅作为 video/audio 透明关联字段，不引入独立 `cast` domain。
+
+### 5.5 返回
 
 ```json
 {
@@ -304,6 +356,12 @@ Profile 规则：
     "nextSeqId": 0,
     "nextFrameId": 0,
     "ackMode": "none",
+    "syncGroupId": "cast_001",
+    "castSessionId": "cast_session_001",
+    "clockDomain": "nt10_media_clock",
+    "timestampBaseUs": 0,
+    "receiverClockDomain": "na20_receive_clock",
+    "firstReceiveTimestampUs": 0,
     "codecConfig": {
       "format": "annexb",
       "parameterSetsInKeyFrame": true
@@ -312,7 +370,7 @@ Profile 规则：
 }
 ```
 
-### 5.5 字段规则
+### 5.6 字段规则
 
 | 字段 | 必选 | 说明 |
 |---|---:|---|
@@ -328,6 +386,12 @@ Profile 规则：
 | `strideBytes` | Raw 推荐 | 单行步长。未传时由设备按 pixelFormat 推导。 |
 | `chunkSizeHint` | 否 | 调用方期望 video data chunk 大小。设备可按 transport MTU 降级。 |
 | `streamProfile` | 否 | 默认 `media.video`。若传 `realtime_video`，实现应归一化为 `media.video`。 |
+| `syncGroupId` | 否 | 与 audio stream 绑定的同步组 ID；可由 Host 指定或设备返回。 |
+| `castSessionId` | 否 | 上层投屏会话 ID；仅作为透明关联字段，不治理独立 `cast` domain。 |
+| `clockDomain` | response 否 | `timestampUs/cursor` 所属时钟域，投屏场景默认 `nt10_media_clock`。 |
+| `timestampBaseUs` | response 否 | NT10 源媒体时钟的时间戳基准。 |
+| `receiverClockDomain` | response 否 | NA20 接收时钟域，投屏场景默认 `na20_receive_clock`。 |
+| `firstReceiveTimestampUs` | response 否 | NA20 收到首个视频 chunk 的接收时钟时间戳。 |
 
 `video.openStream` 成功后：
 
@@ -336,6 +400,8 @@ Profile 规则：
 - `nextSeqId` 初始值通常为 0。
 - `nextFrameId` 初始值通常为 0。
 - `cursorUnit` 对 `media.video` 为 `timestampUs`，`cursor=0` 表示尚未发送首帧。
+- 若返回 `syncGroupId`，同一投屏会话中的 `audio.stream` 应返回相同值。
+- `clockDomain` 必须与同组 audio stream 兼容；投屏场景中 `cursor/timestampUs` 使用 NT10 源媒体时钟，NA20 接收时钟用于 jitter/诊断。
 - 不得在普通 RPC response 中返回视频大数据。
 - 可先返回 `state=opening`，随后用 `video.streamStateChanged(state=streaming)` 表示 encoder 已开始推流。
 
@@ -546,9 +612,90 @@ Profile 规则：
 
 `video.setStreamConfig` 不用于配置 RTSP URL、NDI sourceName 或外部推流地址。这些配置归 `video.rtsp`、`video.ndi` 或后续 `video.pushStream` feature。
 
-## 10. STREAM 数据面
+## 10. Optional source proxy control
 
-### 10.1 AXTP STREAM header
+用途：`wireless_cast` 主流程中，NT10 接入 NA20 后自动开始无线推流；Host 不需要先调用 `video.startStreamSource` 才能让 NT10 推流。若设备仍希望暴露显式准备、重启或停止 source 的能力，可允许 Host 通过 NA20 发起可选 source proxy control。该控制只表达 Host 到 NA20 的 AXTP 控制面；NA20 与 NT10 之间如何通信、鉴权、重试和传输由设备实现决定，不进入 AXTP wire。
+
+这些方法不替代 `video.openStream` / `video.closeStream`：
+
+- `video.startStreamSource` 可选让 source 进入可接收/推流状态，或请求设备重新准备 source；不是 NA20/NT10 自动推流主流程的前置条件。
+- `video.openStream` 打开 NA20 到 Host 的 AXTP 视频 stream。
+- `video.closeStream` 关闭 NA20 到 Host 的 AXTP 视频 stream。
+- `video.stopStreamSource` 可选停止上游 source，例如请求 NT10 停止无线推流。
+
+候选请求：
+
+```json
+{
+  "method": "video.startStreamSource",
+  "params": {
+    "source": "wireless_cast",
+    "targetDeviceId": "nt10_001",
+    "mediaKinds": ["video", "audio"],
+    "timeoutMs": 5000
+  }
+}
+```
+
+候选返回：
+
+```json
+{
+  "result": {
+    "source": "wireless_cast",
+    "state": "starting",
+    "targetDeviceId": "nt10_001",
+    "proxyControl": true,
+    "implementation": "device_specific"
+  }
+}
+```
+
+状态查询候选：
+
+```json
+{
+  "method": "video.getStreamSourceState",
+  "params": {
+    "source": "wireless_cast"
+  }
+}
+```
+
+```json
+{
+  "result": {
+    "source": "wireless_cast",
+    "state": "receiving",
+    "targetDeviceId": "nt10_001",
+    "mediaKinds": ["video", "audio"],
+    "castSessionId": "cast_session_001",
+    "lastReceiveTimestampUs": 1710000000005000,
+    "receiverClockDomain": "na20_receive_clock"
+  }
+}
+```
+
+状态枚举候选：
+
+| state | 说明 |
+|---|---|
+| `idle` | source 未启动或未检测到上游推流。 |
+| `starting` | NA20 正在请求或等待上游开始推流。 |
+| `receiving` | NA20 正在接收上游无线投屏流。 |
+| `stopping` | NA20 正在请求或等待上游停止推流。 |
+| `stopped` | source 已停止。 |
+| `failed` | source 启动、接收或停止失败。 |
+
+Review：
+
+- `[REVIEW-DRAFT]` `targetDeviceId` 可引用 NT10，但其身份来源可来自配对流程、USB descriptor、`device.childDevice` 或设备内部绑定记录。
+- `[REVIEW-DRAFT]` `mediaKinds` 可包含 `audio`，因为 NT10 无线投屏通常是音视频一起启停；这不表示 audio 数据归 video 域承载。
+- `[REVIEW-DRAFT]` Source proxy control 已确认为可选能力；采纳时再决定进入 `video.stream` MVP 还是 P1/deferred。
+
+## 11. STREAM 数据面
+
+### 11.1 AXTP STREAM header
 
 视频数据通过 AXTP `PayloadType = STREAM` 承载，公共 STREAM header 固定 16B：
 
@@ -567,7 +714,7 @@ Profile 规则：
 
 公共 header 中不得新增 `payloadType`、`codec`、`timestamp`、`frameId`、`offset`、`keyFrame` 等业务字段。视频业务元数据必须放入 video payload envelope，或通过 `video.openStream` 返回的 Stream Context 绑定。
 
-### 10.2 VideoChunkHeaderV1
+### 11.2 VideoChunkHeaderV1
 
 每个 `media.video` STREAM data 以 `VideoChunkHeaderV1` 开头，然后承载一段编码后或 raw 的视频数据。
 
@@ -601,7 +748,7 @@ Profile 规则：
 | 4 | `discontinuity` | 前面存在丢帧、跳帧或 encoder discontinuity。 |
 | 5-15 | reserved | 发送端必须置 0，接收端必须忽略未知 bit。 |
 
-### 10.3 JSON 诊断表示
+### 11.3 JSON 诊断表示
 
 下面的 JSON 仅用于日志、测试向量和文档说明；二进制 STREAM wire 仍按 16B STREAM header + `VideoChunkHeaderV1` + data bytes 编码。
 
@@ -662,7 +809,7 @@ Profile 规则：
 }
 ```
 
-### 10.4 seqId / cursor / frameId / frameOffset
+### 11.4 seqId / cursor / frameId / frameOffset
 
 | 字段 | 层级 | 规则 | 不能用于 |
 |---|---|---|---|
@@ -678,15 +825,16 @@ Profile 规则：
 - `frameOffset` 不连续表示同一帧内部缺少 chunk。
 - 对实时视频，不要求补齐历史缺失 chunk，优先请求关键帧。
 
-## 11. 编码格式规则
+## 12. 编码格式规则
 
-### 11.1 H.264 / H.265
+### 12.1 H.264 / H.265
 
 - `data bytes` 承载编码后的 NAL 或 access unit 数据。
 - 推荐一帧对应一个 access unit；一帧过大时拆成多个 chunk。
 - `keyFrame=true` 表示 IDR 或 intra frame。
-- H.264 可使用 `annexb` 或 `avcc`；H.265 可使用 `annexb` 或 `hvcC`。
-- SPS/PPS/VPS 必须在关键帧前或关键帧中可获得；推荐 `parameterSetsInKeyFrame=true`。
+- H.264 可使用 `annexb` 或 `avcc`，但 `source=wireless_cast` 的 NA20/NT10 投屏路径固定使用 `annexb`。
+- `source=wireless_cast` 时 SPS/PPS 必须随关键帧发送，即 `parameterSetsInKeyFrame=true`。
+- 其他 source 若支持 `avcc`，必须通过 capabilities 或 `codecConfig` 明确声明。
 - 若发生丢包或解码失败，client 应调用 `video.requestKeyFrame`。
 
 `video.openStream` 返回示例：
@@ -700,7 +848,7 @@ Profile 规则：
 }
 ```
 
-### 11.2 MJPEG
+### 12.2 MJPEG
 
 - 每帧是一个 JPEG 图片。
 - 每帧通常 `keyFrame=true`。
@@ -708,16 +856,16 @@ Profile 规则：
 - `frameStart=true` 的 chunk 应从 JPEG SOI 或完整 JPEG 片段起点开始。
 - `frameEnd=true` 的 chunk 应包含 JPEG EOI 或让接收端能确认帧结束。
 
-### 11.3 Raw Video
+### 12.3 Raw Video
 
 - Raw video 必须声明 `pixelFormat`、`width`、`height`。
 - 推荐声明 `strideBytes`；未声明时接收端按 `pixelFormat` 和 width 推导。
 - Raw 数据量大，设备可以限制分辨率、帧率和并发数。
 - Raw 帧可以拆成多个 chunk，`frameOffset` 表示当前 chunk 在 raw frame 内的字节偏移。
 
-## 12. 事件
+## 13. 事件
 
-### 12.1 video.streamStateChanged
+### 13.1 video.streamStateChanged
 
 进入 streaming：
 
@@ -771,7 +919,7 @@ Profile 规则：
 }
 ```
 
-### 12.2 video.streamStatsReported
+### 13.2 video.streamStatsReported
 
 ```json
 {
@@ -794,9 +942,123 @@ Profile 规则：
 }
 ```
 
-## 13. 调用流程
+### 13.3 NA20/NT10 投屏 JSON 示例
 
-### 13.1 正常视频流
+本节示例用于评审 `docs/flows/device-streaming-audio-video.md` 中的 NA20/NT10 投屏路径。示例只写 RPC `d` 数据块，不包裹外层 `sid` / `op` / `d` wire envelope。
+
+#### `video.openStream` request
+
+```json
+{
+  "id": 10,
+  "method": "video.openStream",
+  "params": {
+    "source": "wireless_cast",
+    "stream": "main",
+    "codec": "h264",
+    "width": 1920,
+    "height": 1080,
+    "frameRate": 30,
+    "bitrateKbps": 4096,
+    "gop": 30,
+    "chunkSizeHint": 65536,
+    "streamProfile": "media.video",
+    "syncGroupId": "cast_001"
+  }
+}
+```
+
+#### `video.openStream` response
+
+```json
+{
+  "id": 10,
+  "status": {
+    "ok": true,
+    "code": 0
+  },
+  "result": {
+    "streamId": 101,
+    "streamProfile": "media.video",
+    "profilePreset": "realtime_video",
+    "state": "opening",
+    "source": "wireless_cast",
+    "stream": "main",
+    "codec": "h264",
+    "width": 1920,
+    "height": 1080,
+    "frameRate": 30,
+    "bitrateKbps": 4096,
+    "gop": 30,
+    "chunkSize": 65536,
+    "cursorUnit": "timestampUs",
+    "cursor": 0,
+    "nextSeqId": 0,
+    "nextFrameId": 0,
+    "ackMode": "none",
+    "syncGroupId": "cast_001",
+    "castSessionId": "cast_session_001",
+    "clockDomain": "nt10_media_clock",
+    "receiverClockDomain": "na20_receive_clock",
+    "timestampBaseUs": 0,
+    "firstReceiveTimestampUs": 0,
+    "codecConfig": {
+      "format": "annexb",
+      "parameterSetsInKeyFrame": true
+    }
+  }
+}
+```
+
+#### `video.streamStateChanged` event
+
+```json
+{
+  "event": "video.streamStateChanged",
+  "intent": 1,
+  "data": {
+    "streamId": 101,
+    "state": "streaming",
+    "source": "wireless_cast",
+    "stream": "main",
+    "codec": "h264",
+    "width": 1920,
+    "height": 1080,
+    "frameRate": 30,
+    "cursorUnit": "timestampUs",
+    "cursor": 1710000000000000,
+    "syncGroupId": "cast_001",
+    "castSessionId": "cast_session_001",
+    "clockDomain": "nt10_media_clock",
+    "receiverClockDomain": "na20_receive_clock",
+    "timestampMs": 1710000000000
+  }
+}
+```
+
+#### source unavailable failure
+
+`0x0802 MEDIA_SOURCE_UNAVAILABLE` 是现有 adopted 错误码，十进制为 `2050`。可用于 NT10 尚未接入 NA20、自动推流尚未到达、NA20 尚未收到无线投屏源的场景。
+
+```json
+{
+  "id": 11,
+  "status": {
+    "ok": false,
+    "code": 2050,
+    "msg": "Wireless cast video source is not available.",
+    "details": {
+      "field": "source",
+      "value": "wireless_cast",
+      "candidateError": "MEDIA_SOURCE_UNAVAILABLE"
+    }
+  }
+}
+```
+
+## 14. 调用流程
+
+### 14.1 正常视频流
 
 ```mermaid
 sequenceDiagram
@@ -826,7 +1088,7 @@ sequenceDiagram
     V-->>C: video.streamStateChanged(closed)
 ```
 
-### 13.2 丢包重同步
+### 14.2 丢包重同步
 
 ```mermaid
 sequenceDiagram
@@ -841,7 +1103,7 @@ sequenceDiagram
     S-->>C: STREAM(keyFrame=true)
 ```
 
-### 13.3 异常释放
+### 14.3 异常释放
 
 ```mermaid
 sequenceDiagram
@@ -855,7 +1117,7 @@ sequenceDiagram
     V-->>C: video.streamStateChanged(aborted or failed)
 ```
 
-## 14. 多路视频流
+## 15. 多路视频流
 
 - 每次 `video.openStream` 返回一个新的 `streamId`。
 - 不同 `streamId` 的 `seqId`、`cursor`、`frameId` 和 `frameOffset` 独立计数。
@@ -870,7 +1132,7 @@ streamId=101 source=main_camera stream=main codec=h264  width=1920 height=1080 f
 streamId=102 source=main_camera stream=sub  codec=mjpeg width=1280 height=720  frameRate=15
 ```
 
-## 15. 与 RTSP / NDI / 外部推流的关系
+## 16. 与 RTSP / NDI / 外部推流的关系
 
 | 能力 | 方法示例 | 数据去向 | 与 `video.openStream` 的关系 |
 |---|---|---|---|
@@ -881,7 +1143,7 @@ streamId=102 source=main_camera stream=sub  codec=mjpeg width=1280 height=720  f
 
 `video.openStream` 不携带 RTSP URL、NDI sourceName 或外部直播地址。旧协议中的 `LiveAddress`、`RTSPStreamURL` 等字段需要根据实际行为归到 `video.rtsp`、`video.ndi` 或后续推流 feature，不能默认归入 AXTP 内部视频流。
 
-## 16. 错误处理
+## 17. 错误处理
 
 建议使用现有 registry 错误码，避免新增同义错误：
 
@@ -923,9 +1185,9 @@ streamId=102 source=main_camera stream=sub  codec=mjpeg width=1280 height=720  f
 }
 ```
 
-## 17. Registry 草案
+## 18. Registry 草案
 
-### 17.1 Capability
+### 18.1 Capability
 
 | 建议 ID | Capability | Domain | Type | Schema | 说明 |
 |---|---|---|---|---|---|
@@ -934,7 +1196,7 @@ streamId=102 source=main_camera stream=sub  codec=mjpeg width=1280 height=720  f
 
 `stream.hidMedia` 是当前 registry 中的历史 draft capability。采纳本文后，应将 HID media 视频能力迁到 `video.stream`，音频能力迁到 `audio.stream` 或 `audio.record`，`stream.hidMedia` 标记为 deprecated 或 adapter-only。
 
-### 17.2 Video method registry
+### 18.2 Video method registry
 
 建议 ID 需要在写入 YAML 前做全局冲突检查。
 
@@ -947,15 +1209,19 @@ streamId=102 source=main_camera stream=sub  codec=mjpeg width=1280 height=720  f
 | `0x0705` | `video.requestKeyFrame` | `VideoRequestKeyFrameRequest` | `VideoRequestKeyFrameResponse` | `video.stream` | `SUCCESS`, `STREAM_NOT_FOUND`, `NOT_SUPPORTED`, `MEDIA_CODEC_UNSUPPORTED` |
 | `0x0706` | `video.getStreamConfig` | `VideoGetStreamConfigRequest` | `VideoGetStreamConfigResponse` | `video.stream` | `SUCCESS`, `STREAM_NOT_FOUND` |
 | `0x0707` | `video.setStreamConfig` | `VideoSetStreamConfigRequest` | `VideoSetStreamConfigResponse` | `video.stream` | `SUCCESS`, `STREAM_NOT_FOUND`, `RPC_PARAM_INVALID`, `RPC_PARAM_OUT_OF_RANGE`, `INVALID_STATE` |
+| `TBD after adoption` | `video.startStreamSource` | `VideoStartStreamSourceRequest` | `VideoStreamSourceActionResponse` | `video.stream` | `SUCCESS`, `MEDIA_SOURCE_NOT_FOUND`, `MEDIA_SOURCE_UNAVAILABLE`, `BUSY`, `RPC_EXECUTION_FAILED` |
+| `TBD after adoption` | `video.stopStreamSource` | `VideoStopStreamSourceRequest` | `VideoStreamSourceActionResponse` | `video.stream` | `SUCCESS`, `MEDIA_SOURCE_NOT_FOUND`, `INVALID_STATE`, `RPC_EXECUTION_FAILED` |
+| `TBD after adoption` | `video.getStreamSourceState` | `VideoGetStreamSourceStateRequest` | `VideoStreamSourceState` | `video.stream` | `SUCCESS`, `MEDIA_SOURCE_NOT_FOUND` |
 
-### 17.3 Video event registry
+### 18.3 Video event registry
 
 | 建议 ID | Event | Event Schema | Capability | Severity |
 |---|---|---|---|---|
 | `0x0701` | `video.streamStateChanged` | `VideoStreamStateChangedEvent` | `video.stream` | `info` / `error` |
 | `0x0702` | `video.streamStatsReported` | `VideoStreamStatsReportedEvent` | `video.stream` | `info` |
+| `TBD after adoption` | `video.streamSourceStateChanged` | `VideoStreamSourceStateChangedEvent` | `video.stream` | `info` / `warning` |
 
-### 17.4 Stream profile registry
+### 18.4 Stream profile registry
 
 | 建议 ID | Name | Domain | Status | Description |
 |---|---|---|---|---|
@@ -963,9 +1229,9 @@ streamId=102 source=main_camera stream=sub  codec=mjpeg width=1280 height=720  f
 
 若保留 `media` domain，description 应从 “bound by RPC stream.open” 改为 “bound by business-domain methods such as `video.openStream`”。若迁到 `video` domain，需同步生成器和历史映射。
 
-## 18. Schema 草案字段
+## 19. Schema 草案字段
 
-### 18.1 VideoOpenStreamRequest
+### 19.1 VideoOpenStreamRequest
 
 | Field ID | 字段 | 类型 | 必选 | 说明 |
 |---:|---|---|---:|---|
@@ -982,8 +1248,10 @@ streamId=102 source=main_camera stream=sub  codec=mjpeg width=1280 height=720  f
 | `0x0B` | `strideBytes` | uint32 | 否 | Raw 每行步长。 |
 | `0x0C` | `chunkSizeHint` | uint32 | 否 | 推荐 chunk 大小。 |
 | `0x0D` | `streamProfile` | string | 否 | 默认 `media.video`。 |
+| `TBD after adoption` | `syncGroupId` | string | 否 | 与 audio stream 共享的同步组 ID。 |
+| `TBD after adoption` | `castSessionId` | string | 否 | 上层投屏会话 ID；仅作为 video/audio 透明关联字段，不治理独立 `cast` domain。 |
 
-### 18.2 VideoOpenStreamResponse
+### 19.2 VideoOpenStreamResponse
 
 | Field ID | 字段 | 类型 | 必选 | 说明 |
 |---:|---|---|---:|---|
@@ -998,10 +1266,17 @@ streamId=102 source=main_camera stream=sub  codec=mjpeg width=1280 height=720  f
 | `0x09` | `nextFrameId` | uint32 | 是 | 初始 frameId。 |
 | `0x0A` | `ackMode` | enum | 是 | 默认 `none`。 |
 | `0x0B` | `codecConfig` | object | 否 | 编码器格式和参数集策略。 |
+| `TBD after adoption` | `syncGroupId` | string | 否 | 与 audio stream 共享的同步组 ID。 |
+| `TBD after adoption` | `castSessionId` | string | 否 | 上层投屏会话 ID。 |
+| `TBD after adoption` | `clockDomain` | string | 否 | `cursor/timestampUs` 所属时钟域，投屏场景默认 `nt10_media_clock`。 |
+| `TBD after adoption` | `timestampBaseUs` | uint64 | 否 | NT10 源媒体时钟的时间戳基准。 |
+| `TBD after adoption` | `receiverClockDomain` | string | 否 | NA20 接收时钟域，投屏场景默认 `na20_receive_clock`。 |
+| `TBD after adoption` | `firstReceiveTimestampUs` | uint64 | 否 | NA20 收到首个视频 chunk 的接收时钟时间戳。 |
+| `TBD after adoption` | `firstPtsUs` | uint64 | 否 | 首个视频帧 PTS；如无法在 open response 时确定，可在 state event 中返回。 |
 
 其他 request/response/event schema 可按正文 JSON 字段进入 YAML；field ID 必须按 `docs/specs/17-AXTP-Schema-Field-Numbering.md` 做唯一性检查。
 
-## 19. Legacy 映射建议
+## 20. Legacy 映射建议
 
 | Legacy | 当前分类 | 建议映射 | Review 状态 |
 |---|---|---|---|
@@ -1016,8 +1291,9 @@ streamId=102 source=main_camera stream=sub  codec=mjpeg width=1280 height=720  f
 | VM33 `PushStream.Stop` | `video.stream` | 同上，内部流映射 `video.closeStream`。 | 需确认目的地。 |
 | VM33 `Config.Set/Get:LiveAddress` | `video.stream` | 多数情况下不是 AXTP 内部视频流，应优先评估 `video.rtsp` 或 `video.pushStream`。 | `[REVIEW-ASK]` |
 | VM33 `Config.Set/Get:MjpegMode` | `video.stream` | 若控制 AXTP MJPEG stream，映射 `video.set/getStreamConfig`；若控制 RTSP/HTTP MJPEG 服务，迁到对应服务 feature。 | `[REVIEW-ASK]` |
+| NA20/NT10 wireless cast | 待确认 | NA20 到 Host 的 H.264 USB HID media bridge 映射到 `video.openStream(source=wireless_cast)`。NT10 到 NA20 的无线协议不作为 AXTP wire 定义。 | `[REVIEW-DRAFT]` |
 
-## 20. 采纳检查清单
+## 21. 采纳检查清单
 
 - `video.openStream` 是视频流常规创建入口。
 - `video.closeStream` 是视频流常规关闭入口。
@@ -1032,5 +1308,7 @@ streamId=102 source=main_camera stream=sub  codec=mjpeg width=1280 height=720  f
 - 丢包重同步使用 `video.requestKeyFrame`。
 - 普通业务 App 不需要显式调用 `stream.ack`、`stream.windowUpdate`、`stream.pause` 或 `stream.resume`。
 - 多路视频流的 `streamId`、`seqId`、`cursor`、`frameId` 独立计数。
+- 与音频同步时，video/audio open response 和 state event 必须共享可比较的 `syncGroupId` 和 `clockDomain`。
+- `wireless_cast` source 的 H.264 Annex-B、SPS/PPS 随关键帧策略已确认；NT10 断连后的 stream 生命周期仍需确认。
 - RTSP、NDI 和外部推流配置不混入 `video.openStream`。
 - 采纳前同步 method/event/capability/schema/profile registry，并处理现有 `stream.open` / `stream.hidMedia` 历史 draft。
