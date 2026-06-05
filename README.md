@@ -40,7 +40,6 @@ AXTP 的核心约定是：业务方案先进入草案，评审采纳后写入 YA
 | `runtimes/cpp/core/` | C++ protocol core/runtime，`include/generated/` 除外 | 部分 |
 | `runtimes/cpp/sdk/` | C++ 应用层 SDK | 部分 |
 | `runtimes/cpp/tools/axtpctl/` | AXTP CLI 调试工具 | 是 |
-| `runtimes/ts/` | TypeScript/Web runtime SDK | 部分 |
 
 `docs/protocol/` 和根目录 `protocol/` 名字相近，但角色不同：前者是草案目录，后者当前只包含生成后的 `protocol/axtp.protocol.yaml`。
 
@@ -139,7 +138,6 @@ git diff --check
 - `docs/generated/**`
 - `tooling/mcp/*.generated.json`
 - `tooling/test-vectors/**`
-- `runtimes/*/generated/**`
 - `runtimes/cpp/core/include/generated/**`
 - `generators/src/__snapshots__/**`
 

@@ -2,7 +2,7 @@
 
 ## Boundary
 
-The compatibility layer sits outside AXTP Core. It accepts legacy AXDP HID, VM33 HTTP JSON and signage SDK messages, translates them into AXTP RPC/Event/STREAM operations, and translates responses back to the legacy caller.
+The compatibility layer sits outside AXTP Core. It accepts the legacy protocols covered by the generated map (AXDP HID and signage SDK), translates them into AXTP RPC/Event/STREAM operations, and translates responses back to the legacy caller.
 
 The layer must not change the AXTP v1 Frame Header, STREAM header, CONTROL opcodes, RPC operation values or PayloadType registry.
 
@@ -19,7 +19,7 @@ The layer must not change the AXTP v1 Frame Header, STREAM header, CONTROL opcod
 - Map AXTP `SUCCESS` to the legacy success status for the source protocol.
 - Map `RPC_PARAM_INVALID`, `BUSY` and adapter validation failures to the source protocol status vocabulary.
 - For unmapped legacy status values, return `LEGACY_STATUS_UNMAPPED` internally and the nearest legacy failure code externally.
-- Preserve the original request correlation field: AXDP command value or VM33 `Seq`.
+- Preserve the original request correlation field, such as an AXDP command value or JSON `Seq`.
 
 ## Event Translation
 
@@ -29,7 +29,7 @@ The layer must not change the AXTP v1 Frame Header, STREAM header, CONTROL opcod
 
 ## Capability Projection
 
-- Legacy support matrices and VM33 Config Name rows project into candidate AXTP capabilities.
+- Legacy support matrices and configuration-name rows project into candidate AXTP capabilities.
 - `capability.supportedMethods` is generated from mapped methods exposed by the adapter for the current device model.
 - Conflicts between legacy feature bits and AXTP capability declarations produce `LEGACY_CAPABILITY_CONFLICT`.
 
@@ -51,7 +51,7 @@ The layer must not change the AXTP v1 Frame Header, STREAM header, CONTROL opcod
 
 ## Generated Coverage
 
-- Total mappings: 418
-- STREAM mappings: 11
-- Event mappings: 11
-- Capability mappings: 35
+- Total mappings: 266
+- STREAM mappings: 10
+- Event mappings: 4
+- Capability mappings: 0

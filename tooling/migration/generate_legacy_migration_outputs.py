@@ -89,6 +89,13 @@ BULK_KEYWORDS = [
 
 CORE_PAYLOAD_TYPES = ["CONTROL", "RPC", "STREAM"]
 
+LEGACY_PROTOCOL_LABELS = {
+    "axdp_hid": "AXDP HID",
+    "rooms_ws_json": "Rooms WebSocket JSON",
+    "signage_sdk": "signage SDK",
+    "vm33_http_json": "VM33 HTTP JSON",
+}
+
 
 @dataclass
 class Mapping:
@@ -242,24 +249,51 @@ def normalize_v2_method(domain: str, raw: str, fallback: str) -> str:
     return f"{domain}.{lower_camel(fallback)}"
 
 
+def infer_legacy_domain(*values: str) -> str:
+    hay = " ".join(v for v in values if v).lower()
+    rules = [
+        ("firmware", ["upgrade", "ota", "firmware", "升级"]),
+        ("audio", ["audio", "mic", "speaker", "volume", "uac", "dante", "音频", "麦克风", "扬声器", "音量"]),
+        ("video", ["video", "camera", "image", "osd", "pip", "ndi", "rtsp", "画面", "视频", "摄像", "图像"]),
+        ("network", ["network", "wifi", "ap", "bluetooth", "ip", "网络", "蓝牙"]),
+        ("storage", ["storage", "sd", "disk", "record", "存储", "录像", "录制"]),
+        ("log", ["log", "日志"]),
+        ("file", ["file", "upload", "download", "文件", "上传", "下载"]),
+        ("system", ["reboot", "reset", "time", "keepalive", "restart", "重启", "恢复", "时间"]),
+        ("device", ["device", "info", "name", "unique", "identity", "设备", "序列号"]),
+        ("input", ["hid", "key", "kvm", "gpio", "按键"]),
+        ("display", ["display", "brightness", "screen", "显示", "亮度"]),
+        ("diagnostic", ["test", "diagnostic", "manufacturing", "测试", "诊断", "产测"]),
+        ("auth", ["auth", "token", "permission", "license", "授权", "令牌"]),
+        ("room", ["room", "rooms", "会议室"]),
+    ]
+    for domain, keywords in rules:
+        if any(keyword in hay for keyword in keywords):
+            return domain
+    return "legacy"
+
+
 def read_axdp_methods() -> list[Mapping]:
-    path = LEGACY_DIR / "AXDP_MethodId_Registry_v2.xlsx"
-    df = pd.read_excel(path, sheet_name="MethodId Registry")
+    path = LEGACY_DIR / "AXDP设备能力协议集.xlsx"
+    if not path.exists():
+        return []
+    df = pd.read_excel(path, sheet_name="USB设备HID交互协议集", header=1)
     rows: list[Mapping] = []
     for _, row in df.iterrows():
-        legacy_id = clean(row.get("methodId"))
-        legacy_name = clean(row.get("v1Method"))
+        legacy_id = clean(row.get("宏参数（Cmd Value）"))
+        legacy_name = clean(row.get("Unnamed: 1"))
         if not legacy_id or not legacy_name:
             continue
-        domain = clean(row.get("Domain")) or "misc"
-        v2 = normalize_v2_method(domain, row.get("v2Method"), legacy_name)
-        payload = clean(row.get("PayloadType"))
-        desc = clean(row.get("Description")) or clean(row.get("Notes")) or f"Legacy {legacy_name} command."
-        status = clean(row.get("Status")) or "Compat"
+        interface = clean(row.get("接口（Interface）"))
+        payload = clean(row.get("参数（Parameter）")) or "legacy_binary"
+        desc = clean(row.get("说明（Explanation）")) or f"AXDP {legacy_name} command."
+        domain = infer_legacy_domain(legacy_name, desc, interface, payload)
+        raw_method = interface.splitlines()[0] if interface else legacy_name
+        v2 = normalize_v2_method(domain, raw_method, legacy_name)
         stream = should_stream(v2, payload, desc)
         rows.append(
             Mapping(
-                source="docs/legacy-protocols/AXDP_MethodId_Registry_v2.xlsx:MethodId Registry",
+                source="docs/legacy-protocols/AXDP设备能力协议集.xlsx:USB设备HID交互协议集",
                 legacy_protocol="axdp_hid",
                 legacy_id=legacy_id,
                 legacy_name=legacy_name,
@@ -270,10 +304,10 @@ def read_axdp_methods() -> list[Mapping]:
                 target_kind="stream" if stream else "rpc_method",
                 axtp_method=None if stream and "chunk" in v2.lower() else v2,
                 axtp_stream_profile=stream_profile_for(f"{v2} {payload} {desc}") if stream else rpc_stream_hint(v2, payload, desc),
-                status="deprecated" if "Deprecated" in status else "compat",
+                status="compat",
                 confidence="high" if v2 in EXISTING_METHODS or "." in v2 else "medium",
-                promotion="adapter_only" if "Deprecated" in status else "candidate_registry_patch",
-                notes=[f"Source status: {status}"],
+                promotion="candidate_registry_patch",
+                notes=["Source file: current AXDP capability protocol set"],
             )
         )
     return rows
@@ -281,6 +315,8 @@ def read_axdp_methods() -> list[Mapping]:
 
 def read_vm33_methods() -> tuple[list[Mapping], list[Mapping], list[Mapping], list[dict[str, Any]]]:
     path = LEGACY_DIR / "VM33_Protocol_V1_V2_Mapping.xlsx"
+    if not path.exists():
+        return [], [], [], []
     methods: list[Mapping] = []
     events: list[Mapping] = []
     caps: list[Mapping] = []
@@ -675,10 +711,10 @@ def build_registry_patch(rows: list[Mapping]) -> dict[str, Any]:
             "sources": [
                 "protocol/axtp.protocol.yaml",
                 "registry/**/*.yaml",
-                "docs/source/AXTP-Legacy-Compatibility-Reference.md",
-                "docs/source/AXTP-Legacy-Registry-Migration-Map.md",
                 "docs/legacy-protocols/*.xlsx",
                 "docs/legacy-protocols/*.md",
+                "docs/migration/*.md",
+                "docs/migration/AXTP_Legacy_Migration_Matrix.xlsx",
             ],
             "policy": {
                 "frame_header": "unchanged",
@@ -796,52 +832,61 @@ def dump_yaml(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, indent=2) + "\n"
 
 
+def covered_legacy_protocols(rows: list[Mapping]) -> list[str]:
+    return sorted({row.legacy_protocol for row in rows})
+
+
+def describe_legacy_protocols(rows: list[Mapping]) -> str:
+    labels = [LEGACY_PROTOCOL_LABELS.get(protocol, protocol) for protocol in covered_legacy_protocols(rows)]
+    if not labels:
+        return "no legacy protocol"
+    if len(labels) == 1:
+        return labels[0]
+    return ", ".join(labels[:-1]) + " and " + labels[-1]
+
+
 def build_test_vectors(rows: list[Mapping]) -> dict[str, Any]:
-    return {
-        "metadata": {
-            "name": "AXTP legacy adapter migration test vectors",
-            "version": "generated",
-            "frame_header_policy": "unchanged",
-            "payload_types": CORE_PAYLOAD_TYPES,
+    vectors = [
+        {
+            "id": "axdp-beta-device-info-existing",
+            "source": "registry/legacy/legacy_mapping.yaml",
+            "legacy": {"protocol": "axdp_hid", "cmdValue": "0x000B0002", "name": "BetaDeviceInfo", "payloadHex": ""},
+            "expect": {"targetKind": "rpc_method", "method": "device.getInfo", "requestSchema": "DeviceGetInfoRequest", "responseSchema": "DeviceGetInfoResponse", "error": "SUCCESS"},
         },
-        "vectors": [
-            {
-                "id": "axdp-beta-device-info-existing",
-                "source": "registry/legacy/legacy_mapping.yaml",
-                "legacy": {"protocol": "axdp_hid", "cmdValue": "0x000B0002", "name": "BetaDeviceInfo", "payloadHex": ""},
-                "expect": {"targetKind": "rpc_method", "method": "device.getInfo", "requestSchema": "DeviceGetInfoRequest", "responseSchema": "DeviceGetInfoResponse", "error": "SUCCESS"},
-            },
-            {
-                "id": "axdp-beta-brightness-existing",
-                "source": "registry/legacy/legacy_mapping.yaml",
-                "legacy": {"protocol": "axdp_hid", "cmdValue": "0x000B0042", "name": "BetaBrightnessSet", "payloadHex": "32"},
-                "expect": {"targetKind": "rpc_method", "method": "display.setBrightness", "request": {"value": 50}, "error": "SUCCESS"},
-            },
-            {
-                "id": "legacy-unmapped-command",
-                "legacy": {"protocol": "axdp_hid", "cmdValue": "0xDEADBEEF", "payloadHex": ""},
-                "expect": {"reject": True, "error": "LEGACY_CMD_UNMAPPED"},
-            },
-            {
-                "id": "legacy-payload-too-short",
-                "legacy": {"protocol": "axdp_hid", "cmdValue": "0x000B0042", "payloadHex": ""},
-                "expect": {"reject": True, "error": "LEGACY_PAYLOAD_TOO_SHORT"},
-            },
-            {
-                "id": "legacy-status-busy",
-                "legacy": {"protocol": "axdp_hid", "cmdValue": "0x000B0042", "status": "0x02"},
-                "expect": {"mappedError": "BUSY", "retryable": True},
-            },
-            {
-                "id": "firmware-bulk-uses-stream",
-                "legacy": {"protocol": "axdp_hid", "cmdValue": "0xB0006", "name": "BetaUpgradeData", "payloadHex": "0011223344556677"},
-                "expect": {"targetKind": "stream", "streamProfile": "firmware.ota", "payloadType": "STREAM", "rpcBodyCarriesChunk": False},
-            },
-            {
-                "id": "log-upload-uses-stream",
-                "legacy": {"protocol": "signage_sdk", "command": "RequestLogUpload", "params": {"url": "https://oss.example/logs.tgz"}},
-                "expect": {"method": "log.requestUpload", "streamProfile": "log.file", "payloadType": "STREAM"},
-            },
+        {
+            "id": "axdp-beta-brightness-existing",
+            "source": "registry/legacy/legacy_mapping.yaml",
+            "legacy": {"protocol": "axdp_hid", "cmdValue": "0x000B0042", "name": "BetaBrightnessSet", "payloadHex": "32"},
+            "expect": {"targetKind": "rpc_method", "method": "display.setBrightness", "request": {"value": 50}, "error": "SUCCESS"},
+        },
+        {
+            "id": "legacy-unmapped-command",
+            "legacy": {"protocol": "axdp_hid", "cmdValue": "0xDEADBEEF", "payloadHex": ""},
+            "expect": {"reject": True, "error": "LEGACY_CMD_UNMAPPED"},
+        },
+        {
+            "id": "legacy-payload-too-short",
+            "legacy": {"protocol": "axdp_hid", "cmdValue": "0x000B0042", "payloadHex": ""},
+            "expect": {"reject": True, "error": "LEGACY_PAYLOAD_TOO_SHORT"},
+        },
+        {
+            "id": "legacy-status-busy",
+            "legacy": {"protocol": "axdp_hid", "cmdValue": "0x000B0042", "status": "0x02"},
+            "expect": {"mappedError": "BUSY", "retryable": True},
+        },
+        {
+            "id": "firmware-bulk-uses-stream",
+            "legacy": {"protocol": "axdp_hid", "cmdValue": "0xB0006", "name": "BetaUpgradeData", "payloadHex": "0011223344556677"},
+            "expect": {"targetKind": "stream", "streamProfile": "firmware.ota", "payloadType": "STREAM", "rpcBodyCarriesChunk": False},
+        },
+        {
+            "id": "log-upload-uses-stream",
+            "legacy": {"protocol": "signage_sdk", "command": "RequestLogUpload", "params": {"url": "https://oss.example/logs.tgz"}},
+            "expect": {"method": "log.requestUpload", "streamProfile": "log.file", "payloadType": "STREAM"},
+        },
+    ]
+    if "vm33_http_json" in covered_legacy_protocols(rows):
+        vectors += [
             {
                 "id": "vm33-json-request",
                 "legacy": {"protocol": "vm33_http_json", "body": {"Seq": 1, "Class": "Config", "Method": "Get", "Param": {"Name": "Wifi"}}},
@@ -852,7 +897,15 @@ def build_test_vectors(rows: list[Mapping]) -> dict[str, Any]:
                 "legacy": {"protocol": "vm33_http_json", "body": {"notify": {"Class": "Config", "Method": "Subscribe", "Param": {"Name": "Wifi"}}}},
                 "expect": {"targetKind": "event", "event": "config.changed"},
             },
-        ],
+        ]
+    return {
+        "metadata": {
+            "name": "AXTP legacy adapter migration test vectors",
+            "version": "generated",
+            "frame_header_policy": "unchanged",
+            "payload_types": CORE_PAYLOAD_TYPES,
+        },
+        "vectors": vectors,
         "coverage": {
             "total_generated_mappings": len(rows),
             "stream_mappings": sum(1 for row in rows if row.target_kind == "stream"),
@@ -872,10 +925,11 @@ def build_migration_plan(rows: list[Mapping], patch: dict[str, Any], issues: lis
         "",
         "## Summary",
         "",
-        "This generated plan migrates legacy AXDP, VM33 and signage SDK protocol material into an AXTP v1 compatible compatibility layer. It does not modify AXTP Core. Registry changes are emitted as candidate patches only.",
+        f"This generated plan migrates {describe_legacy_protocols(rows)} protocol material into an AXTP v1 compatible compatibility layer. It does not modify AXTP Core. Registry changes are emitted as candidate patches only.",
         "",
         "## Source Coverage",
         "",
+        f"- Source protocols: {', '.join(covered_legacy_protocols(rows)) or 'none'}",
         f"- Total legacy mappings: {len(rows)}",
         f"- RPC method mappings: {counts['rpc_method']}",
         f"- Event mappings: {counts['event']}",
@@ -914,10 +968,7 @@ def build_migration_plan(rows: list[Mapping], patch: dict[str, Any], issues: lis
         "## Promotion Decisions",
         "",
         "- Existing mappings such as `BetaDeviceInfo -> device.getInfo` and `BetaBrightnessSet -> display.setBrightness` remain authoritative.",
-        "- Deprecated AXDP commands are retained as adapter-only mappings unless they target an already registered AXTP method.",
-        "- VM33 JSON Class/Method aliases are promoted as draft candidate methods when they represent request/response control or query operations.",
-        "- VM33 notify/subscribe items are promoted as candidate events.",
-        "- VM33 Config Name rows become candidate capabilities because they describe device configuration features rather than one-off commands.",
+        "- AXDP commands are retained as adapter mappings unless they target an already registered AXTP method.",
         "- Firmware/file/log/media/raw streams are represented as STREAM profiles and must not place large chunks into RPC bodies.",
         "",
         "## Unresolved Source Issues",
@@ -944,7 +995,7 @@ def build_compatibility_layer(rows: list[Mapping]) -> str:
 
 ## Boundary
 
-The compatibility layer sits outside AXTP Core. It accepts legacy AXDP HID, VM33 HTTP JSON and signage SDK messages, translates them into AXTP RPC/Event/STREAM operations, and translates responses back to the legacy caller.
+The compatibility layer sits outside AXTP Core. It accepts the legacy protocols covered by the generated map ({describe_legacy_protocols(rows)}), translates them into AXTP RPC/Event/STREAM operations, and translates responses back to the legacy caller.
 
 The layer must not change the AXTP v1 Frame Header, STREAM header, CONTROL opcodes, RPC operation values or PayloadType registry.
 
@@ -961,7 +1012,7 @@ The layer must not change the AXTP v1 Frame Header, STREAM header, CONTROL opcod
 - Map AXTP `SUCCESS` to the legacy success status for the source protocol.
 - Map `RPC_PARAM_INVALID`, `BUSY` and adapter validation failures to the source protocol status vocabulary.
 - For unmapped legacy status values, return `LEGACY_STATUS_UNMAPPED` internally and the nearest legacy failure code externally.
-- Preserve the original request correlation field: AXDP command value or VM33 `Seq`.
+- Preserve the original request correlation field, such as an AXDP command value or JSON `Seq`.
 
 ## Event Translation
 
@@ -971,7 +1022,7 @@ The layer must not change the AXTP v1 Frame Header, STREAM header, CONTROL opcod
 
 ## Capability Projection
 
-- Legacy support matrices and VM33 Config Name rows project into candidate AXTP capabilities.
+- Legacy support matrices and configuration-name rows project into candidate AXTP capabilities.
 - `capability.supportedMethods` is generated from mapped methods exposed by the adapter for the current device model.
 - Conflicts between legacy feature bits and AXTP capability declarations produce `LEGACY_CAPABILITY_CONFLICT`.
 
@@ -1000,17 +1051,17 @@ The layer must not change the AXTP v1 Frame Header, STREAM header, CONTROL opcod
 """
 
 
-def build_cpp_plan() -> str:
+def build_cpp_plan(rows: list[Mapping]) -> str:
     return """# C++ Legacy Adapter Plan (Generated)
 
 ## Goal
 
-Provide a C++ legacy adapter skeleton that consumes `docs/migration/generated/legacy-to-axtp-map.generated.yaml` and exposes legacy AXDP, VM33 and signage SDK traffic as AXTP v1 RPC/Event/STREAM operations.
+Provide a C++ legacy adapter skeleton that consumes `docs/migration/generated/legacy-to-axtp-map.generated.yaml` and exposes LEGACY_PROTOCOLS traffic as AXTP v1 RPC/Event/STREAM operations.
 
 ## Components
 
-- `LegacyProtocolDetector`: inspects incoming bytes or JSON and returns `axdp_hid`, `vm33_http_json`, or `signage_sdk`.
-- `LegacyCommandDecoder`: parses command value, VM33 `Seq/Class/Method`, legacy status and raw payload bytes.
+- `LegacyProtocolDetector`: inspects incoming bytes or JSON and returns one of the generated `legacy_protocol` values.
+- `LegacyCommandDecoder`: parses protocol-specific command value, sequence/correlation fields, legacy status and raw payload bytes.
 - `LegacyToAxtpMapper`: resolves generated mapping entries and builds AXTP RPC requests, event emissions or stream-open instructions.
 - `AxtpToLegacyMapper`: translates AXTP responses/events back into legacy response envelopes.
 - `LegacyStatusMapper`: owns status mapping tables such as `0x00 -> SUCCESS`, `0x01 -> RPC_PARAM_INVALID`, `0x02 -> BUSY`.
@@ -1107,7 +1158,7 @@ class LegacyAdapter {
 - Assert existing Beta mappings target current generated AXTP method IDs.
 - Assert firmware/file/log/media bulk vectors use STREAM.
 - Assert unknown command and invalid payload vectors produce legacy adapter errors.
-"""
+""".replace("LEGACY_PROTOCOLS", describe_legacy_protocols(rows))
 
 
 def main() -> None:
@@ -1125,7 +1176,7 @@ def main() -> None:
     (OUTPUT_DIR / "registry-patches.generated.yaml").write_text(dump_yaml(patch), encoding="utf-8")
     (OUTPUT_DIR / "migration-plan.generated.md").write_text(build_migration_plan(rows, patch, issues), encoding="utf-8")
     (OUTPUT_DIR / "compatibility-layer.generated.md").write_text(build_compatibility_layer(rows), encoding="utf-8")
-    (OUTPUT_DIR / "cpp-legacy-adapter-plan.generated.md").write_text(build_cpp_plan(), encoding="utf-8")
+    (OUTPUT_DIR / "cpp-legacy-adapter-plan.generated.md").write_text(build_cpp_plan(rows), encoding="utf-8")
     (OUTPUT_DIR / "test-vectors.generated.json").write_text(
         json.dumps(build_test_vectors(rows), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",

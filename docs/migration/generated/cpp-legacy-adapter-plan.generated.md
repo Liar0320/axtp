@@ -2,12 +2,12 @@
 
 ## Goal
 
-Provide a C++ legacy adapter skeleton that consumes `migration/output/legacy-to-axtp-map.generated.yaml` and exposes legacy AXDP, VM33 and signage SDK traffic as AXTP v1 RPC/Event/STREAM operations.
+Provide a C++ legacy adapter skeleton that consumes `docs/migration/generated/legacy-to-axtp-map.generated.yaml` and exposes AXDP HID and signage SDK traffic as AXTP v1 RPC/Event/STREAM operations.
 
 ## Components
 
-- `LegacyProtocolDetector`: inspects incoming bytes or JSON and returns `axdp_hid`, `vm33_http_json`, or `signage_sdk`.
-- `LegacyCommandDecoder`: parses command value, VM33 `Seq/Class/Method`, legacy status and raw payload bytes.
+- `LegacyProtocolDetector`: inspects incoming bytes or JSON and returns one of the generated `legacy_protocol` values.
+- `LegacyCommandDecoder`: parses protocol-specific command value, sequence/correlation fields, legacy status and raw payload bytes.
 - `LegacyToAxtpMapper`: resolves generated mapping entries and builds AXTP RPC requests, event emissions or stream-open instructions.
 - `AxtpToLegacyMapper`: translates AXTP responses/events back into legacy response envelopes.
 - `LegacyStatusMapper`: owns status mapping tables such as `0x00 -> SUCCESS`, `0x01 -> RPC_PARAM_INVALID`, `0x02 -> BUSY`.

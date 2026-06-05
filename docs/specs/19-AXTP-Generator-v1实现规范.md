@@ -226,7 +226,7 @@ axtp/
 | `registry/error|capability|schema/` | 当前已采纳核心/MVP/共享事实源 | 是 |
 | `registry/method|event|legacy/` | Core/shared method/event 或 legacy mapping 按需创建；空集合不保留占位文件 | 是 |
 | `registry/domains/<domain>/domain.yaml` | 新增业务域事实源，包含 method/event/type/error/capability/profile | 是 |
-| `registry/vendor/` | P1 vendor extension 预留目录，当前不参与生成 | 否 |
+| Vendor extension source | P1 vendor extension 未来按需创建；当前不保留空占位目录，也不参与生成 | 否 |
 | `protocol/axtp.protocol.yaml` | Generator 生成的聚合 Protocol IR | 否 |
 | `docs/generated/` | Generator 生成的文档产物 | 否 |
 | `tooling/mcp/` | Generator 生成的 MCP JSON 产物 | 否 |
