@@ -30,6 +30,7 @@ AXTP 的价值不只是“定义一套新的 wire format”，而是把协议研
 | 兼容和演进可治理 | 字段删除、重命名、错误码复用容易破坏旧版本 | 通过 draft/experimental/stable/MVP 状态、amendment、deprecate/version 策略控制兼容性 |
 | 测试更早介入 | 传统协议到实现末期才发现字段和错误路径不可测 | 采纳时同步生成 test vectors 和 registry reference，测试可以基于协议事实提前设计用例 |
 | 自动化工具更容易接入 | MCP、CLI、SDK、mock server 需要人工维护协议表 | 工具读取 generated JSON 和 registry，能自动查询 method、schema、error、capability |
+| 对外 SDK 交付更快 | 外部客户或合作方需要 SDK 时，过去要临时补文档、补示例、补常量和测试说明 | 基于同一份 generated protocol、JSON、runtime headers、test vectors 和 SDK 接入模式打包交付，减少重复解释和临时适配成本 |
 
 因此，AXTP 不是把文档搬到 Markdown，而是建立“业务需求 -> 场景流程 -> 协议草案 -> 采纳事实源 -> 自动生成 -> runtime/SDK/测试消费”的一站式协议生产方式。
 
