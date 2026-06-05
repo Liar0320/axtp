@@ -2,7 +2,7 @@
 
 ## 概要
 
-`runtimes/cpp/sdk` 是面向应用的 C++ 层，构建在 `runtimes/cpp/core` 之上。它隐藏 Frame、Message、Payload 等底层细节，对外提供 client/server、endpoint、call、event、capability 和 typed method helper。
+`axtp-cpp-runtime/sdk` 是面向应用的 C++ 层，构建在 `axtp-cpp-runtime/core` 之上。它隐藏 Frame、Message、Payload 等底层细节，对外提供 client/server、endpoint、call、event、capability 和 typed method helper。
 
 SDK 直接复用 runtime 分层：
 
@@ -41,7 +41,7 @@ SDK P0 目标是跑通一条可构建、可测试的纵向链路：
 ## 包布局
 
 ```text
-runtimes/cpp/sdk/
+axtp-cpp-runtime/sdk/
   include/
     axtp_client.hpp
     axtp_server.hpp

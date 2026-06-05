@@ -204,11 +204,11 @@ Core 可以解析 frame、重组 message、解码 payload envelope、维护 sess
 
 ## 8. 格式化脚本
 
-使用：
+在 `axtp-cpp-runtime` 仓库中使用：
 
 ```bash
 scripts/format-cpp.sh
 scripts/check-format-cpp.sh
 ```
 
-脚本扫描 `runtimes/cpp/core`、`runtimes/cpp/sdk`、`runtimes/cpp/json-rpc`、`runtimes/cpp/transports` 和 `runtimes/cpp/tools`，排除 `build/`、`generated/` 和 `thirdparty/`。
+脚本扫描 `core`、`sdk`、`json-rpc`、`transports` 和 `tools`，排除 `build/`、`generated/` 和 `thirdparty/`。

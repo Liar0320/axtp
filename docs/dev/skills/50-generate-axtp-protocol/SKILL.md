@@ -1,6 +1,6 @@
 ---
 name: generate-axtp-protocol
-description: Stage 50 generation skill for accepted AXTP registry YAML facts. Use when specs and registry/domain YAML are already updated and the user asks to generate, regenerate, build, emit, refresh, validate, or publish AXTP protocol artifacts. Runs the Generator pipeline from YAML to Protocol IR, generated docs, tooling JSON, test vectors, and runtime generated headers.
+description: Stage 50 generation skill for accepted AXTP registry YAML facts. Use when specs and registry/domain YAML are already updated and the user asks to generate, regenerate, build, emit, refresh, validate, or publish AXTP protocol artifacts. Runs the Generator pipeline from YAML to Protocol IR, generated docs, tooling JSON, and test vectors.
 ---
 
 # Generate AXTP Protocol
@@ -88,7 +88,6 @@ docs/generated/protocol.json
 docs/generated/*_registry.generated.md
 tooling/mcp/*.generated.json
 tooling/test-vectors/*
-runtimes/cpp/core/include/generated/*
 generators/src/__snapshots__/*
 ```
 

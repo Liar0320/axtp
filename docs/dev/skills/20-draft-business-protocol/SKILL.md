@@ -10,7 +10,7 @@ Stage 20. Create or update an AXTP business protocol draft in `docs/protocol/<do
 ## Boundaries
 
 - Edit only `docs/protocol/**` unless the user explicitly asks for documentation around the draft.
-- Do not edit `registry/**`, `registry/domains/**`, `protocol/axtp.protocol.yaml`, `docs/generated/**`, `tooling/mcp/**`, `tooling/test-vectors/**`, or runtime generated files.
+- Do not edit `registry/**`, `registry/domains/**`, `protocol/axtp.protocol.yaml`, `docs/generated/**`, `tooling/mcp/**`, or `tooling/test-vectors/**`.
 - Do not assign final numeric IDs unless they already exist in YAML/specs; use `TBD after adoption` for new methodId/eventId/errorCode/fieldId values.
 - Do not introduce new PayloadType, Frame Header business fields, WebSocket STREAM support, or runtime Header Profile negotiation.
 - JSON examples must be embedded in the `docs/protocol/**` Markdown draft by default; do not create generated JSON artifacts unless the user explicitly asks.

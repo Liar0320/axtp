@@ -2,7 +2,7 @@
 
 ## 概要
 
-`runtimes/cpp/core` 是协议正确性优先的 C++ runtime 层。它负责 AXTP model 类型、byte IO 接口、FramedBinary 解析/编码、WebSocketJsonRpc 文本 JSON 解析/编码、核心协议状态、transport profile 和运行时 lookup helper。
+`axtp-cpp-runtime/core` 是协议正确性优先的 C++ runtime 层。它负责 AXTP model 类型、byte IO 接口、FramedBinary 解析/编码、WebSocketJsonRpc 文本 JSON 解析/编码、核心协议状态、transport profile 和运行时 lookup helper。
 
 Core 不暴露面向业务的 client API，不直接依赖平台 transport，不包含 HID/TCP/WebSocket concrete transport，也不承载 legacy AXDP adapter。
 
@@ -31,9 +31,9 @@ ITransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker
 | `axtp_broker` | `INTERFACE` | `BasicBroker<>`、`BrokerTask`、`BrokerResult`、dynamic method dispatch helper |
 | `axtp_runtime` | `INTERFACE` | core + broker + endpoint glue，供普通应用使用 |
 | `axtp_json_rpc` | `INTERFACE` | WebSocket session helper adapter 和 JSON registry-file loader |
-| `axtp_transport_hidapi` | `STATIC` optional | HID report-level transport，位于 `runtimes/cpp/transports`，依赖 vendored `runtimes/cpp/thirdparty/hidapi` |
-| `axtp_transport_tcp_boost` | `INTERFACE` optional | Boost.Asio TCP transport，位于 `runtimes/cpp/transports` |
-| `axtp_transport_websocket_boost` | `INTERFACE` optional | Boost.Beast WebSocket transport，位于 `runtimes/cpp/transports` |
+| `axtp_transport_hidapi` | `STATIC` optional | HID report-level transport，位于 `axtp-cpp-runtime/transports`，依赖 vendored `axtp-cpp-runtime/thirdparty/hidapi` |
+| `axtp_transport_tcp_boost` | `INTERFACE` optional | Boost.Asio TCP transport，位于 `axtp-cpp-runtime/transports` |
+| `axtp_transport_websocket_boost` | `INTERFACE` optional | Boost.Beast WebSocket transport，位于 `axtp-cpp-runtime/transports` |
 
 推荐 runtime 聚合 include：
 
@@ -173,7 +173,7 @@ Generated typed traits 和 schema codecs 只是可选便利头，不包含在 `<
 - `AxtpCore` 不直接解析业务 JSON；JSON-RPC wire 解析属于 adapter/decoder。
 - `AxtpCore` 不调用 `SchemaCodec`、`MethodTraits` 或业务 request/response struct。
 - `AxtpCore` 不知道 legacy command ID 或 AXDP framing。
-- TCP/WebSocket/HID 类是 `runtimes/cpp/transports` 下的可选 target，不属于 `axtp_core`。
+- TCP/WebSocket/HID 类是 `axtp-cpp-runtime/transports` 下的可选 target，不属于 `axtp_core`。
 
 ## 实现模式
 

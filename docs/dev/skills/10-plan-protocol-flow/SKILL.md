@@ -12,7 +12,7 @@ This skill sits before `draft-business-protocol`: it discovers which existing pr
 ## Boundaries
 
 - Edit `docs/flows/**` by default.
-- Do not edit `registry/**`, `registry/domains/**`, `protocol/axtp.protocol.yaml`, `docs/generated/**`, `tooling/mcp/**`, `tooling/test-vectors/**`, or runtime generated files.
+- Do not edit `registry/**`, `registry/domains/**`, `protocol/axtp.protocol.yaml`, `docs/generated/**`, `tooling/mcp/**`, or `tooling/test-vectors/**`.
 - Do not change `docs/protocol/**` unless the user explicitly asks to continue into the draft/update stage.
 - Do not invent adopted method names. Use generated/YAML facts when adopted, and mark unadopted candidates as gaps.
 - If an adopted protocol needs a semantic change, route to `amend-adopted-protocol`, not `draft-business-protocol`.

@@ -81,7 +81,7 @@ protocol/axtp.protocol.yaml
 
 ```text
 docs/generated/
-runtimes/*/generated/
+runtime 子仓库 generated 产物
 tooling/*/
 ```
 

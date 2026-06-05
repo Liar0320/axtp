@@ -15,7 +15,8 @@
 ## Build
 
 ```bash
-cmake -S runtimes/cpp/tools/axtpctl -B build/axtpctl
+cd /path/to/mostormlabs/axtp-cpp-runtime
+cmake -S tools/axtpctl -B build/axtpctl
 cmake --build build/axtpctl
 ```
 

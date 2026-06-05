@@ -1,6 +1,6 @@
 # AXTP How To Use
 
-本文用具体例子说明当前仓库怎么查协议、怎么生成产物、怎么用 CLI/SDK/runtime、怎么把业务需求变成可评审草案，再采纳为正式协议。
+本文用具体例子说明当前仓库怎么查协议、怎么生成产物、怎么找到 runtime 仓库，以及怎么把业务需求变成可评审草案，再采纳为正式协议。
 
 ## 1. 先理解权威模型
 
@@ -16,8 +16,8 @@ registry/**/*.yaml + registry/domains/**/*.yaml
 protocol/axtp.protocol.yaml
   Generator 输出的 Protocol IR，不手写
 
-docs/generated/* + tooling/* + runtime generated headers
-  Generator 输出的人读/工具/runtime 产物，不手写
+docs/generated/* + tooling/*
+  Generator 输出的人读协议、工具 JSON 和测试向量，不手写
 ```
 
 ### 1.1 YAML 从哪里来
@@ -49,7 +49,7 @@ docs/generated/* + tooling/* + runtime generated headers
 | 草案阶段 | `docs/dev/skills/20-draft-business-protocol/SKILL.md` | 大白话需求、旧协议线索、产品/架构想法 | `docs/protocol/<domain>/<domain.feature>.md` 草案 | 不写 registry，不生成正式协议 |
 | 采纳阶段 | `docs/dev/skills/30-adopt-protocol-draft/SKILL.md` | 已评审草案 MD | specs 08-13 对齐；涉及 profile/MVP 时同步 14；草案 formalized；写入 YAML | 不采纳未确认 `[REVIEW-*]`，不手写 generated |
 | 修订阶段 | `docs/dev/skills/40-amend-adopted-protocol/SKILL.md` | 已采纳或已生成协议的语义修正、字段删除、废弃、重命名或扩展 | amendment 记录、proposal/specs/YAML 修正、generated 重新生成 | 先判断 draft/experimental vs stable/MVP，不直接手写 generated |
-| 生成阶段 | `docs/dev/skills/50-generate-axtp-protocol/SKILL.md` | 已采纳 YAML 事实源 | Protocol IR、generated docs、tooling JSON、test vectors、runtime generated headers | 只从 YAML 生成，不从 Markdown 推断新事实 |
+| 生成阶段 | `docs/dev/skills/50-generate-axtp-protocol/SKILL.md` | 已采纳 YAML 事实源 | Protocol IR、generated docs、tooling JSON、test vectors | 只从 YAML 生成，不从 Markdown 推断新事实 |
 
 每个阶段的责任分工如下：
 
@@ -62,7 +62,7 @@ docs/generated/* + tooling/* + runtime generated headers
 | 草案评审 | 架构 / 业务负责人 | 固件、上位机、后台、SDK/工具、测试 | 组织评审，逐项处理 `[REVIEW-*]` | 各端确认字段、错误码、事件、stream、legacy 映射和兼容边界 | 可采纳内容均为 `[REVIEW-OK]` 或等价确认 |
 | 采纳阶段 | 协议维护者 / 架构 | 业务、固件、上位机、测试 | 使用 `adopt-protocol-draft` 对齐 specs 08-13/14，固定草案状态，写入 YAML，分配 ID / `bitOffset` / fieldId | 确认没有未解决 review blocker 被写入 YAML | `validate:sources` 通过，YAML 只含已确认事实 |
 | 修订阶段 | 协议维护者 / 架构 | 业务、固件、上位机、后台、测试 | 使用 `amend-adopted-protocol` 修正已采纳事实，记录 amendment，判断删除/废弃/版本化策略 | 确认 draft/experimental 可直接修正，stable/MVP 不静默破坏 wire 合同 | amendment 记录、YAML/source validation、generated diff |
-| 生成阶段 | 协议维护者 / SDK/工具 | 测试、研发 | 使用 `generate-axtp-protocol` 从 YAML 生成 Protocol IR、generated docs、tooling、test vectors、runtime generated headers | 确认 generated diff 符合本次协议变化 | `validate:protocol`、Generator tests、`git diff --check` 通过 |
+| 生成阶段 | 协议维护者 / SDK/工具 | 测试、研发 | 使用 `generate-axtp-protocol` 从 YAML 生成 Protocol IR、generated docs、tooling JSON 和 test vectors | 确认 generated diff 符合协议变更 | `validate:protocol`、Generator tests、`git diff --check` 通过 |
 | PR 发布 | 协议维护者 / 研发负责人 | 业务、固件、上位机、后台、测试 | 提交草案、specs、YAML、generated diff，说明兼容影响和测试结果 | 评审 generated 文档是否能支撑实现和验收 | PR 合并 main，generated 协议成为研发/测试依据 |
 | 研发实现 | 固件 / 上位机 / 后台 / SDK | 测试、协议维护者 | 按 `docs/generated/protocol.md/json`、generated headers 和 test vectors 实现功能 | 测试确认正向、错误、event、stream、legacy 兼容用例 | 端到端联调和测试通过 |
 
@@ -74,7 +74,7 @@ docs/generated/* + tooling/* + runtime generated headers
 - 明确需要新增或修改协议后，再写 `docs/protocol/**` 草案。
 - 草案评审通过后，使用 `adopt-protocol-draft` 把已确认事实写入 `registry/**` 或 `registry/domains/**`。
 - 已采纳协议需要删除字段、收窄范围、重命名、废弃或扩展时，使用 `amend-adopted-protocol`，不要回到普通草案流程或手改 generated。
-- 使用 `generate-axtp-protocol` 运行 Generator，刷新 generated 文档、JSON、C++ 头文件和测试向量。
+- 使用 `generate-axtp-protocol` 运行 Generator，刷新 generated 文档、工具 JSON 和测试向量。
 - 研发和测试按 generated 产物实现，不按未采纳草案实现。
 
 ## 2. 查当前协议
@@ -128,15 +128,17 @@ node -e "const p=require('./docs/generated/protocol.json'); console.log(p.method
 
 ## 3. 运行 Generator
 
-### 3.1 安装依赖
+本仓库保留自己的 `generators/`，只负责生成主库文档和工具产物。五个 runtime / mock 仓库也各自维护 generator，用于生成各自 runtime/server 产物。
+
+### 3.1 安装主库 Generator 依赖
 
 ```bash
 pnpm --dir generators install
 ```
 
-仓库提交了 `generators/pnpm-lock.yaml`，建议使用 pnpm。
+主库提交了 `generators/pnpm-lock.yaml`，建议使用 pnpm。
 
-### 3.2 构建 Generator
+### 3.2 构建主库 Generator
 
 ```bash
 pnpm --dir generators build
@@ -170,7 +172,6 @@ docs/generated/protocol.json
 docs/generated/*_registry.generated.md
 tooling/mcp/*.generated.json
 tooling/test-vectors/*
-runtimes/cpp/core/include/generated/*
 ```
 
 ### 3.5 校验 Protocol IR
@@ -179,7 +180,19 @@ runtimes/cpp/core/include/generated/*
 pnpm --dir generators validate:protocol
 ```
 
-### 3.6 文档-only 改动的建议检查
+### 3.6 生成 runtime 产物
+
+在对应 runtime 仓库中运行该仓库自己的 generator，并把 `AXTP_SPEC_PATH` 指向本 AXTP 主库：
+
+```bash
+export AXTP_SPEC_PATH=/path/to/axtp
+cd /path/to/mostormlabs/axtp-node-runtime
+pnpm --dir generators install
+pnpm --dir generators build
+pnpm --dir generators generate:runtime
+```
+
+### 3.7 文档-only 改动的建议检查
 
 如果只改 README、How To Use、Kickoff 这类文档：
 
@@ -193,10 +206,16 @@ git diff --check
 
 ## 4. 使用 axtpctl
 
-`axtpctl` 是调试、产测和集成检查工具，位置在：
+`axtpctl` 是调试、产测和集成检查工具，已迁移到独立 C++ runtime 仓库：
 
 ```text
-runtimes/cpp/tools/axtpctl
+https://github.com/Mostorm-Labs/axtp-cpp-runtime
+```
+
+以下命令在 `axtp-cpp-runtime` 仓库根目录执行。工具位置是：
+
+```text
+tools/axtpctl
 ```
 
 P0 支持：
@@ -210,10 +229,10 @@ P0 支持：
 
 ### 4.1 构建 axtpctl
 
-当前仓库没有顶层 CMakeLists，按工具目录单独构建：
+按工具目录单独构建：
 
 ```bash
-cmake -S runtimes/cpp/tools/axtpctl -B build/axtpctl
+cmake -S tools/axtpctl -B build/axtpctl
 cmake --build build/axtpctl
 ```
 
@@ -300,10 +319,10 @@ TCP 示例形态：
 
 ## 5. C++ SDK dynamic RPC
 
-SDK 位置：
+SDK 已迁移到 `axtp-cpp-runtime` 仓库，位置：
 
 ```text
-runtimes/cpp/sdk
+sdk
 ```
 
 SDK 的 P0 策略是 dynamic RPC first。业务调用优先用 method name/id + JSON/TLV/Raw body，不强制依赖 typed generated wrappers。
@@ -366,6 +385,8 @@ auto config = client.callJson("audio.getAlgorithmConfig", "{}");
 Typed API 是 dynamic/raw RPC 的便利包装，不应该绕过 MethodRegistry 和 runtime 分层。
 
 ## 6. C++ runtime 接入
+
+本节代码示例属于 `axtp-cpp-runtime` 仓库。AXTP 主库只维护协议事实源和 generated 协议产物；runtime 仓库通过 `AXTP_SPEC.lock.yaml` 绑定本仓库的 spec tag / commit。
 
 推荐 runtime 结构：
 
@@ -783,13 +804,12 @@ pnpm --dir generators validate:protocol
 git diff --check
 ```
 
-C++ 变更：
+C++ runtime 变更在 `axtp-cpp-runtime` 仓库内检查，例如：
 
 ```bash
-scripts/check-format-cpp.sh
-cmake -S runtimes/cpp/core -B build/cpp/core
-cmake --build build/cpp/core
-ctest --test-dir build/cpp/core --output-on-failure
+cmake -S core -B build/core
+cmake --build build/core
+ctest --test-dir build/core --output-on-failure
 ```
 
 按实际改动范围补充 SDK、axtpctl 或 transport 测试。

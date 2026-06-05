@@ -20,7 +20,7 @@ Classify the request before editing anything:
 | Already-adopted/generated protocol needs semantic correction, field removal, deprecation, rename, or extension | Use `docs/dev/skills/40-amend-adopted-protocol/SKILL.md` | `docs/protocol/**`, `docs/specs/08-14` as needed, `registry/**`, `registry/domains/**`, generated artifacts via Generator |
 | YAML facts are ready and artifacts need refresh | Use `docs/dev/skills/50-generate-axtp-protocol/SKILL.md` | generated artifacts only, unless validation exposes a source bug |
 | Governance-confirmed registry maintenance without a draft | Use this skill directly only for narrow, non-design maintenance | Scoped YAML and then `generate-axtp-protocol` |
-| Runtime/SDK/tool implementation after protocol adoption | Use generated docs/headers and normal code-edit workflow | runtime/SDK/tool code only |
+| Runtime/SDK/tool implementation after protocol adoption | Use generated docs, tooling JSON, test vectors, and the relevant runtime repository | runtime/SDK/tool repository only |
 
 Default to draft, adoption, or amendment. Direct registry edits are exceptional.
 
@@ -50,7 +50,6 @@ generate-axtp-protocol
   registry YAML -> protocol/axtp.protocol.yaml
                 -> docs/generated/*
                 -> tooling/*
-                -> runtime generated headers
                 -> validation report
 ```
 
@@ -59,7 +58,7 @@ generate-axtp-protocol
 - Do not convert rough requirements or scenario flow plans directly into YAML.
 - Do not put scenario-only UI behavior into protocol drafts; keep it in `docs/flows/**`.
 - Do not adopt unresolved `[REVIEW-ASK]`, `[REVIEW-FIX]`, or `[REVIEW-BLOCKER]` facts.
-- Do not edit `protocol/axtp.protocol.yaml`, `docs/generated/*`, `tooling/mcp/*`, `tooling/test-vectors/*`, or runtime generated files by hand.
+- Do not edit `protocol/axtp.protocol.yaml`, `docs/generated/*`, `tooling/mcp/*`, or `tooling/test-vectors/*` by hand.
 - New business features default to `docs/protocol/**` first, then `registry/domains/<domain>/domain.yaml` after adoption.
 - Already-adopted semantic changes must update the proposal and YAML facts first, then regenerate; do not patch generated files directly.
 - Use core `registry/` files only for core constants, shared schemas, MVP/Core adopted entries, profile governance, and accepted legacy mappings.

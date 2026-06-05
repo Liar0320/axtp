@@ -1,6 +1,7 @@
 # AXTP C++ Runtime 架构与设计模式
 
 本文档记录当前 C++ runtime 的代码设计模式。它描述“为什么这样分层”和“新增功能时应该放在哪里”，不替代 wire spec。
+本文中的 C++ runtime 路径均相对于独立仓库 `axtp-cpp-runtime`。
 
 核心结构固定为：
 
@@ -18,9 +19,9 @@ ITransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker<>
 | `axtp_broker` | `INTERFACE` | `BasicBroker<>`、`BrokerTask`、`BrokerResult`、dynamic method dispatch helpers |
 | `axtp_runtime` | `INTERFACE` | core + broker + endpoint glue，供普通应用使用 |
 | `axtp_json_rpc` | `INTERFACE` | WebSocket session helper adapter 和 JSON registry-file loader |
-| `axtp_transport_hidapi` | `STATIC` optional | HID report-level transport，位于 `runtimes/cpp/transports`，依赖 `runtimes/cpp/thirdparty/hidapi` |
-| `axtp_transport_tcp_boost` | `INTERFACE` optional | Boost.Asio TCP transport，位于 `runtimes/cpp/transports` |
-| `axtp_transport_websocket_boost` | `INTERFACE` optional | Boost.Beast WebSocket transport，位于 `runtimes/cpp/transports` |
+| `axtp_transport_hidapi` | `STATIC` optional | HID report-level transport，位于 `transports`，依赖 `thirdparty/hidapi` |
+| `axtp_transport_tcp_boost` | `INTERFACE` optional | Boost.Asio TCP transport，位于 `transports` |
+| `axtp_transport_websocket_boost` | `INTERFACE` optional | Boost.Beast WebSocket transport，位于 `transports` |
 
 推荐 runtime include：
 
@@ -93,7 +94,7 @@ flowchart TB
 | Port adapter | `AxtpCore` 内部 sink/writer port | 把内部 processor 适配成队列输出，避免 core 暴露可变实现细节 |
 | Pipeline processor | `core/inbound/*`、`core/outbound/*` | 把 wire mode 的解析和编码分成小组件 |
 | Dynamic RPC first | `MethodRegistry` + broker dynamic handlers | 默认按 method id/name + body bytes 调用业务 |
-| Optional platform adapter | `runtimes/cpp/transports/*` | HID/TCP/WebSocket 作为可选 transport target，不污染 core |
+| Optional platform adapter | `transports/*` | HID/TCP/WebSocket 作为可选 transport target，不污染 core |
 | Generated facts boundary | `generated/*` | ID、registry、schema 是事实源产物；runtime 不手写业务常量 |
 
 ## Endpoint Glue 模式
@@ -212,7 +213,7 @@ Transport 可以处理平台特有边界，例如 HID report id、report size、
 - JSON-RPC method name
 - Legacy/AXDP command
 
-如果 transport 需要额外平台库，应放在 `runtimes/cpp/transports` 或更上层 target。`runtimes/cpp/core/include` 不能泄漏平台 include。
+如果 transport 需要额外平台库，应放在 `transports` 或更上层 target。`core/include` 不能泄漏平台 include。
 
 ## Dynamic RPC 模式
 
@@ -234,7 +235,7 @@ method name/id + RpcEncoding + body bytes
 
 ### 新增 Transport
 
-1. 在 `runtimes/cpp/transports/include/<name>/` 增加 public header。
+1. 在 `transports/include/<name>/` 增加 public header。
 2. 实现 `ITransport`，只处理平台 I/O。
 3. `profile()` 填写 `TransportKind`、`AxtpWireMode`、message/text/binary 能力和 `preferredFrameSize`。
 4. 在 optional CMake target 中链接平台依赖。
@@ -255,7 +256,7 @@ method name/id + RpcEncoding + body bytes
 
 ### 新增 CLI Command
 
-1. 命令解析留在 `runtimes/cpp/tools/axtpctl/src/main.cpp` 或后续拆分模块。
+1. 命令解析留在 `tools/axtpctl/src/main.cpp` 或后续拆分模块。
 2. 业务调用走 SDK；只有 `inspect` 类命令可以直接读 core model/decoder。
 3. 输出格式固定为 JSON、hex 或 file，不混合 debug 文本和机器输出。
 
@@ -277,7 +278,7 @@ method name/id + RpcEncoding + body bytes
 
 - `AxtpCore` 直接 `attachTransport()` 或 `attachBroker()`。
 - `BasicBroker<>` 保存 `AxtpCore*` 并回调 core。
-- concrete transport include 出现在 `runtimes/cpp/core/include`。
+- concrete transport include 出现在 `core/include`。
 - transport 根据 `MethodId` 或 payload type 分流。
 - CLI 为普通 `call` 命令手写 frame。
 - core 为某个业务 schema 引入 `MethodTraits` 或 `SchemaCodec`。

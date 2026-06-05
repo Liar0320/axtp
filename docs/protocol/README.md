@@ -38,7 +38,7 @@ Codex skill: generate-axtp-protocol
         ↓
 protocol/axtp.protocol.yaml
         ↓
-docs/generated/*、tooling/*、runtimes/*/generated/*
+docs/generated/*、tooling/*、runtime 子仓库 generated 产物
         ↓ post-adoption semantic correction / field removal / deprecation / extension
 Codex skill: amend-adopted-protocol
         ↓ update adopted proposal + specs/YAML

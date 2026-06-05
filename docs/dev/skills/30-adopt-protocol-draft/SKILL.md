@@ -12,7 +12,7 @@ Stage 30. Convert a reviewed AXTP protocol draft into formal protocol facts afte
 - Start from an existing `docs/protocol/<domain>/<domain.feature>.md` draft.
 - Do not adopt drafts containing unresolved `[REVIEW-BLOCKER]`, `[REVIEW-FIX]`, or `[REVIEW-ASK]` facts unless the user provides exact confirmed facts and the adoption is scoped around them.
 - Do not invent method/event/error/capability/profile semantics that are not present in the reviewed draft or specs.
-- Do not edit `protocol/axtp.protocol.yaml`, `docs/generated/*`, `tooling/mcp/*`, `tooling/test-vectors/*`, `runtimes/*/generated/*`, or `runtimes/cpp/core/include/generated/*` by hand.
+- Do not edit `protocol/axtp.protocol.yaml`, `docs/generated/*`, `tooling/mcp/*`, or `tooling/test-vectors/*` by hand.
 - Do not run full generated artifact emission as the main goal of this skill; use `generate-axtp-protocol` after adoption.
 - New business features default to `registry/domains/<domain>/domain.yaml`.
 - Use core `registry/` files only for Core/MVP adopted facts, shared schemas, core constants, profile governance, or accepted legacy mappings.

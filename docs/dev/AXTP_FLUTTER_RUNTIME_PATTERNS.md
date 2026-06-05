@@ -6,7 +6,7 @@ Flutter runtime 复用 C++ runtime 的固定分层：
 AxtpTransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker
 ```
 
-`runtimes/flutter` 是纯 Dart 包，可被 Flutter app 直接依赖，也可在命令行用 Dart 测试。平台 I/O（HID、BLE、USB、TCP、WebSocket）不进入 core；它们应作为 Flutter plugin 或应用层 connector 实现 `AxtpTransport`。
+`axtp-flutter-runtime` 是独立维护的纯 Dart 包，可被 Flutter app 直接依赖，也可在命令行用 Dart 测试。平台 I/O（HID、BLE、USB、TCP、WebSocket）不进入 core；它们应作为 Flutter plugin 或应用层 connector 实现 `AxtpTransport`。
 
 ## Target 映射
 
@@ -26,7 +26,7 @@ AxtpTransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker
 - WebSocketJsonRpc：每次 `onBytes()` 输入一条完整 UTF-8 text message，支持 `sid/op/d` request/event/response。
 - Dynamic RPC first：`callJson`、`callTlv`、`callRawBytes` 和 broker raw/json/tlv handler。
 - Mock transport：用于 Flutter 单元测试、demo 和本地业务 handler 验证。
-- Generator 集成：`pnpm generate` 会刷新 Flutter generated registry。
+- Generator 集成：runtime 仓库自己的 `generators/` 会刷新 Flutter generated registry。
 
 ## 边界约束
 
@@ -48,7 +48,7 @@ AxtpTransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker
 推荐验证：
 
 ```bash
-cd runtimes/flutter
+cd /path/to/mostormlabs/axtp-flutter-runtime
 dart analyze lib test tool
 dart test
 dart tool/smoke.dart

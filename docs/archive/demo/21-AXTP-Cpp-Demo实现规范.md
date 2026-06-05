@@ -1,6 +1,6 @@
 # 21-AXTP-Cpp-Demo实现规范
 
-> 历史说明：本文是早期 MVP/demo 草案，下面仍会出现旧目录和旧类型示例。当前 C++ runtime 已迁移到 `ITransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker<>`、lower_snake_case `.hpp` public header、dynamic RPC-first SDK/CLI API，以及 `runtimes/cpp-transports` 下的可选 concrete transport。当前代码架构、代码规范、设计模式和执行流程请以 `runtimes/cpp-core/ARCHITECTURE.md` 与 `docs/dev/AXTP_CPP_*.md` 为准。
+> 历史说明：本文是早期 MVP/demo 草案，下面仍会出现旧目录和旧类型示例。当前 C++ runtime 已迁移到独立 `axtp-cpp-runtime` 仓库，采用 `ITransport <-> AxtpEndpoint -> AxtpCore -> BasicBroker<>`、lower_snake_case `.hpp` public header、dynamic RPC-first SDK/CLI API，以及 `axtp-cpp-runtime/transports` 下的可选 concrete transport。当前代码架构、代码规范、设计模式和执行流程请以 `docs/dev/AXTP_CPP_*.md` 为准。
 
 版本：v1.0  
 状态：MVP Implementation Draft  

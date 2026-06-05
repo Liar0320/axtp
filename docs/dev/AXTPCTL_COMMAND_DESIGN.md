@@ -2,7 +2,7 @@
 
 ## 概要
 
-`runtimes/cpp/tools/axtpctl` 是 AXTP 命令行工具，用于调试、产测和集成检查。它依赖 `runtimes/cpp/sdk`，除明确的 inspect 命令外，不应直接操作低层 frame decoder。
+`axtp-cpp-runtime/tools/axtpctl` 是 AXTP 命令行工具，用于调试、产测和集成检查。它依赖 `axtp-cpp-runtime/sdk`，除明确的 inspect 命令外，不应直接操作低层 frame decoder。
 
 Runtime 调用应走 SDK；SDK 再通过 `AxtpEndpoint` 连接 `ITransport`、`AxtpCore` 和 `BasicBroker<>`。
 

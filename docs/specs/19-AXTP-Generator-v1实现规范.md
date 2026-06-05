@@ -82,7 +82,7 @@ registry/**/*.yaml + registry/domains/**/*.yaml
         ↓ generate-registry
 docs/generated/*_registry.generated.md
 tooling/mcp/*.generated.json
-runtimes/cpp/core/include/generated/*
+axtp-cpp-runtime/core/include/generated/*
 tooling/test-vectors/*
 ```
 
@@ -111,7 +111,7 @@ docs/legacy-classification/**
 ```text
 protocol/axtp.protocol.yaml
 docs/generated/*
-runtimes/*/generated/*
+runtime 子仓库中的 generated runtime/server 产物
 tooling/* generated artifacts
 generators/src/__snapshots__/*
 ```
@@ -214,7 +214,7 @@ axtp/
 │   ├── generator.yaml
 │   ├── package.json
 │   └── src/
-├── runtimes/
+├── runtimes/                 # independent runtime repository index
 └── tooling/
 ```
 
@@ -230,7 +230,7 @@ axtp/
 | `protocol/axtp.protocol.yaml` | Generator 生成的聚合 Protocol IR | 否 |
 | `docs/generated/` | Generator 生成的文档产物 | 否 |
 | `tooling/mcp/` | Generator 生成的 MCP JSON 产物 | 否 |
-| `runtimes/*/generated/` | Generator 生成的 runtime/codegen 产物 | 否 |
+| runtime 子仓库 generated 目录 | 子仓库 Generator 生成的 runtime/codegen 产物 | 否 |
 | `tooling/test-vectors/` | Generator 生成的测试向量 | 否 |
 
 顶层 `domains/` 与 `registry/domain/` 已废弃；若顶层 `domains/**/*.yaml` 存在，`validate-sources` 必须失败并提示迁移到 `registry/domains/`。
