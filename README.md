@@ -63,7 +63,7 @@ AXTP runtime implementations are maintained in dedicated repositories:
 - [`axtp-c-runtime`](https://github.com/Mostorm-Labs/axtp-c-runtime)
 - [`axtp-cpp-runtime`](https://github.com/Mostorm-Labs/axtp-cpp-runtime)
 - [`axtp-flutter-runtime`](https://github.com/Mostorm-Labs/axtp-flutter-runtime)
-- [`axtp-node-runtime`](https://github.com/Mostorm-Labs/axtp-node-runtime)
+- [`axtp-ts-runtime`](https://github.com/Mostorm-Labs/axtp-ts-runtime)
 - [`axtp-python-runtime`](https://github.com/Mostorm-Labs/axtp-python-runtime)
 - [`axtp-mock-server`](https://github.com/Mostorm-Labs/axtp-mock-server)
 
@@ -142,7 +142,7 @@ Runtime 仓库有各自的 `generators/`，用于生成各自 runtime/server 产
 
 ```bash
 export AXTP_SPEC_PATH=/path/to/axtp
-cd /path/to/mostormlabs/axtp-node-runtime
+cd /path/to/mostormlabs/axtp-ts-runtime
 pnpm --dir generators generate:runtime
 ```
 

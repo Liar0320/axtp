@@ -5,7 +5,7 @@ Full runtime implementations have been moved to dedicated repositories:
 - `axtp-c-runtime`
 - `axtp-cpp-runtime`
 - `axtp-flutter-runtime`
-- `axtp-node-runtime`
+- `axtp-ts-runtime`
 - `axtp-python-runtime`
 - `axtp-mock-server`
 

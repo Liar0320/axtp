@@ -186,7 +186,7 @@ pnpm --dir generators validate:protocol
 
 ```bash
 export AXTP_SPEC_PATH=/path/to/axtp
-cd /path/to/mostormlabs/axtp-node-runtime
+cd /path/to/mostormlabs/axtp-ts-runtime
 pnpm --dir generators install
 pnpm --dir generators build
 pnpm --dir generators generate:runtime
