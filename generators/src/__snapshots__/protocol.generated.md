@@ -151,7 +151,7 @@ Every Standard Framed AXTP Frame carries exactly one payload. WebSocket Unframed
 | Type | ID | Header Size | When to Use |
 | ---- | ---- | ---- | ---- |
 | `CONTROL` | 0x01 | 5B | Logical session control payload. |
-| `RPC` | 0x02 | 11B | Binary request, response, event and error payload. |
+| `RPC` | 0x02 | 15B | Binary request, response, event and error payload. |
 | `STREAM` | 0x03 | 16B | Chunk-oriented data plane payload. |
 
 ## Generated Method Index

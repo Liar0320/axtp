@@ -73,7 +73,7 @@ AXTP 通过分阶段工作流维护。草案和 legacy 证据是评审输入；r
 
 | 路径 | 内容 |
 |---|---|
-| `KICKOFF.md` | 面向研发启动会的 Why / What / How 快速说明。 |
+| `KICKOFF.md` | 面向研发启动会的 Why / What / How 说明与推进框架。 |
 | `ROADMAP.md` | 产品与技术迭代路线图。 |
 | `docs/specs/` | AXTP 正式规范，按 core、registry、codec、tooling 分组。 |
 | `docs/business/` | 业务需求和场景源材料。 |

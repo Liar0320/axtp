@@ -16,7 +16,7 @@
 
 ```text
 允许变化： outer frame header / MTU / fragmentation / retry policy
-不得变化： PayloadType / CONTROL 5B / RPC Binary 11B / STREAM 16B / methodId / eventId / errorCode
+不得变化： PayloadType / CONTROL 5B / RPC Binary 15B / STREAM 16B / methodId / eventId / errorCode
 ```
 
 选择降级路径前先判断：
@@ -117,7 +117,7 @@ Compact Frame 只替换外层 L1 Frame Header，不改变 L2 Payload：
 | PayloadType | Compact 下的 Payload |
 |---|---|
 | CONTROL | 仍然是 04 定义的 5B Control Payload Header + TLV body |
-| RPC | 仍然是 05 定义的 JSON envelope 或 11B Binary RPC Header + body |
+| RPC | 仍然是 05 定义的 JSON envelope 或 15B Binary RPC Header + body |
 | STREAM | 仍然是 06 定义的 16B STREAM Header + data |
 
 HID-64 示例：

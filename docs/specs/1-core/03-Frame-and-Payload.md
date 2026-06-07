@@ -53,7 +53,7 @@ WebSocket Unframed JSON 路径在线上始终是：
 WebSocket message payload = JSON { "sid": "...", "op": N, "d": { ... } }
 ```
 
-该路径没有 Frame Header、CONTROL Payload、STREAM Payload、CRC16、Binary RPC 11B Header，也不参与 CONTROL ACK/NACK / RESUME。
+该路径没有 Frame Header、CONTROL Payload、STREAM Payload、CRC16、Binary RPC 15B Header，也不参与 CONTROL ACK/NACK / RESUME。
 
 ---
 
@@ -150,7 +150,7 @@ CONTROL frame:
 
 RPC Binary frame:
   Standard Frame Header(payloadType=RPC)
-  + RPC Binary Payload = rpcEncoding(1) + rpcOp(1) + requestId(4)
+  + RPC Binary Payload = rpcEncoding(1) + rpcOp(1) + sid(4) + requestId(4)
                        + methodOrEventId(2) + statusCode(2) + bodyEncoding(1)
                        + body(N)
   + CRC16
@@ -171,7 +171,7 @@ STREAM frame:
 | PayloadType | Payload 内部结构 | 规范归属 |
 |---|---|---|
 | CONTROL | 5B 固定头 + TLV body | 04《Control Session Spec》 |
-| RPC / BINARY | 11B Binary RPC Header + body | 05《RPC Session Spec》 |
+| RPC / BINARY | 15B Binary RPC Header + body | 05《RPC Session Spec》 |
 | RPC / JSON | JSON `sid` / `op` / `d` envelope | 05《RPC Session Spec》 |
 | STREAM | 16B STREAM Header + data | 06《Stream Spec》 |
 

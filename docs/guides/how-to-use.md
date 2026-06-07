@@ -2,7 +2,7 @@
 
 使用这个仓库时，优先用自然语言描述你想完成的协议工作。AXTP 已经围绕 lifecycle skills、generated artifacts 和 CI checks 建立了完整流水线，所以好的请求应该描述“想达成什么协议结果”，而不是从“改哪个文件、跑哪个命令”开始。
 
-如果你是 runtime、SDK、mock server 或应用侧研发，只想先把协议接通，请先看 [研发接入 Quickstart](quickstart.md)。本文档更偏“如何使用主库工作流”。
+如果你是 runtime、SDK、mock server 或应用侧研发，只想先把协议接通，请先看 [研发接入 Quickstart](quickstart.md)。如果你需要实现 Phase 1 的核心握手、鉴权和会话流程，请看 [核心协议流程指南](core-protocol-flow.md)。本文档更偏“如何使用主库工作流”。
 
 这份指南说明一个自然语言需求如何贯穿仓库工作流：
 
@@ -270,7 +270,7 @@ git diff --check
 | 产品 / 架构 | `docs/business/`、`docs/flows/` | `docs/protocol/README.md` |
 | 协议维护者 | `docs/dev/skills/README.md` | `docs/specs/README.md`、`registry/` |
 | Runtime 实现者 | `docs/generated/protocol.md` | `protocol/axtp.protocol.yaml`、`docs/conformance/README.md` |
-| 测试 / conformance 负责人 | `docs/conformance/README.md` | `tooling/test-vectors/`、generated references |
+| 测试 / conformance 负责人 | `docs/guides/testing-conformance-quickstart.md` | `docs/conformance/README.md`、generated references |
 | 发布负责人 | `docs/release/README.md` | `.github/workflows/`、`scripts/build-spec-artifact.sh` |
 | Legacy 迁移负责人 | `docs/legacy-migration/README.md` | `tooling/legacy_classification/`、`tooling/migration/` |
 
@@ -310,3 +310,5 @@ docs/flows/<firmware-update-scenario>.md
 ```
 
 这就是 AXTP 的预期工作方式：先自然语言意图，再协议生命周期，再 generated contracts，最后 runtime 消费。
+
+Runtime 团队第一次接入时，建议额外阅读 [runtime-mvp-conformance.md](runtime-mvp-conformance.md)，先按 Phase 1 MVP checklist 声明 runtime 支持范围，再接入 conformance。测试团队验收 runtime、SDK 或 mock server 时，建议从 [testing-conformance-quickstart.md](testing-conformance-quickstart.md) 开始。

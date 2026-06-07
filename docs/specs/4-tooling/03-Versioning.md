@@ -34,7 +34,7 @@
 6. 固化事实：长期事实进入 registry YAML，临时兼容进入 legacy_mapping.yaml。
 ```
 
-任何迁移都必须遵守 v1 冻结事实：Standard Frame Header 12B、CONTROL 5B、RPC Binary 11B、STREAM 16B、PayloadType 仅 CONTROL / RPC / STREAM。
+任何迁移都必须遵守 v1 冻结事实：Standard Frame Header 12B、CONTROL 5B、RPC Binary 15B、STREAM 16B、PayloadType 仅 CONTROL / RPC / STREAM。
 
 ---
 
@@ -51,7 +51,7 @@
 | Standard L1 Frame Header | 02 §4 | 12B 固定布局，字段顺序/长度/语义不变 |
 | Standard CRC | 02 §7 | CRC16-CCITT-FALSE，覆盖 Header(12B)+Payload |
 | Control L2 Payload Header | 04 §2.1 | 5B 固定头：opcode/controlId/statusCode |
-| RPC Binary L2 Payload Header | 05 §19.1 | 11B 固定头：rpcEncoding/rpcOp/requestId/methodOrEventId/statusCode/bodyEncoding |
+| RPC Binary L2 Payload Header | 05 §19.1 | 15B 固定头：rpcEncoding/rpcOp/sid/requestId/methodOrEventId/statusCode/bodyEncoding |
 | STREAM L2 Payload Header | 06 §3.1 | 16B 固定头：streamId/seqId/cursor |
 | PayloadType 枚举值 | 02 §5 | CONTROL=0x01 / RPC=0x02 / STREAM=0x03 |
 | 字节序 | 02 §9 | 所有多字节整数 Little-Endian |
@@ -501,7 +501,7 @@ legacy:
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 7,
   "d": {
     "id": "000003e9",

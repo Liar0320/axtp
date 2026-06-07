@@ -164,7 +164,7 @@ payloadTypes:
     description: Logical session control payload.
   - name: RPC
     id: 2
-    headerBytes: 11
+    headerBytes: 15
     description: Binary request, response, event and error payload.
   - name: STREAM
     id: 3

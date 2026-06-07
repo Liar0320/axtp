@@ -169,13 +169,14 @@ docs/generated/protocol.md + protocol.json + SDK/bitmap/test-vector
 | JSON-RPC 概念 | Binary-RPC 字段 | 规则 |
 |---|---|---|
 | method name | methodId | 从 `methods[].methodId` 生成，稳定后不得复用 |
+| sid | sid | 映射为 uint32，Little-Endian；JSON 表示为 8 位 hex string |
 | request id | requestId | 映射为 uint32，Little-Endian |
 | params | body | 按 request type 生成 TLV / CBOR / FixedStruct |
 | result | body | 按 response type 生成 TLV / CBOR / FixedStruct |
 | event name | eventId | 从 `events[].eventId` 生成 |
 | error code | statusCode / errorCode | 从 `errors[].code` 生成 |
 
-Binary-RPC Header 固定 11B。JSON / CBOR / MessagePack 模式不使用 Binary 11B Header。
+Binary-RPC Header 固定 15B。JSON / CBOR / MessagePack 模式不使用 Binary 15B Header。
 
 ---
 

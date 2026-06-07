@@ -197,7 +197,7 @@ Rooms JSON profile 和 AXTP RPC 的 request id 类型不同：
 |---|---|---|---|
 | Rooms JSON profile | `d.id` 或具体实现中的 `d.requestid` | string | opaque correlation id，例如 `"ab22-dddaa"`；字段名和值都只做匹配和回填。 |
 | AXTP JSON RPC | `d.id` | uint32 | AXTP 正式 JSON RPC 的请求序号。 |
-| AXTP Binary RPC | `requestId` | uint32 | Binary RPC 11B header 中的请求序号。 |
+| AXTP Binary RPC | `requestId` | uint32 | Binary RPC 15B header 中的请求序号。 |
 
 因此 Rooms parser 必须把 Rooms request id 作为字符串保存。如果某个 Rooms handler 内部桥接到正式 AXTP RPC，adapter 必须分配一个本地 `uint32` AXTP requestId，并维护映射：
 

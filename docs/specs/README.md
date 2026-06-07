@@ -22,7 +22,7 @@
 | 有 Frame Header | `AXTP-USB-HID`、`AXTP-TCP` | `Standard Frame Header(12B) + Payload(N) + CRC16(2B)` | CONTROL / RPC / STREAM |
 | 无 Frame Header | `AXTP-WS-JSON`、`AXTP-WS-CLOUD-REVERSE` | `WebSocket message payload = JSON { sid, op, d }` | RPC-only |
 
-无 Frame Header 路径没有 CONTROL、STREAM、CRC16、Binary RPC 11B Header，也不参与 CONTROL ACK/NACK / RESUME。
+无 Frame Header 路径没有 CONTROL、STREAM、CRC16、Binary RPC 15B Header，也不参与 CONTROL ACK/NACK / RESUME。
 
 ## 分组导航
 

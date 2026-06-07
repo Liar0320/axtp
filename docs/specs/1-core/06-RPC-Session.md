@@ -19,14 +19,14 @@ RPC 是业务控制面，承载 Hello / Identify / Request / Response / Event。
 
 | 路径 | 线上结构 | session 表达 | 典型用途 |
 |---|---|---|---|
-| WebSocket Unframed JSON | `WebSocket message payload = JSON { sid, op, d }` | `sid` 在 JSON Envelope 中 | 浏览器、云端、轻量 RPC |
-| Standard Framed + RPC JSON | `Frame Header(payloadType=RPC) + UTF-8 JSON { sid, op, d } + CRC16` | `sid` 在 JSON Payload 中 | 调试、诊断、实现便利 |
-| Standard Framed + RPC Binary | `Frame Header(payloadType=RPC) + Binary RPC Header(11B) + body + CRC16` | Link session 由 CONTROL 管理，Payload 不携带 `sid` | 嵌入式、高吞吐路径 |
+| WebSocket Unframed JSON | `WebSocket message payload = JSON { sid, op, d }` | `sid` 在 JSON Envelope 中，格式为固定 8 位十六进制字符串 | 浏览器、云端、轻量 RPC |
+| Standard Framed + RPC JSON | `Frame Header(payloadType=RPC) + UTF-8 JSON { sid, op, d } + CRC16` | `sid` 在 JSON Payload 中，格式为固定 8 位十六进制字符串 | 调试、诊断、实现便利 |
+| Standard Framed + RPC Binary | `Frame Header(payloadType=RPC) + Binary RPC Header(15B) + body + CRC16` | `sid:uint32` 在 Binary RPC Header 中 | 嵌入式、高吞吐路径 |
 
-Binary RPC 11B 固定头：
+Binary RPC 15B 固定头：
 
 ```text
-rpcEncoding(1) + rpcOp(1) + requestId(4)
+rpcEncoding(1) + rpcOp(1) + sid(4) + requestId(4)
   + methodOrEventId(2) + statusCode(2) + bodyEncoding(1)
 ```
 
@@ -34,14 +34,14 @@ rpcEncoding(1) + rpcOp(1) + requestId(4)
 
 | 字段 | 所在层 | 作用 |
 |---|---|---|
-| `sid` | RPC JSON Envelope | JSON/TextCodec 的 session 路由与恢复；Binary Payload 不携带 |
+| `sid` | RPC Session Layer | 业务 session 路由与恢复；JSON 中为 8 位 hex string，Binary 中为 uint32 |
 | `requestId` | RPC Payload | 匹配 Request / Response；不用于 Frame 分片 |
 | `messageId` | Frame Header | 标识完整 Frame Message 及其分片；不匹配 RPC Response |
 
 最小 JSON 调用：
 
 ```json
-{ "sid": "28378462323", "op": 7, "d": { "id": 1, "method": "audio.getAlgorithmCapabilities" } }
+{ "sid": "12345678", "op": 7, "d": { "id": 1, "method": "audio.getAlgorithmCapabilities" } }
 ```
 
 最小 Binary 调用：
@@ -49,7 +49,7 @@ rpcEncoding(1) + rpcOp(1) + requestId(4)
 ```text
 Frame(payloadType=RPC)
   RPC Binary Header:
-    rpcEncoding=BINARY, rpcOp=REQUEST, requestId=1,
+    rpcEncoding=BINARY, rpcOp=REQUEST, sid=0x12345678, requestId=1,
     methodOrEventId=audio.getAlgorithmCapabilities, statusCode=SUCCESS, bodyEncoding=NONE
   body: empty
 ```
@@ -73,7 +73,7 @@ AXTP Frame Header (payloadType=RPC)
   ↓
 RPC Payload
   ├── JSON Mode:   UTF-8 JSON text, { "sid": "...", "op": N, "d": {...} }
-  └── Binary Mode: Fixed 11B binary header + TLV body
+  └── Binary Mode: Fixed 15B binary header + TLV body
 ```
 
 | 编码模式 | rpcEncoding | 适用场景 |
@@ -83,7 +83,7 @@ RPC Payload
 | CBOR | `0x03` | 后续扩展 |
 | MessagePack | `0x04` | 后续扩展 |
 
-JSON 使用 sid+op+d 语义结构。Binary 使用固定二进制头，语义与 op+d 一一对应（sid 由 CONTROL 层 session 管理，不出现在 Binary Payload 中）。
+JSON 使用 sid+op+d 语义结构。Binary 使用固定二进制头，语义与 op+d 一一对应；业务 session `sid` 必须出现在 Binary RPC Header 中，不得复用 CONTROL `sessionId`。
 
 ---
 
@@ -92,22 +92,38 @@ JSON 使用 sid+op+d 语义结构。Binary 使用固定二进制头，语义与 
 所有 JSON 消息使用统一三字段 Envelope：
 
 ```json
-{ "sid": "28378462323", "op": 6, "d": { ... } }
+{ "sid": "12345678", "op": 6, "d": { ... } }
 ```
 
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
-| `sid` | string | Session ID，由服务端在 Identified 中分配；TextCodec 边界消费，不透传给业务逻辑 |
+| `sid` | string | RPC Session ID，由服务端在 Identified 中分配；JSON 中使用固定 8 位十六进制字符串 |
 | `op` | uint8 | 操作码，见 §4 |
 | `d` | object | 消息数据块，结构由 op 决定 |
 
+### 3.1 sid 类型与编码
+
+`sid` 的规范类型是 `uint32`，取值范围为 `1..0xFFFFFFFF`。`0` 是保留值，表示尚未分配业务 session 或该消息不绑定已有业务 session。
+
+32-bit 对 AXTP v1 的业务 session 是足够的，因为 `sid` 不是全局唯一 ID，而是由单个 Logical Server 在当前可恢复业务 session 集合内分配的局部 ID。即使一个设备、mock server 或网关同时维护数万级活跃 session，`uint32` 仍有足够空间；实现只需要保证当前活跃 session 不冲突。跨设备、跨云、跨租户的全局唯一性应由 `deviceId / endpointId / tenantId / connectionId + sid` 组合表达，不应把全局身份塞进 `sid`。
+
+| 编码 | 表达方式 | 示例 |
+|---|---|---|
+| JSON RPC | 固定 8 位 hex string | `"12345678"` |
+| Binary RPC | uint32 Little-Endian | `78 56 34 12` |
+
+JSON 选择 string 是为了延续 OBS-style `sid/op/d` envelope、避免 JSON number 解析差异，并为网关日志和调试提供稳定文本格式。该 string 必须是 8 个十六进制字符，发送方必须使用 uppercase canonical form，接收方可以兼容 lowercase。不得使用 `0x12345678`、`"s-001"`、UUID、负数、浮点数、可变长 UTF-8 token 或带业务前缀的字符串。
+
+不推荐用任意 UTF-8 / ASCII 文本表达 `sid`。如果把 `sid` 定义成可变长文本 token，Binary RPC Header 就无法保持固定宽度，runtime 也必须额外处理编码、长度、大小写和字符集问题。Phase 1 的目标是让 JSON 和 Binary 可以直接互转，因此 `sid` 保持 `uint32`，JSON 只采用它的固定宽度 hex 文本表示。
+
 `sid` 的作用：
 
-- **路由**：网关场景下一个连接承载多个逻辑 session，`sid` 区分路由目标
-- **恢复**：断线重连时客户端携带旧 `sid` 发 Identify，服务端可恢复 session 状态
-- Hello（op=0）是连接建立后第一条消息，此时尚无 session，`sid` 填空字符串 `""`
-- Identified（op=3）中服务端分配并返回 `sid`，客户端后续所有消息必须携带此 `sid`
-- Binary 模式下 `sid` 不出现在 Payload 中，session 由 CONTROL OPEN/ACCEPT 管理
+- **路由**：网关场景下一个连接承载多个逻辑 session，`sid` 区分路由目标。
+- **恢复**：断线重连时客户端携带旧 `sid` 发 Identify，服务端可恢复 session 状态。
+- **JSON / Binary 统一**：JSON 使用 8 位 hex string 表示同一个 uint32；Binary RPC Header 使用 uint32，二者必须可以无损互转。
+- Hello（op=0）是连接建立后第一条消息，此时尚无 session，JSON `sid` 填空字符串 `""`，Binary `sid` 填 `0`。
+- Identify（op=2）新建 session 时 JSON `sid` 填 `""`，Binary `sid` 填 `0`；断线恢复时旧业务 session 放在 `d.resumeSid` / Binary body 的 resumeSid 字段。
+- Identified（op=3）中服务端分配并返回非 0 `sid`，客户端后续所有 Request / Event / Response 必须携带此 `sid`。
 
 ---
 
@@ -180,7 +196,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
     "rpcVersion": 1,
     "authentication": "...",
     "eventMasks": "850101",
-    "resumeSid": "28378462323"
+    "resumeSid": "12345678"
   }
 }
 ```
@@ -204,7 +220,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 3,
   "d": {
     "negotiatedRpcVersion": 1
@@ -226,7 +242,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 4,
   "d": {
     "eventMasks": "850301"
@@ -272,7 +288,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 7,
   "d": {
     "id": 1,
@@ -355,7 +371,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 8,
   "d": {
     "id": 1,
@@ -378,7 +394,7 @@ MVP 必须实现：`Hello / Identify / Identified / Event / Request / RequestRes
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 8,
   "d": {
     "id": 1,
@@ -425,7 +441,7 @@ Event 不携带 `id`（Binary 中 requestId 填 0）。
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 6,
   "d": {
     "event": "audio.algorithmConfigChanged",
@@ -653,7 +669,7 @@ MVP 阶段设备可采用"全量广播模式"：忽略 `eventMasks`，只要 App
 
 MessagePack 和 CBOR 保留为后续扩展，不属于 AXTP v1 Core 必选实现。
 
-若后续启用 MessagePack 或 CBOR，它们必须复用 JSON 的 sid/op/d 语义，不得复用 Binary RPC 11B Header，也不得改变 methodId/eventId/errorCode registry。
+若后续启用 MessagePack 或 CBOR，它们必须复用 JSON 的 sid/op/d 语义，不得复用 Binary RPC 15B Header，也不得改变 methodId/eventId/errorCode registry。
 
 当前实现入口只要求 `rpcEncoding=JSON` 与 `rpcEncoding=BINARY`。
 
@@ -661,21 +677,22 @@ MessagePack 和 CBOR 保留为后续扩展，不属于 AXTP v1 Core 必选实现
 
 ## 19. Binary RPC 编码
 
-Binary 模式面向 Standard Framed 设备，使用统一 11B 固定二进制头承载 op+d 语义。AXTP v1 Core 不再区分 RPC Standard/Compact Payload；Compact 低带宽降级见 `docs/specs/1-core/08-Low-Bandwidth-Degradation.md`。
+Binary 模式面向 Standard Framed 设备，使用统一 15B 固定二进制头承载 sid+op+d 语义。AXTP v1 Core 不再区分 RPC Standard/Compact Payload；Compact 低带宽降级见 `docs/specs/1-core/08-Low-Bandwidth-Degradation.md`。
 
-### 19.1 Binary Payload（11B 固定头）
+### 19.1 Binary Payload（15B 固定头）
 
 | 字段 | 长度 | 类型 | 说明 |
 | --- | ---: | --- | --- |
 | `rpcEncoding` | 1B | uint8 | 首字节，v1 Core 使用 `0x01=JSON / 0x02=BINARY` |
 | `rpcOp` | 1B | uint8 | op 值，见 §4 |
+| `sid` | 4B | uint32 | RPC Session ID；未分配前填 0，APP_READY 后必须为服务端分配的非 0 sid |
 | `requestId` | 4B | uint32 | 请求 ID，EVENT 填 0 |
 | `methodOrEventId` | 2B | uint16 | methodId 或 eventId |
 | `statusCode` | 2B | uint16 | `0x0000=SUCCESS`，非 0 为 ErrorCode Registry 错误码 |
 | `bodyEncoding` | 1B | uint8 | 仅 `rpcEncoding=BINARY` 时有效，v1 Core 使用 `0x01=TLV8` |
 | `body` | N | bytes | 由 bodyEncoding 决定 |
 
-固定头 11B，所有多字节字段 Little-Endian。body 长度 = `Frame.payloadLength - 11`。
+固定头 15B，所有多字节字段 Little-Endian。body 长度 = `Frame.payloadLength - 15`。
 
 ### 19.2 Parser 分发规则
 
@@ -684,11 +701,11 @@ Binary 模式面向 Standard Framed 设备，使用统一 11B 固定二进制头
 | rpcEncoding | Parser |
 | ---: | --- |
 | `0x01` JSON | JSON sid/op/d parser |
-| `0x02` BINARY | Binary 11B header parser |
+| `0x02` BINARY | Binary 15B header parser |
 | `0x03` CBOR | 后续扩展 |
 | `0x04` MSGPACK | 后续扩展 |
 
-JSON 模式下不使用 Binary 11B Header，`bodyEncoding` 字段不存在。CBOR/MSGPACK 若后续启用，也不得复用 Binary 11B Header。
+JSON 模式下不使用 Binary 15B Header，`bodyEncoding` 字段不存在。CBOR/MSGPACK 若后续启用，也不得复用 Binary 15B Header。
 
 ### 19.3 bodyEncoding
 
@@ -716,6 +733,7 @@ Binary RESPONSE 中 `statusCode` 与 JSON `status.code` 对应，不再维护独
 
 | op+d 字段 | Binary 字段 | 说明 |
 | --- | --- | --- |
+| `sid` | `sid` | uint32；JSON string ↔ Binary uint32 必须无损互转 |
 | `op` | `rpcOp` | 直接对应 |
 | `d.id` | `requestId` | uint32，Event 填 0 |
 | `d.method` | `methodOrEventId` | 方法名映射到 uint16 methodId |
@@ -751,7 +769,7 @@ Request：
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 7,
   "d": {
     "id": 1,
@@ -771,7 +789,7 @@ Response 成功：
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 8,
   "d": {
     "id": 1,
@@ -796,7 +814,7 @@ Response 失败：
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 8,
   "d": {
     "id": 1,
@@ -817,7 +835,7 @@ Response 失败：
 
 ```json
 {
-  "sid": "28378462323",
+  "sid": "12345678",
   "op": 6,
   "d": {
     "event": "audio.algorithmConfigChanged",
@@ -841,13 +859,13 @@ Response 失败：
 
 ```text
 Request:
-02 07 01 00 00 00 01 09 00 00 00
-rpcEncoding=BINARY(2), rpcOp=Request(7), requestId=1, methodId=0x0901, statusCode=SUCCESS, bodyEncoding=NONE
+02 07 78 56 34 12 01 00 00 00 01 09 00 00 00
+rpcEncoding=BINARY(2), rpcOp=Request(7), sid=0x12345678, requestId=1, methodId=0x0901, statusCode=SUCCESS, bodyEncoding=NONE
 body: empty
 
 Response 成功:
-02 08 01 00 00 00 01 09 00 00 01 ...
-rpcEncoding=BINARY(2), rpcOp=RequestResponse(8), requestId=1, methodId=0x0901, statusCode=SUCCESS, bodyEncoding=TLV8
+02 08 78 56 34 12 01 00 00 00 01 09 00 00 01 ...
+rpcEncoding=BINARY(2), rpcOp=RequestResponse(8), sid=0x12345678, requestId=1, methodId=0x0901, statusCode=SUCCESS, bodyEncoding=TLV8
 body: TLV8 encoded AudioAlgorithmConfig, field layout comes from generated schema
 ```
 
@@ -862,21 +880,21 @@ Client → Server:
   { "sid": "", "op": 2, "d": { "rpcVersion": 1, "eventMasks": "090101" } }
 
 Server → Client:
-  { "sid": "28378462323", "op": 3, "d": { "negotiatedRpcVersion": 1 } }
+  { "sid": "12345678", "op": 3, "d": { "negotiatedRpcVersion": 1 } }
 
 [业务调用]
 Client → Server:
-  { "sid": "28378462323", "op": 7, "d": { "id": 1, "method": "audio.getAlgorithmConfig" } }
+  { "sid": "12345678", "op": 7, "d": { "id": 1, "method": "audio.getAlgorithmConfig" } }
 
 Server → Client:
-  { "sid": "28378462323", "op": 8, "d": { "id": 1, "status": { "ok": true, "code": 0 }, "result": { "noiseSuppression": { "level": 2 } } } }
+  { "sid": "12345678", "op": 8, "d": { "id": 1, "status": { "ok": true, "code": 0 }, "result": { "noiseSuppression": { "level": 2 } } } }
 
 [断线重连]
 Client → Server:
-  { "sid": "", "op": 2, "d": { "rpcVersion": 1, "resumeSid": "28378462323" } }
+  { "sid": "", "op": 2, "d": { "rpcVersion": 1, "resumeSid": "12345678" } }
 
 Server → Client:
-  { "sid": "28378462323", "op": 3, "d": { "negotiatedRpcVersion": 1 } }
+  { "sid": "12345678", "op": 3, "d": { "negotiatedRpcVersion": 1 } }
 ```
 
 ---
@@ -963,10 +981,11 @@ RPC Parser 必须满足：
 ```text
 rpcEncoding = JSON / BINARY
 op = Hello(0) / Identify(2) / Identified(3) / Event(6) / Request(7) / RequestResponse(8)
-sid+op+d Envelope（JSON）
-Binary RPC Header（11B）
+sid+op+d Envelope（JSON，sid 为 8 位 hex string）
+Binary RPC Header（15B，sid 为 uint32）
 TLV body encode/decode
 uint16 methodId / eventId
+uint32 sid（RPC Session ID）
 uint32 id（requestId）
 method ↔ methodId 映射 / event ↔ eventId 映射
 业务 result / status.ok / status.code / status.msg / status.details 结构

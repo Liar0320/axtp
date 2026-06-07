@@ -46,5 +46,5 @@ levels:
     required_cases:
       - handshake.open_accept
       - handshake.close
-      - handshake.ping_pong
+      - handshake.heartbeat
       - rpc.request_id_match

@@ -136,7 +136,7 @@ WebSocket Unframed JSON 不使用：
 - CONTROL OPEN / ACCEPT / ACK / NACK / CLOSE
 - STREAM Payload
 - CRC16
-- Binary RPC 11B Header
+- Binary RPC 15B Header
 
 WebSocket 断开即代表该 unframed RPC session 断开。恢复策略由应用层重新连接、重新 Identify、重新查询能力完成。
 
@@ -181,6 +181,6 @@ Compact/HID-64/BLE/UART 迁移到 `docs/specs/1-core/08-Low-Bandwidth-Degradatio
 
 - MethodId / EventId / ErrorCode 不变
 - PayloadType 仍只有 CONTROL / RPC / STREAM
-- Binary RPC Header 仍为 11B
+- Binary RPC Header 仍为 15B，并携带 `sid:uint32`
 - STREAM Header 仍为 16B
 - stream profile 通过 RPC 建流绑定到 streamId，不进入 STREAM Header

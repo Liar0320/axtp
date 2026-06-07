@@ -26,3 +26,11 @@ Runtime repositories should point `AXTP_SPEC_PATH` at this repository or at a
 released AXTP spec artifact. Source checkouts use `docs/conformance/`; release
 artifacts may expose the same content as a top-level `conformance/` directory
 for compatibility.
+
+Runtime teams implementing Phase 1 should start from
+`docs/guides/runtime-mvp-conformance.md` before declaring supported conformance
+levels.
+
+QA and conformance owners should start from
+`docs/guides/testing-conformance-quickstart.md` to decide which levels to run
+and how to classify failures.

@@ -1,5 +1,5 @@
-id: handshake.ping_pong
-title: CONTROL PING / PONG
+id: handshake.heartbeat
+title: CONTROL HEARTBEAT / HEARTBEAT_ACK
 since: spec/v0.0.2
 level: framed-binary
 profiles:
@@ -12,15 +12,15 @@ given:
 steps:
   - direction: client_to_server
     control:
-      type: PING
+      type: HEARTBEAT
       controlId: 3
 
   - direction: server_to_client
     expect:
       control:
-        type: PONG
+        type: HEARTBEAT_ACK
         controlId: 3
         statusCode: SUCCESS
 
 assertions:
-  - pong.controlId == ping.controlId
+  - heartbeatAck.controlId == heartbeat.controlId
