@@ -36,7 +36,7 @@ AXTP 不是为了“换一种协议格式”，而是为了解决多产品、多
 
 | 阶段 | 目标 | 核心交付 | 验收 |
 |---|---|---|---|
-| Phase 1 | 核心协议冻结 | Hello / Identify / OPEN / ACCEPT / sid / requestId / stream / event / error | 协议状态机明确，JSON 与 framed 两条链路都能解释 |
+| Phase 1 | 核心协议冻结 | Hello / Identify / OPEN / ACCEPT / HEARTBEAT / CLOSE / sid / requestId / event / error / RPC encoding | 协议状态机明确，JSON 与 Standard Framed 两条链路都能解释 |
 | Phase 2 | Core Runtime MVP | Frame、Message、Session、Request、Event、Stream、Error、Capability、Transport 抽象 | client / server 可以完成最小通信闭环 |
 | Phase 3 | NA20 首个落地 | pairing、OTA、stream、flow-control、server endpoint、`axtpctl` | 上位机能发现、配对、拉流、收事件、触发升级流程 |
 | Phase 4 | 老协议迁移策略 | AXDP 重建，Rooms / Signage / uxplay 平移，VM33 HTTP + AXTP hybrid | 老业务可通过 AXTP 统一入口访问，且迁移路径清楚 |
@@ -51,8 +51,8 @@ AXTP 协议库承担四类职责。
 
 | 职责 | 范围 | 主库边界 |
 |---|---|---|
-| 协议基础设施 | Hello / Identify / OPEN / ACCEPT / sid / requestId / streamId / event / error / stream / low-bandwidth 等核心交互流程 | 规则写入 `docs/specs/`、事实写入 `registry/`、生成 `protocol/axtp.protocol.yaml` |
-| 业务能力承载 | `device.*`、`system.*`、framing、focus/zoom/ptz、camera image/exposure/calibration/whiteBalance、diagnostic、room/signage、OTA、stream、flow-control event | 草案进 `docs/protocol/`，采纳后进入 `registry/domains/` |
+| 协议基础设施 | Hello / Identify / OPEN / ACCEPT / HEARTBEAT / CLOSE / sid / requestId / event / error / RPC encoding / low-bandwidth 边界等核心交互流程 | 规则写入 `docs/specs/`、事实写入 `registry/`、生成 `protocol/axtp.protocol.yaml` |
+| 业务能力承载 | `device.*`、`system.*`、framing、focus/zoom/ptz、camera image/exposure/calibration/whiteBalance、diagnostic、room/signage、OTA、video/audio stream RPC 控制面 + STREAM 数据面、flow-control event | 草案进 `docs/protocol/`，采纳后进入 `registry/domains/` |
 | 老协议迁移适配 | AXDP、Rooms、VM33、数字标牌、uxplay 等历史协议族的迁移、平移、adapter 策略 | 证据和计划放 `docs/legacy-migration/`，实现放 runtime / adapter 仓库 |
 | 研发接入工具链 | server endpoint、client CLI、`axtpctl`、SDK/runtime、discovery、mock server、conformance、probe、inspector、replay | 主库提供 spec、generated、conformance；工具实现放外部仓库 |
 
@@ -81,7 +81,7 @@ WebSocket JSON:
   connect -> Hello -> Identify -> Identified -> RPC / Event -> close
 
 Standard Framed:
-  transport connect -> CONTROL OPEN -> ACCEPT -> RPC / STREAM / Event -> CONTROL CLOSE
+  transport connect -> CONTROL OPEN -> ACCEPT -> RPC / STREAM / Event -> CONTROL HEARTBEAT -> CONTROL CLOSE
 ```
 
 ### 1.2 ID 生命周期
@@ -102,12 +102,12 @@ AXTP core 至少冻结以下语义：
 - Response
 - Event
 - Error
-- Stream open
-- Stream data
-- Stream close
+- Media stream open（`video.openStream` / `audio.startRecording(deliveryMode=stream)`）
+- STREAM 16B data packet
+- Media stream close（`video.closeStream` / `audio.stopRecording`）
 - JSON RPC 与 Binary / TLV 映射关系
 
-验收标准：`AXTP-WS-JSON` 能完成 Hello / Identify / Request / Response / Event；`AXTP-TCP` 或 `AXTP-USB-HID` 能在 CONTROL OPEN / ACCEPT 后承载 RPC，且 STREAM 边界清楚。
+验收标准：`AXTP-WS-JSON` 能完成 Hello / Identify / Request / Response / Event；`AXTP-TCP` 或 `AXTP-USB-HID` 能在 CONTROL OPEN / ACCEPT 后承载 RPC 和 STREAM，并实现 HEARTBEAT / CLOSE。P0 STREAM 重点是 audio/video 媒体流，ACK/NACK 严格重传仍后续扩展。
 
 ## 2. Phase 2：AXTP Core Runtime MVP
 
@@ -448,8 +448,10 @@ axtpctl discover --json
 - `ota.prepare`
 - `ota.transfer`
 - `ota.commit`
-- `stream.open`
-- `stream.pull`
+- `video.openStream`
+- `video.closeStream`
+- `audio.startRecording`
+- `audio.stopRecording`
 - `flowControl.pause`
 - `flowControl.resume`
 - `flowControl.event`

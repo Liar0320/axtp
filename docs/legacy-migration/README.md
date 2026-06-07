@@ -1,10 +1,8 @@
-# AXTP Legacy Migration
+# AXTP Legacy 迁移
 
-`docs/legacy-migration/` keeps old protocol evidence, classification output,
-migration plans, and generated migration candidates in one place. It is a
-migration workspace, not an AXTP protocol fact source.
+`docs/legacy-migration/` 集中保存旧协议证据、分类输出、迁移计划和 generated 迁移候选。这里是迁移工作区，不是 AXTP 当前协议事实源。
 
-Stable AXTP facts still come from:
+稳定 AXTP 事实仍来自：
 
 ```text
 registry/**/*.yaml + registry/domains/**/*.yaml
@@ -12,15 +10,14 @@ registry/**/*.yaml + registry/domains/**/*.yaml
   -> docs/generated/**
 ```
 
-## Layout
+## 目录结构
 
-| Path | Purpose |
+| 路径 | 用途 |
 |---|---|
-| `evidence/` | Original AXDP, VM33, Rooms, NearHub, and other legacy protocol evidence. |
-| `classification/` | Script-generated domain-feature classification intake. |
-| `plans/` | Human migration plans and review matrices. |
-| `generated/` | Generated migration candidates and adapter planning outputs. |
-| `planning/` | Historical planning references that remain relevant to legacy compatibility. |
+| `evidence/` | AXDP、VM33、Rooms、NearHub 等旧协议原始证据。 |
+| `classification/` | 脚本生成的 domain-feature 分类输入。 |
+| `plans/` | 人工迁移计划和评审矩阵。 |
+| `generated/` | 生成的迁移候选和 adapter 规划输出。 |
+| `planning/` | 仍对 legacy compatibility 有价值的历史规划参考。 |
 
-Do not promote legacy mappings into `registry/` without concrete legacy command,
-status, payload, or behavior evidence and human review.
+不要在没有具体旧命令、状态码、payload 或行为证据以及人工评审的情况下，把 legacy mapping 提升到 `registry/`。

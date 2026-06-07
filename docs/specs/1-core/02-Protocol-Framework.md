@@ -58,7 +58,7 @@ Standard Framed
   -> AXTP-USB-HID / AXTP-TCP
   -> STANDARD_FRAME
   -> PayloadType = CONTROL / RPC / STREAM
-  -> rpcEncoding = BINARY / JSON
+  -> rpcEncoding = JSON / CBOR / MSGPACK / JSON_BINARY
 
 WebSocket Unframed JSON
   -> AXTP-WS-JSON / AXTP-WS-CLOUD-REVERSE
@@ -93,9 +93,9 @@ AXTP v1 Core 只定义三类顶层 PayloadType：
 
 | PayloadType | 职责 |
 |---|---|
-| CONTROL | OPEN / ACCEPT、心跳、ACK/NACK、关闭、恢复等协议运行时信令 |
+| CONTROL | OPEN / ACCEPT、心跳、关闭；ACK/NACK、恢复等为后续协议运行时扩展 |
 | RPC | Hello / Identify / Request / Response / Event 等结构化业务控制面 |
-| STREAM | 固件更新、文件、日志、音视频、传感器等长生命周期数据面 |
+| STREAM | P0 音视频媒体流，以及后续固件更新、文件、日志、传感器等长生命周期数据面 |
 
 具体 wire format 见 `docs/specs/1-core/03-Frame-and-Payload.md`。
 
@@ -112,7 +112,7 @@ Server -> Client: RPC Identified
 Client -> Server: RPC adopted business methods from generated registry
 ```
 
-`READY` 保留为可选三步确认名称，但 v1 Core 默认不要求实现；默认握手只要求 OPEN / ACCEPT。
+`READY` 保留为可选三步确认名称，但 v1 Core 默认不要求实现；默认握手只要求 OPEN / ACCEPT。Phase 1 还必须实现 HEARTBEAT / HEARTBEAT_ACK 与 CLOSE / CLOSE_ACK，ACK / NACK 只作为后续可靠传输预留。
 
 ---
 
@@ -130,7 +130,7 @@ v1 Core 保留 `capability` 域，但不内置默认业务能力发现 method。
 |---|---|
 | `docs/specs/1-core/03-Frame-and-Payload.md` | Standard Header、PayloadType、CRC、分片 |
 | `docs/specs/1-core/04-Transport-Profiles.md` | USB HID / TCP / WebSocket JSON / Cloud Reverse 连接形态 |
-| `docs/specs/1-core/05-Control-Session.md` | OPEN / ACCEPT / READY / ACK / NACK / HEARTBEAT / CLOSE |
+| `docs/specs/1-core/05-Control-Session.md` | OPEN / ACCEPT / HEARTBEAT / CLOSE；READY / ACK / NACK 预留 |
 | `docs/specs/1-core/06-RPC-Session.md` | Hello / Identify / Identified / Binary RPC / methodId / eventId |
 | `docs/specs/1-core/07-Stream-Data-Plane.md` | 16B STREAM Header、streamId / seq / cursor、resume / retransmit / flow control |
 | `docs/specs/4-tooling/03-Versioning.md` | v1 freeze rules、reserved 规则、ID 不复用、Legacy migration |

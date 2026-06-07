@@ -193,7 +193,7 @@ Binary-RPC Header 固定 15B。JSON / CBOR / MessagePack 模式不使用 Binary 
 | `TLV16` | 扩展长度 TLV |
 | `CBOR` | 可选紧凑对象编码 |
 | `FIXED_STRUCT` | Legacy 兼容结构 |
-| `RAW_BYTES` | Legacy 过渡字段 |
+| `TLV8` / `TLV16` | JSON_BINARY body 字段编码 |
 
 ---
 
@@ -531,13 +531,13 @@ MVP Control Opcode：`OPEN(0x01) / ACCEPT(0x02) / HEARTBEAT(0x04) / HEARTBEAT_AC
 |---:| --- |---|
 | `0x00` | `NONE` | 无 body |
 | `0x01` | `JSON` | DS-RPC Text Profile body |
-| `0x02` | `BINARY` | AXTP Binary RPC body |
-| `0x03` | `CBOR` | CBOR body |
-| `0x04` | `MSGPACK` | MessagePack body |
+| `0x02` | `CBOR` | CBOR sid/op/d envelope |
+| `0x03` | `MSGPACK` | MessagePack sid/op/d envelope |
+| `0x04` | `JSON_BINARY` | AXTP fixed binary sid/op/d envelope |
 | `0x06-0x7E` | `RESERVED` | 保留 |
 | `0x7F` | `VENDOR` | 厂商私有 |
 
-MVP 必须实现：`JSON / BINARY`。二进制 Body 的 TLV8 / TLV16 / RAW_BYTES / CBOR_BODY 由 `bodyEncoding` 表达，不占用 `rpcEncoding` 枚举。
+Phase 1 必须实现：`JSON`；Standard Framed 优先实现 `JSON_BINARY`。二进制 Body 的 TLV8 / TLV16 由 `bodyEncoding` 表达，不占用 `rpcEncoding` 枚举。
 
 #### 8.4 RPC Operation
 
@@ -838,8 +838,8 @@ legacyMappings:
     direction: request_response
     payload:
       legacyEncoding: fixed_struct
-      axtpRpcEncoding: BINARY
-      axtpBodyEncoding: TLV
+      axtpRpcEncoding: JSON_BINARY
+      axtpBodyEncoding: TLV8
       schema: VideoSetModeParams
     statusMapping:
       legacySuccess: 0x00
@@ -852,7 +852,7 @@ Legacy Mapping 规则：
 - 老协议固定 payload 必须映射到 AXTP Schema
 - 老协议状态码必须映射到 AXTP ErrorCode
 
-MVP 优先适配：设备信息 / 能力查询 / 显示亮度设置查询 / 固件升级 / 基础 ACK/NACK / 基础错误码
+MVP 优先适配：设备信息 / 能力查询 / 显示亮度设置查询 / 视频/音频 stream 类 RPC 控制面 / 基础错误码
 
 ---
 
@@ -902,9 +902,9 @@ required 字段必须无 default 或具有明确 default 策略
 
 ```text
 PayloadType:    CONTROL / RPC / STREAM
-Control Opcode: OPEN / ACCEPT / HEARTBEAT / HEARTBEAT_ACK / ACK / NACK / CLOSE / CLOSE_ACK
+Control Opcode: OPEN / ACCEPT / HEARTBEAT / HEARTBEAT_ACK / CLOSE / CLOSE_ACK
 RPC Op:         HELLO / IDENTIFY / IDENTIFIED / EVENT / REQUEST / REQUEST_RESPONSE
-RPC Encoding:   JSON / BINARY
+RPC Encoding:   JSON / CBOR / MSGPACK / JSON_BINARY
 Stream Profile: none by default; business stream profiles require adopted drafts
 ```
 

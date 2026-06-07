@@ -25,7 +25,7 @@ docs/source/
 |---|---|
 | CmdValue | `methods[].legacy.cmdValue` |
 | Legacy method name | `methods[].legacy.name` |
-| Legacy payload format | `methods[].legacy.payloadFormat` or `bodyEncoding=RAW_BYTES` |
+| Legacy payload format | `methods[].legacy.payloadFormat` or runtime legacy adapter metadata |
 | Legacy status | `errors[].code` through a legacy error mapping |
 | Legacy event | `events[]` plus adapter metadata |
 | Legacy capability / feature bit | Normalize to `domain.feature`, then expose through v1 `capability.supportedMethods` or future Capability Model |
@@ -80,5 +80,5 @@ Legacy material is only promoted to `registry/**/*.yaml` or `registry/domains/**
 
 1. A stable AXTP method/event/error/type/profile mapping.
 2. A clear owner domain.
-3. A schema or explicit `RAW_BYTES` compatibility body.
+3. A schema or explicit runtime legacy adapter conversion rule.
 4. Conformance tests or adapter test vectors.

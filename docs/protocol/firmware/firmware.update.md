@@ -1334,7 +1334,7 @@ cleanup
 限制：
 
 1. `data` 大小不得超过 RPC body 和 transport MTU 能承受的上限。
-2. 该方法不得替代 `firmware.update` STREAM 作为 P0 数据面。
+2. 该方法不得替代后续 `firmware.update` STREAM 数据面；Phase 1 已要求 audio/video STREAM 数据包，但不要求实现固件更新 STREAM profile。
 3. 如果 registry 采纳该方法，必须单独声明 max chunk size、编码和错误码。
 
 ---
@@ -1859,7 +1859,7 @@ TLV 规则：
 firmware.update 是固件更新控制面：
   manifest、devicePolicy、updateSessionId、batchId、md5 校验、安装、自动重启、状态。
 
-firmware.update STREAM 是 P0 数据面：
+firmware.update STREAM 是后续 profile 数据面：
   streamId、seqId、cursor、payload、ack；resume 是 P1 预留。
 
 file.transfer 只是 P1 暂存文件模式：

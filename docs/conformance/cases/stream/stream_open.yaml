@@ -1,5 +1,5 @@
 id: stream.stream_open
-title: STREAM context is opened by RPC control plane
+title: Media STREAM context is opened by RPC control plane
 since: spec/v0.0.2
 level: stream
 profiles:
@@ -14,9 +14,11 @@ steps:
     rpc:
       op: REQUEST
       requestId: 200
-      method: stream.open
+      method: video.openStream
       params:
-        profile: vendor.test
+        streamProfile: media.video
+        source: conformance_test
+        codec: h264
 
   - direction: server_to_client
     expect:
@@ -26,7 +28,9 @@ steps:
         result:
           streamId:
             gt: 0
+          streamProfile: media.video
 
 assertions:
   - streamId > 0
   - streamId != 0
+  - streamProfile == media.video

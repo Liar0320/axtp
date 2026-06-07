@@ -3,29 +3,19 @@ rpc_encodings:
     name: JSON
     domain: rpc
     status: mvp
-    description: UTF-8 JSON business body bytes.
+    description: UTF-8 JSON sid/op/d envelope bytes.
   - id: 0x02
-    name: TLV
-    domain: rpc
-    status: mvp
-    description: AXTP TLV business body bytes.
-  - id: 0x03
-    name: BINARY
-    domain: rpc
-    status: deprecated
-    description: Deprecated compatibility alias. New code must use JSON, TLV or RAW.
-  - id: 0x04
-    name: RAW
-    domain: rpc
-    status: mvp
-    description: Uninterpreted business bytes.
-  - id: 0x05
     name: CBOR
     domain: rpc
     status: draft
-    description: CBOR encoded RPC body.
-  - id: 0x06
+    description: CBOR encoded sid/op/d envelope bytes.
+  - id: 0x03
     name: MSGPACK
     domain: rpc
     status: draft
-    description: MessagePack encoded sid/op/d envelope.
+    description: MessagePack encoded sid/op/d envelope bytes.
+  - id: 0x04
+    name: JSON_BINARY
+    domain: rpc
+    status: mvp
+    description: Fixed binary sid/op/d envelope with bodyEncoding-selected body bytes.

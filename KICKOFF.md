@@ -165,7 +165,7 @@ Business 解决“设备实际做什么”
 |---|---|---|
 | CONTROL | Standard Framed 的运行时控制 | `OPEN/ACCEPT`、`HEARTBEAT/HEARTBEAT_ACK`、`CLOSE/CLOSE_ACK`。 |
 | RPC | 业务控制面 | Hello、Identify、Identified、Request、Response、Event。 |
-| STREAM | 连续数据面 | 固件、文件、日志、音视频等，后续按 profile 增量实现。 |
+| STREAM | 连续数据面 | P0 承载 audio/video 媒体流；固件、文件、日志等后续按 profile 增量实现。 |
 
 Phase 1 明确暂不做：
 
@@ -174,11 +174,10 @@ ACK/NACK 严格重传
 RESUME / SESSION_RESET
 PING/PONG RTT 测量
 链路加密
-自定义 binary JSON
-完整 STREAM 数据面
+固件 / 文件 / 日志类 STREAM profile
 ```
 
-这能避免 runtime MVP 一开始就背上过重实现成本。第一阶段先把建连、RPC、心跳、关闭、错误和 conformance 跑通。
+这能避免 runtime MVP 一开始就背上过重实现成本。第一阶段先把建连、RPC、心跳、关闭、错误、JSON / JSON_BINARY 边界、audio/video STREAM 数据面和 conformance 跑通。
 
 ### 2.4 Source of Truth 如何解决事实分散
 
@@ -402,7 +401,7 @@ AXTP 后续不追求一次性把所有协议域写全。正确节奏是：
 
 | 阶段 | 目标 | 核心交付 | 验收 |
 |---|---|---|---|
-| Phase 1 | 核心协议冻结 | Hello / Identify / OPEN / ACCEPT / sid / requestId / event / error | JSON 与 Standard Framed 两条链路都能解释。 |
+| Phase 1 | 核心协议冻结 | Hello / Identify / OPEN / ACCEPT / HEARTBEAT / CLOSE / sid / requestId / event / error / RPC encoding | JSON 与 Standard Framed 两条链路都能解释。 |
 | Phase 2 | Core Runtime MVP | Frame、Session、Request、Event、Error、Capability、Transport 抽象 | client / server 完成最小通信闭环。 |
 | Phase 3 | NA20 首个落地 | pairing、OTA、stream、flow-control、server endpoint、`axtpctl` | 上位机能发现、配对、拉流、收事件、触发升级流程。 |
 | Phase 4 | 老协议迁移策略 | AXDP 重建，Rooms / Signage / uxplay 平移，VM33 HTTP + AXTP hybrid | 老业务可通过 AXTP 统一入口访问，迁移路径清楚。 |
@@ -415,8 +414,8 @@ AXTP 后续不追求一次性把所有协议域写全。正确节奏是：
 
 | 版本 | 目标 | 重点交付 |
 |---|---|---|
-| v0.1 | 协议核心可跑 | Hello / Identify / OPEN / ACCEPT、Request / Response / Event / Error、sid / requestId、mock server、client demo。 |
-| v0.2 | NA20 首个业务闭环 | NA20 server endpoint、pairing、OTA、stream、flow-control event、`axtpctl stream pull`、基础 conformance。 |
+| v0.1 | 协议核心可跑 | Hello / Identify / OPEN / ACCEPT、HEARTBEAT、CLOSE、Request / Response / Event / Error、sid / requestId、mock server、client demo。 |
+| v0.2 | NA20 首个业务闭环 | NA20 server endpoint、pairing、video/audio stream RPC 控制面 + STREAM 数据面、flow-control event、基础 conformance。 |
 | v0.3 | 设备控制能力完善 | `device.*`、`system.*`、framing、focus / zoom / ptz、camera image / exposure / whiteBalance / calibration。 |
 | v0.4 | 老协议迁移适配 | Rooms Adapter、Signage Adapter、uxplay Adapter、VM33 hybrid、AXDP migration docs、legacy mapping。 |
 | v0.5 | 工具链与多端 runtime | `axtpctl`、`axtp-probe`、`axtp-mock-server`、`axtp-conformance`、多语言 runtime 基础一致。 |
@@ -427,11 +426,12 @@ AXTP 后续不追求一次性把所有协议域写全。正确节奏是：
 | 优先级 | 做什么 | 为什么 |
 |---|---|---|
 | P0 | WebSocket JSON 控制面、Hello / Identify、generated method 调用、mock server、core conformance | 最快让 App、Web、云端、外部 SDK 和测试接入。 |
-| P0 | Standard Framed 的 OPEN / ACCEPT、HEARTBEAT、CLOSE、基础 RPC | 给设备 runtime 建立统一地基。 |
+| P0 | Standard Framed 的 OPEN / ACCEPT、HEARTBEAT、CLOSE、基础 RPC、JSON_BINARY 边界 | 给设备 runtime 建立统一地基。 |
+| P0 | audio/video STREAM 数据面、`video.openStream`、`audio.startRecording(deliveryMode=stream)`、STREAM 16B header/parser | 让设备到软件的实时媒体交互真正落地，不只停留在控制面。 |
 | P0 | `device.*`、`system.*`、`video.framing`、focus / zoom / ptz 的协议评审 | 先覆盖最常见设备控制能力。 |
 | P1 | camera image / exposure / calibration / whiteBalance、diagnostic | 扩展核心设备调节和产测能力。 |
 | P1 | `axtpctl`、probe、inspector | 提升研发调试和问题复现效率。 |
-| P2 | STREAM 完整 profile、ACK/NACK、RESUME、低带宽、强认证 / 加密 | 等固件升级、弱链路、客户安全需求明确后推进。 |
+| P2 | 固件 / 文件 / 日志类 STREAM profile、ACK/NACK、RESUME、低带宽、强认证 / 加密 | 等固件升级、弱链路、客户安全需求明确后推进。 |
 | P2 | Rooms / Signage / uxplay / VM33 深度迁移 | 先 adapter 接入，再逐步标准化 capability。 |
 
 ### 4.5 会后行动清单

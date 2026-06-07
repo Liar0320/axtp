@@ -25,7 +25,7 @@
       "name": "protocol.payload.stream",
       "domain": "protocol",
       "status": "mvp",
-      "description": "Device supports STREAM payload.",
+      "description": "Device supports STREAM data-plane payloads.",
       "deprecated": false,
       "type": "bool",
       "idHex": "0x0003"

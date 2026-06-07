@@ -18,7 +18,7 @@ capabilities:
     domain: protocol
     status: mvp
     type: bool
-    description: Device supports STREAM payload.
+    description: Device supports STREAM data-plane payloads.
 
   - id: 0x0009
     name: protocol.reservedRequestIdWidth

@@ -32,7 +32,7 @@ AXTP v1 定义两条正式接入路径：
 
 | 模式 | Frame Header | CONTROL | RPC | STREAM | 典型传输 |
 |---|---|---:|---:|---:|---|
-| Standard Framed | 12B Standard Header | 是 | JSON / BINARY | 是 | AXTP-USB-HID、AXTP-TCP |
+| Standard Framed | 12B Standard Header | 是 | JSON / CBOR / MSGPACK / JSON_BINARY | 是 | AXTP-USB-HID、AXTP-TCP |
 | WebSocket Unframed JSON | 无 | 否 | JSON | 否 | AXTP-WS-JSON、AXTP-WS-CLOUD-REVERSE |
 
 同一连接不得混用两种模式。WebSocket Unframed JSON 使用 05《RPC Session Spec》的 `sid` / `op` / `d` JSON Envelope，不承载 Frame Header、CONTROL Payload、STREAM Payload、CRC 或 ACK/NACK。
@@ -63,9 +63,9 @@ Standard Framed 模式中，Frame Header 的 `PayloadType` 固定为三类：
 
 | ID | 名称 | 作用 |
 |---:|---|---|
-| `0x01` | `CONTROL` | 协议运行时信令：OPEN、ACCEPT、HEARTBEAT、ACK、NACK、CLOSE |
+| `0x01` | `CONTROL` | 协议运行时信令：OPEN、ACCEPT、HEARTBEAT、HEARTBEAT_ACK、CLOSE、CLOSE_ACK；ACK/NACK 为后续预留 |
 | `0x02` | `RPC` | 结构化业务控制面：Hello、Identify、Request、Response、Event |
-| `0x03` | `STREAM` | 连续数据面：视频帧、音频帧、固件更新数据块、文件块 |
+| `0x03` | `STREAM` | 连续数据面：P0 视频帧、音频帧；后续固件更新数据块、文件块 |
 
 PayloadType 只选择一级 parser，不表达具体业务类型：
 
@@ -148,16 +148,16 @@ CONTROL frame:
   + Control Payload = opcode(1) + controlId(2) + statusCode(2) + TLV body(N)
   + CRC16
 
-RPC Binary frame:
+RPC JSON / CBOR / MSGPACK frame:
   Standard Frame Header(payloadType=RPC)
-  + RPC Binary Payload = rpcEncoding(1) + rpcOp(1) + sid(4) + requestId(4)
-                       + methodOrEventId(2) + statusCode(2) + bodyEncoding(1)
-                       + body(N)
+  + RPC Payload = rpcEncoding(1) + encoded sid/op/d envelope(N)
   + CRC16
 
-RPC JSON frame:
+RPC JSON_BINARY frame:
   Standard Frame Header(payloadType=RPC)
-  + RPC JSON Payload = UTF-8 JSON { "sid": "...", "op": N, "d": { ... } }
+  + RPC Payload = rpcEncoding(1) + rpcOp(1) + sid(4) + requestId(4)
+                + methodOrEventId(2) + statusCode(2) + bodyEncoding(1)
+                + body(N)
   + CRC16
 
 STREAM frame:
@@ -171,8 +171,8 @@ STREAM frame:
 | PayloadType | Payload 内部结构 | 规范归属 |
 |---|---|---|
 | CONTROL | 5B 固定头 + TLV body | 04《Control Session Spec》 |
-| RPC / BINARY | 15B Binary RPC Header + body | 05《RPC Session Spec》 |
-| RPC / JSON | JSON `sid` / `op` / `d` envelope | 05《RPC Session Spec》 |
+| RPC / JSON、CBOR、MSGPACK | rpcEncoding(1B) + encoded `sid` / `op` / `d` envelope | 05《RPC Session Spec》 |
+| RPC / JSON_BINARY | 15B Binary RPC Header + body | 05《RPC Session Spec》 |
 | STREAM | 16B STREAM Header + data | 06《Stream Spec》 |
 
 WebSocket Unframed JSON 不包在 Standard Frame 中：
@@ -196,7 +196,7 @@ Standard Frame 使用 CRC16-CCITT-FALSE：
 | 覆盖范围 | Header(12B) + Payload |
 | Footer 长度 | 2B |
 
-接收方必须先校验 Header 长度、PayloadLength、PayloadType、Fragment，再校验 CRC。CRC 失败时应通过 CONTROL NACK 返回 `FRAME_CRC_ERROR`；无法安全返回时可以直接关闭连接。
+接收方必须先校验 Header 长度、PayloadLength、PayloadType、Fragment，再校验 CRC。Phase 1 不要求 CONTROL NACK 重传；CRC 失败时可以直接丢弃该 Frame，连续失败或无法安全恢复时关闭连接。后续可靠传输 profile 可通过 CONTROL NACK 返回 `FRAME_CRC_ERROR`。
 
 ---
 

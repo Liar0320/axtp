@@ -27,13 +27,13 @@ control_opcodes:
   - id: 0x06
     name: ACK
     domain: control
-    status: mvp
-    description: Positive transport acknowledgement.
+    status: p1
+    description: Reserved positive transport acknowledgement for future reliable transfer profiles.
   - id: 0x07
     name: NACK
     domain: control
-    status: mvp
-    description: Negative transport acknowledgement.
+    status: p1
+    description: Reserved negative transport acknowledgement for future reliable transfer profiles.
   - id: 0x08
     name: RESUME
     domain: control

@@ -735,8 +735,8 @@ Stream Profile 是具体可建流协议档案，存在于 Registry/Capability/St
     "windowSize": 1
   },
   "rpc": {
-    "encodings": ["BINARY"],
-    "bodyEncodings": ["TLV"],
+    "encodings": ["JSON_BINARY"],
+    "bodyEncodings": ["TLV8"],
     "event": true
   },
   "stream": {

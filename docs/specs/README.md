@@ -10,9 +10,9 @@
 1-core/01  总览：AXTP 分成哪几层，有哪两条连接路径
 1-core/03  Wire format：有 Frame Header 时，Header + Payload + CRC 怎么排
 1-core/04  Transport：不同连接方式下，谁先发 OPEN / Hello / Identify
-1-core/05  CONTROL 细节：OPEN / ACCEPT / ACK / NACK 的 Payload
-1-core/06  RPC 细节：JSON sid/op/d 与 Binary RPC Payload
-1-core/07  STREAM 细节：16B STREAM Header + data
+1-core/05  CONTROL 细节：OPEN / ACCEPT / HEARTBEAT / CLOSE；ACK / NACK 预留
+1-core/06  RPC 细节：JSON / CBOR / MSGPACK / JSON_BINARY 与 sid/op/d
+1-core/07  STREAM 细节：16B STREAM Header + data，P0 用于 audio/video 媒体流
 ```
 
 两条主线要分开看：
@@ -22,7 +22,7 @@
 | 有 Frame Header | `AXTP-USB-HID`、`AXTP-TCP` | `Standard Frame Header(12B) + Payload(N) + CRC16(2B)` | CONTROL / RPC / STREAM |
 | 无 Frame Header | `AXTP-WS-JSON`、`AXTP-WS-CLOUD-REVERSE` | `WebSocket message payload = JSON { sid, op, d }` | RPC-only |
 
-无 Frame Header 路径没有 CONTROL、STREAM、CRC16、Binary RPC 15B Header，也不参与 CONTROL ACK/NACK / RESUME。
+无 Frame Header 路径没有 CONTROL、STREAM、CRC16、JSON_BINARY RPC 15B Header，也不参与 CONTROL ACK/NACK / RESUME。
 
 ## 分组导航
 

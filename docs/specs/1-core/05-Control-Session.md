@@ -247,19 +247,19 @@ MVP Control 至少需要识别以下错误码：
 | 1 | RPC |
 | 2 | STREAM |
 
-示例：`0x07` = 支持 CONTROL/RPC/STREAM。
+Phase 1 示例：`0x07` = 支持 CONTROL/RPC/STREAM。
 
 ### 6.2 RPC Encoding Bitmap
 
 | bit | rpcEncoding |
 |---:|---|
 | 0 | JSON |
-| 1 | BINARY |
-| 2 | CBOR |
-| 3 | MSGPACK |
+| 1 | CBOR |
+| 2 | MSGPACK |
+| 3 | JSON_BINARY |
 | 4-31 | RESERVED |
 
-示例：`0x03` = JSON/BINARY。TLV/RAW_BYTES 属于 RPC Body Encoding，不属于此 bitmap。
+示例：`0x01` = 仅 JSON；`0x09` = JSON + JSON_BINARY；`0x0F` = JSON / CBOR / MSGPACK / JSON_BINARY 全支持。TLV8/TLV16 属于 `JSON_BINARY` 的 bodyEncoding，不属于此 bitmap。
 
 ### 6.3 Stream Profile 能力
 
@@ -373,7 +373,7 @@ Body TLV:
 04 02 00 10     // maxFrameSize = 4096
 06 02 C4 09     // mtu = 2500
 07 01 07        // supportedPayloadTypes = CONTROL/RPC/STREAM
-08 01 03        // supportedRpcEncodings = JSON/BINARY
+08 01 09        // supportedRpcEncodings = JSON + JSON_BINARY
 0A 02 E8 03     // heartbeatIntervalMs = 1000
 0B 01 00        // ackMode = NONE (Phase 1 default)
 ```
@@ -389,7 +389,7 @@ Body TLV:
 04 02 00 10        // maxFrameSize = 4096
 06 02 C4 09        // mtu = 2500
 07 01 07           // payloadTypes = CONTROL/RPC/STREAM
-1E 01 02           // selectedRpcEncoding = BINARY
+1E 01 01           // selectedRpcEncoding = JSON
 0A 02 E8 03        // heartbeatIntervalMs = 1000
 0B 01 00           // ackMode = NONE (Phase 1 default)
 ```

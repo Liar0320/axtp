@@ -75,7 +75,7 @@ Frame Header 只决定一级 parser：
 |---:|---|---|
 | `0x01` | CONTROL | OPEN / ACCEPT / HEARTBEAT / HEARTBEAT_ACK / CLOSE / CLOSE_ACK；ACK / NACK 仅预留 |
 | `0x02` | RPC | Hello / Identify / Request / Response / Event |
-| `0x03` | STREAM | 固件、文件、日志、音视频等连续数据 |
+| `0x03` | STREAM | P0 音视频媒体流；后续固件、文件、日志等连续数据面 |
 
 ### 3.2 WebSocket Unframed JSON：App / Web / Node / Cloud
 
@@ -99,9 +99,9 @@ WebSocket JSON 不使用：
 - CONTROL OPEN / ACCEPT
 - CONTROL HEARTBEAT / HEARTBEAT_ACK
 - CONTROL CLOSE / CLOSE_ACK
-- CONTROL ACK / NACK
+- CONTROL ACK / NACK 严格重传
 - CRC16
-- STREAM Payload
+- STREAM Payload 数据面（Standard Framed P0 必做）
 - Binary RPC 15B Header
 
 ## 4. 状态机
@@ -175,7 +175,7 @@ HEARTBEAT_ACK payload:
 |---|---|
 | 心跳间隔 | 使用 OPEN / ACCEPT 协商出的 `heartbeatIntervalMs`，建议 1000-5000ms。 |
 | 超时判断 | 连续 3 次未收到 HEARTBEAT_ACK，认为链路异常。 |
-| 异常处理 | 停止发送业务 RPC / STREAM，关闭 transport，必要时重新 OPEN。 |
+| 异常处理 | 停止发送业务 RPC 和后续 STREAM 数据，关闭 transport，必要时重新 OPEN。 |
 | WebSocket JSON | 不走 CONTROL HEARTBEAT；使用 WebSocket ping/pong 或应用层 RPC event。 |
 
 ### 5.2 CLOSE / CLOSE_ACK 最小规则
@@ -271,7 +271,7 @@ OPEN 常用 TLV：
 | `maxFrameSize` | `0x04` | `4096` | `04 02 00 10` | 本端可接收最大 Frame |
 | `mtu` | `0x06` | `2500` | `06 02 c4 09` | transport 建议 MTU |
 | `supportedPayloadTypes` | `0x07` | CONTROL/RPC/STREAM | `07 01 07` | bit0/1/2 全支持 |
-| `supportedRpcEncodings` | `0x08` | JSON/BINARY | `08 01 03` | bit0=JSON，bit1=BINARY |
+| `supportedRpcEncodings` | `0x08` | JSON/JSON_BINARY | `08 01 09` | bit0=JSON，bit3=JSON_BINARY |
 | `heartbeatIntervalMs` | `0x0A` | `1000` | `0a 02 e8 03` | 心跳间隔 |
 | `ackMode` | `0x0B` | NONE | `0b 01 00` | Phase 1 不启用 ACK/NACK 重传 |
 
@@ -285,7 +285,7 @@ OPEN 常用 TLV：
 | SourceId / DestinationId | `0x01 -> 0x02` |
 | MessageId | `0x0001` |
 | PayloadLength | `29` |
-| CRC16-CCITT-FALSE | `0x8db5`，little-endian 写入 `b5 8d` |
+| CRC16-CCITT-FALSE | `0x1cc9`，little-endian 写入 `c9 1c` |
 
 ```text
 Header:
@@ -297,17 +297,17 @@ Control Payload:
 04 02 00 10
 06 02 c4 09
 07 01 07
-08 01 03
+08 01 09
 0a 02 e8 03
 0b 01 00
 
 CRC16 little-endian:
-b5 8d
+c9 1c
 
 Full packet:
 41 58 01 01 1d 00 01 02 01 00 00 01
 01 01 00 00 00 02 01 01 04 02 00 10 06 02 c4 09
-07 01 07 08 01 03 0a 02 e8 03 0b 01 00 b5 8d
+07 01 07 08 01 09 0a 02 e8 03 0b 01 00 c9 1c
 ```
 
 ## 7. CONTROL ACCEPT
@@ -331,14 +331,14 @@ ACCEPT 常用 TLV：
 | `protocolVersion` | `0x02` | `1` | `02 01 01` | 协商后的 AXTP Core 版本 |
 | `maxFrameSize` | `0x04` | `4096` | `04 02 00 10` | 最终可用最大 Frame |
 | `mtu` | `0x06` | `2500` | `06 02 c4 09` | 最终可用 MTU |
-| `supportedPayloadTypes` | `0x07` | CONTROL/RPC/STREAM | `07 01 07` | 最终 payload type 集合 |
+| `supportedPayloadTypes` | `0x07` | CONTROL/RPC/STREAM | `07 01 07` | Phase 1 payload type 集合 |
 | `selectedRpcEncoding` | `0x1E` | JSON | `1e 01 01` | 本示例选择 JSON，便于联调 |
 | `heartbeatIntervalMs` | `0x0A` | `1000` | `0a 02 e8 03` | 最终心跳间隔 |
 | `ackMode` | `0x0B` | NONE | `0b 01 00` | Phase 1 不启用 ACK/NACK 重传 |
 
-> 如果 `selectedRpcEncoding=BINARY(0x02)`，后续 Hello / Identify / Identified 必须按 Binary RPC 15B header + TLV body 编码。本文示例选择 JSON，是为了让研发先把流程打通。
+> 如果 `selectedRpcEncoding=JSON_BINARY(0x04)`，后续 Hello / Identify / Identified 必须按 JSON_BINARY 15B header + TLV8/TLV16 body 编码。本文示例选择 JSON，是为了让研发先把流程打通。
 
-> `sessionId` 在 Phase 1 不是核心依赖。普通 RPC / STREAM 不携带它，业务 session 以 RPC `sid` 为准。MVP runtime 收到后可以保存到连接上下文中，主要用于日志、调试和未来 RESUME / SESSION_RESET / 网关链路管理。
+> `sessionId` 在 Phase 1 不是核心依赖。普通 RPC / STREAM 不携带它，STREAM 也不应把它当业务路由 ID；业务 session 以 RPC `sid` 和建流返回的 `streamId` 为准。MVP runtime 收到后可以保存到连接上下文中，主要用于日志、调试和未来 RESUME / SESSION_RESET / 网关链路管理。
 
 ### 7.2 完整 ACCEPT packet 示例
 
@@ -385,7 +385,7 @@ ACCEPT 可以携带非 0 `statusCode` 表示失败。
 |---|---|---|
 | Header version 不支持 | `FRAME_VERSION_UNSUPPORTED` | 断开或降级 |
 | payload type 无交集 | `CONTROL_NEGOTIATION_FAILED` | 调整参数后最多重试 3 次 |
-| rpc encoding 无交集 | `CONTROL_NEGOTIATION_FAILED` | 选择对端支持的 JSON/BINARY |
+| rpc encoding 无交集 | `CONTROL_NEGOTIATION_FAILED` | 选择对端支持的 JSON/CBOR/MSGPACK/JSON_BINARY |
 | OPEN 格式非法 | `CONTROL_PAYLOAD_INVALID` 或直接断开 | 修 parser 或配置 |
 
 ## 8. RPC sid 实现裁决
@@ -675,7 +675,244 @@ authentication = "uGXkKQgJcTinrNiAyxTCj0TVXUq4c5iyRiQRL6nKnPU="
 | 需要密码门禁 | 使用 `AXTP-AUTH-OBS-SHA256`，字段保持 `challenge/salt/authentication`，不传明文密码。 |
 | 后续安全增强 | 等有明确客户或部署需求时，再补充更强认证或链路加密方案。 |
 
-## 14. 实现检查清单
+## 14. Phase 1 音视频 STREAM 数据流
+
+Phase 1 的 STREAM 不是只预留 `payloadType=0x03`。Standard Framed runtime 必须能完成音视频业务流的三个动作：
+
+```text
+RPC 建流 -> STREAM 数据包 -> RPC 关流
+```
+
+也就是说，CONTROL 负责让链路进入 `FRAMING_READY`，RPC 负责打开/关闭业务流，STREAM 负责搬运连续媒体数据。三者缺一不可。
+
+发布前，具体 `video.*` / `audio.*` 方法仍必须进入 `registry/` 并由 generator 输出到 `docs/generated/protocol.json`。研发联调可以先按 `docs/protocol/video/video.stream.md` 和 `docs/protocol/audio/audio.recording.md` 草案实现 adapter，但不能把未采纳草案当作最终发布合同。
+
+### 14.1 视频流完整流程
+
+```mermaid
+sequenceDiagram
+    participant Host as Host / Logical Client
+    participant Device as Device / Logical Server
+
+    Host->>Device: RPC Request video.openStream
+    Device-->>Host: RPC Response streamId=101, streamProfile=media.video
+    Device-->>Host: RPC Event video.streamStateChanged(state=streaming)
+    loop H.264 / MJPEG / raw chunks
+        Device->>Host: STREAM(streamId=101, seqId++, cursor=timestampUs, videoChunk)
+    end
+    Host->>Device: RPC Request video.requestKeyFrame(optional)
+    Device-->>Host: STREAM(key frame chunks)
+    Host->>Device: RPC Request video.closeStream(streamId=101)
+    Device-->>Host: RPC Response success
+    Device-->>Host: RPC Event video.streamStateChanged(state=closed)
+```
+
+最小 `video.openStream` 请求：
+
+```json
+{
+  "sid": "12345678",
+  "op": 7,
+  "d": {
+    "id": 20,
+    "method": "video.openStream",
+    "params": {
+      "source": "main_camera",
+      "stream": "main",
+      "codec": "h264",
+      "streamProfile": "media.video",
+      "preferredChunkSize": 65536
+    }
+  }
+}
+```
+
+最小响应：
+
+```json
+{
+  "sid": "12345678",
+  "op": 8,
+  "d": {
+    "id": 20,
+    "status": {
+      "ok": true,
+      "code": 0
+    },
+    "result": {
+      "streamId": 101,
+      "streamProfile": "media.video",
+      "cursorUnit": "timestampUs",
+      "ackMode": "none",
+      "maxDataSize": 65536
+    }
+  }
+}
+```
+
+视频 STREAM data 的解释：
+
+| 字段 | 示例 | 说明 |
+|---|---:|---|
+| `streamId` | `101` | `video.openStream` 返回，后续所有视频 chunk 都用它查 Stream Context。 |
+| `seqId` | `1` | 当前 `streamId` 内递增；用于发现丢包、乱序或重复包。 |
+| `cursor` | `1000000` | `media.video` 默认是 `timestampUs`，这里表示 1 秒。 |
+| `data` | H.264 NAL / MJPEG chunk / raw frame chunk | 业务 payload，不进入公共 STREAM header。 |
+
+完整 Standard Framed STREAM packet 示例：
+
+```text
+Header:
+41 58 01 03 17 00 02 01 06 00 00 01
+
+STREAM Payload:
+65 00 00 00              # streamId=101
+01 00 00 00              # seqId=1
+40 42 0f 00 00 00 00 00  # cursor=1000000us
+00 00 00 01 65 88 84     # H.264 sample data
+
+CRC16 little-endian:
+bb f5
+
+Full packet:
+41 58 01 03 17 00 02 01 06 00 00 01
+65 00 00 00 01 00 00 00 40 42 0f 00 00 00 00 00
+00 00 00 01 65 88 84 bb f5
+```
+
+### 14.2 音频流完整流程
+
+音频可以用 `audio.startRecording(deliveryMode=stream)` 先落地。它适合实时监听、算法前后抓音、产测抓音和问题定位。
+
+```mermaid
+sequenceDiagram
+    participant Host as Host / Logical Client
+    participant Device as Device / Logical Server
+
+    Host->>Device: RPC Request audio.startRecording(deliveryMode=stream)
+    Device-->>Host: RPC Response recordingId, streamId=102
+    Device-->>Host: RPC Event audio.recordingStateChanged(recording)
+    loop PCM chunks
+        Device->>Host: STREAM(streamId=102, seqId++, cursor=sampleIndex/timestampUs, pcmBytes)
+    end
+    Host->>Device: RPC Request audio.stopRecording(recordingId)
+    Device-->>Host: RPC Response finalSeqId/finalCursor
+    Device-->>Host: RPC Event audio.recordingStateChanged(completed)
+```
+
+最小请求：
+
+```json
+{
+  "sid": "12345678",
+  "op": 7,
+  "d": {
+    "id": 30,
+    "method": "audio.startRecording",
+    "params": {
+      "source": "mic_processed",
+      "deliveryMode": "stream",
+      "format": "pcm",
+      "sampleRate": 48000,
+      "channels": 2,
+      "sampleFormat": "s16le",
+      "chunkDurationMs": 20
+    }
+  }
+}
+```
+
+最小响应：
+
+```json
+{
+  "sid": "12345678",
+  "op": 8,
+  "d": {
+    "id": 30,
+    "status": {
+      "ok": true,
+      "code": 0
+    },
+    "result": {
+      "recordingId": "rec-001",
+      "streamId": 102,
+      "streamProfile": "media.audio",
+      "cursorUnit": "sampleIndex",
+      "ackMode": "none",
+      "chunkDurationMs": 20
+    }
+  }
+}
+```
+
+音频 STREAM data 的 `data` 推荐直接承载 PCM bytes。以 `48000Hz / 2ch / s16le / 20ms` 为例：
+
+```text
+48000 * 2 * 2 * 20 / 1000 = 3840 bytes
+```
+
+也就是每个 20ms 音频 chunk 的 STREAM payload 为：
+
+```text
+STREAM Header(16B) + PCM data(3840B)
+```
+
+### 14.3 P0 不用 ACK/NACK 怎么处理丢包
+
+音视频流和固件、文件不一样。音视频优先保证低延迟，丢一个旧 chunk 通常不应该阻塞整个流。
+
+Phase 1 最小策略：
+
+| 场景 | P0 处理 |
+|---|---|
+| `seqId` 缺失 | 记录丢包计数，继续处理后续 chunk。视频可请求关键帧。 |
+| `seqId` 重复 | 幂等丢弃。 |
+| `seqId` 乱序 | 能重排则短暂重排；超过小窗口就丢弃旧包。 |
+| CRC16 失败 | 丢弃当前 Frame；不进入 STREAM parser。 |
+| `streamId` 不存在 | 丢弃并记录 `STREAM_NOT_FOUND`，必要时关闭或重开业务流。 |
+| 解码失败 | 视频调用 `video.requestKeyFrame`；音频丢弃损坏 chunk 并继续。 |
+| 接收端背压 | 丢旧帧、降码率、降帧率或暂停 producer；通过 stats/event 说明。 |
+
+ACK/NACK、sliding window、selective repeat 后续仍可以服务固件、文件、低带宽链路或需要严格可靠的 profile，但不进入 Phase 1 音视频 MVP 的必选范围。
+
+### 14.4 关流和清理
+
+业务正常结束时，优先使用业务域关流方法：
+
+```json
+{
+  "sid": "12345678",
+  "op": 7,
+  "d": {
+    "id": 21,
+    "method": "video.closeStream",
+    "params": {
+      "streamId": 101
+    }
+  }
+}
+```
+
+或者：
+
+```json
+{
+  "sid": "12345678",
+  "op": 7,
+  "d": {
+    "id": 31,
+    "method": "audio.stopRecording",
+    "params": {
+      "recordingId": "rec-001"
+    }
+  }
+}
+```
+
+当 CONTROL CLOSE、TCP 断开、USB 拔出或心跳超时时，runtime 必须立刻释放当前 link 下所有 Stream Context，不等待业务层再发 close。
+
+## 15. 实现检查清单
 
 | 检查项 | 通过标准 |
 |---|---|
@@ -692,7 +929,11 @@ authentication = "uGXkKQgJcTinrNiAyxTCj0TVXUq4c5iyRiQRL6nKnPU="
 | 鉴权失败 | 不进入 `APP_READY`，返回安全错误或关闭连接。 |
 | 鉴权边界 | Phase 1 默认无认证；需要密码门禁时才启用 OBS-style challenge-response。 |
 | generated 边界 | APP_READY 后只能调用已采纳并生成的 method。 |
+| STREAM 建流 | Phase 1 audio/video 通过业务 RPC 建立 Stream Context，并返回非 0 `streamId`。 |
+| STREAM 数据 | Standard Framed runtime 能解析 16B STREAM header，并按 `streamId` 投递到 audio/video profile。 |
+| STREAM 关流 | 业务正常结束用 `video.closeStream` / `audio.stopRecording` 等业务方法释放；链路断开时 runtime 批量清理。 |
+| STREAM 可靠性 | Phase 1 不要求 ACK/NACK；音视频按 best-effort、丢包统计、关键帧请求和背压策略处理。 |
 
-## 15. 参考
+## 16. 参考
 
 - [obs-websocket generated protocol](https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md)：本文的 `Hello / Identify / Identified` 鉴权思路参考其 challenge/salt 认证模型。

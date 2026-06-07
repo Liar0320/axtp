@@ -1,6 +1,8 @@
-# AXTP Release Docs
+# AXTP 发布文档
 
-| Topic | English | 中文 |
+`docs/release/` 存放 changelog、spec version、release checklist、runtime spec lock 和 runtime update flow。发布时以这里的流程和脚本为准。
+
+| 主题 | 英文 | 中文 |
 |---|---|---|
 | Changelog | [CHANGELOG.md](CHANGELOG.md) | - |
 | Spec versioning | [AXTP_SPEC_VERSIONING.md](AXTP_SPEC_VERSIONING.md) | [AXTP_SPEC_VERSIONING.zh-CN.md](AXTP_SPEC_VERSIONING.zh-CN.md) |

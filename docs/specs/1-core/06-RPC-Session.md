@@ -7,23 +7,24 @@
 
 版本：v1.0.0-rc1
 状态：AXTP v1 Core Freeze Candidate
-适用范围：RPC Payload 结构、op+d Envelope、sid、JSON/BINARY 编码、MethodId/EventId、Hello/Identify/Request/Response/Event/Batch
+适用范围：RPC Payload 结构、op+d Envelope、sid、JSON/CBOR/MSGPACK/JSON_BINARY 编码、MethodId/EventId、Hello/Identify/Request/Response/Event/Batch
 前置文档：`docs/specs/1-core/02-Protocol-Framework.md`、`docs/specs/1-core/03-Frame-and-Payload.md`、`docs/specs/1-core/05-Control-Session.md`
 后续文档：`docs/specs/1-core/07-Stream-Data-Plane.md`、Registry 文档
 
 ---
 
-## 0. 速读：RPC 有 JSON 和 Binary 两种线上形态
+## 0. 速读：RPC 有四种 payload 编码路径
 
 RPC 是业务控制面，承载 Hello / Identify / Request / Response / Event。它可以直接跑在 WebSocket Unframed JSON 上，也可以作为 `PayloadType=RPC` 放进 Standard Frame。
 
 | 路径 | 线上结构 | session 表达 | 典型用途 |
 |---|---|---|---|
 | WebSocket Unframed JSON | `WebSocket message payload = JSON { sid, op, d }` | `sid` 在 JSON Envelope 中，格式为固定 8 位十六进制字符串 | 浏览器、云端、轻量 RPC |
-| Standard Framed + RPC JSON | `Frame Header(payloadType=RPC) + UTF-8 JSON { sid, op, d } + CRC16` | `sid` 在 JSON Payload 中，格式为固定 8 位十六进制字符串 | 调试、诊断、实现便利 |
-| Standard Framed + RPC Binary | `Frame Header(payloadType=RPC) + Binary RPC Header(15B) + body + CRC16` | `sid:uint32` 在 Binary RPC Header 中 | 嵌入式、高吞吐路径 |
+| Standard Framed + JSON | `Frame Header(payloadType=RPC) + rpcEncoding(0x01) + UTF-8 JSON { sid, op, d } + CRC16` | `sid` 在 JSON Payload 中，格式为固定 8 位十六进制字符串 | 调试、诊断、实现便利 |
+| Standard Framed + CBOR / MSGPACK | `Frame Header(payloadType=RPC) + rpcEncoding + encoded { sid, op, d } + CRC16` | `sid` 在对象 envelope 中，格式为固定 8 位十六进制字符串 | 后续紧凑对象编码 |
+| Standard Framed + JSON_BINARY | `Frame Header(payloadType=RPC) + JSON_BINARY Header(15B) + body + CRC16` | `sid:uint32` 在 JSON_BINARY Header 中 | 嵌入式、高吞吐路径 |
 
-Binary RPC 15B 固定头：
+JSON_BINARY 15B 固定头：
 
 ```text
 rpcEncoding(1) + rpcOp(1) + sid(4) + requestId(4)
@@ -44,12 +45,12 @@ rpcEncoding(1) + rpcOp(1) + sid(4) + requestId(4)
 { "sid": "12345678", "op": 7, "d": { "id": 1, "method": "audio.getAlgorithmCapabilities" } }
 ```
 
-最小 Binary 调用：
+最小 JSON_BINARY 调用：
 
 ```text
 Frame(payloadType=RPC)
-  RPC Binary Header:
-    rpcEncoding=BINARY, rpcOp=REQUEST, sid=0x12345678, requestId=1,
+  RPC JSON_BINARY Header:
+    rpcEncoding=JSON_BINARY, rpcOp=REQUEST, sid=0x12345678, requestId=1,
     methodOrEventId=audio.getAlgorithmCapabilities, statusCode=SUCCESS, bodyEncoding=NONE
   body: empty
 ```
@@ -60,7 +61,7 @@ Frame(payloadType=RPC)
 
 本文档定义 `PayloadType = RPC` 时的业务控制协议。RPC 负责业务控制面（设备查询、参数设置、能力查询、事件上报等），不负责协议运行时控制（属于 CONTROL）和连续数据传输（属于 STREAM）。
 
-AXTP RPC 采用与 OBS-WebSocket 相同的 `{ "sid": string, "op": number, "d": object }` Envelope 结构。AXTP v1 Core 当前支持 `rpcEncoding=JSON` 与 `rpcEncoding=BINARY`：JSON 用于 WebSocket Unframed JSON 和 framed JSON，BINARY 用于 Standard Framed 嵌入式/高吞吐路径。CBOR 和 MessagePack 保留为后续扩展。
+AXTP RPC 采用与 OBS-WebSocket 相同的 `{ "sid": string, "op": number, "d": object }` Envelope 结构。AXTP v1 Core 定义四个 `rpcEncoding`：`JSON / CBOR / MSGPACK / JSON_BINARY`。JSON 是最先实现的默认路径；CBOR 和 MessagePack 是同一 envelope 的后续紧凑对象编码；JSON_BINARY 用固定 15B 二进制 envelope 表达同一套 `sid/op/d` 语义，并通过 `bodyEncoding` 承载 TLV8/TLV16 body。
 
 ---
 
@@ -72,18 +73,20 @@ Transport
 AXTP Frame Header (payloadType=RPC)
   ↓
 RPC Payload
-  ├── JSON Mode:   UTF-8 JSON text, { "sid": "...", "op": N, "d": {...} }
-  └── Binary Mode: Fixed 15B binary header + TLV body
+  ├── JSON:        0x01 + UTF-8 JSON text, { "sid": "...", "op": N, "d": {...} }
+  ├── CBOR:        0x02 + CBOR encoded { sid, op, d }
+  ├── MSGPACK:     0x03 + MessagePack encoded { sid, op, d }
+  └── JSON_BINARY: 0x04 + fixed 15B binary envelope + TLV body
 ```
 
 | 编码模式 | rpcEncoding | 适用场景 |
 | --- | --- | --- |
 | JSON | `0x01` | WebSocket Unframed JSON、framed JSON、CLI、浏览器集成 |
-| Binary | `0x02` | AXTP-USB-HID、AXTP-TCP 等 Standard Framed 场景 |
-| CBOR | `0x03` | 后续扩展 |
-| MessagePack | `0x04` | 后续扩展 |
+| CBOR | `0x02` | 后续紧凑对象编码，复用 sid/op/d 语义 |
+| MessagePack | `0x03` | 后续紧凑对象编码，复用 sid/op/d 语义 |
+| JSON_BINARY | `0x04` | AXTP-USB-HID、AXTP-TCP 等 Standard Framed 高吞吐场景 |
 
-JSON 使用 sid+op+d 语义结构。Binary 使用固定二进制头，语义与 op+d 一一对应；业务 session `sid` 必须出现在 Binary RPC Header 中，不得复用 CONTROL `sessionId`。
+JSON、CBOR、MessagePack 都使用完整的 sid+op+d 语义结构。JSON_BINARY 使用固定二进制头，语义与 op+d 一一对应；业务 session `sid` 必须出现在 JSON_BINARY Header 中，不得复用 CONTROL `sessionId`。
 
 ---
 
@@ -110,17 +113,17 @@ JSON 使用 sid+op+d 语义结构。Binary 使用固定二进制头，语义与 
 | 编码 | 表达方式 | 示例 |
 |---|---|---|
 | JSON RPC | 固定 8 位 hex string | `"12345678"` |
-| Binary RPC | uint32 Little-Endian | `78 56 34 12` |
+| JSON_BINARY RPC | uint32 Little-Endian | `78 56 34 12` |
 
 JSON 选择 string 是为了延续 OBS-style `sid/op/d` envelope、避免 JSON number 解析差异，并为网关日志和调试提供稳定文本格式。该 string 必须是 8 个十六进制字符，发送方必须使用 uppercase canonical form，接收方可以兼容 lowercase。不得使用 `0x12345678`、`"s-001"`、UUID、负数、浮点数、可变长 UTF-8 token 或带业务前缀的字符串。
 
-不推荐用任意 UTF-8 / ASCII 文本表达 `sid`。如果把 `sid` 定义成可变长文本 token，Binary RPC Header 就无法保持固定宽度，runtime 也必须额外处理编码、长度、大小写和字符集问题。Phase 1 的目标是让 JSON 和 Binary 可以直接互转，因此 `sid` 保持 `uint32`，JSON 只采用它的固定宽度 hex 文本表示。
+不推荐用任意 UTF-8 / ASCII 文本表达 `sid`。如果把 `sid` 定义成可变长文本 token，JSON_BINARY RPC Header 就无法保持固定宽度，runtime 也必须额外处理编码、长度、大小写和字符集问题。Phase 1 的目标是让 JSON/CBOR/MSGPACK 和 JSON_BINARY 可以直接互转，因此 `sid` 保持 `uint32`，对象编码只采用它的固定宽度 hex 文本表示。
 
 `sid` 的作用：
 
 - **路由**：网关场景下一个连接承载多个逻辑 session，`sid` 区分路由目标。
 - **恢复**：断线重连时客户端携带旧 `sid` 发 Identify，服务端可恢复 session 状态。
-- **JSON / Binary 统一**：JSON 使用 8 位 hex string 表示同一个 uint32；Binary RPC Header 使用 uint32，二者必须可以无损互转。
+- **对象编码 / JSON_BINARY 统一**：JSON/CBOR/MSGPACK 使用 8 位 hex string 表示同一个 uint32；JSON_BINARY RPC Header 使用 uint32，二者必须可以无损互转。
 - Hello（op=0）是连接建立后第一条消息，此时尚无 session，JSON `sid` 填空字符串 `""`，Binary `sid` 填 `0`。
 - Identify（op=2）新建 session 时 JSON `sid` 填 `""`，Binary `sid` 填 `0`；断线恢复时旧业务 session 放在 `d.resumeSid` / Binary body 的 resumeSid 字段。
 - Identified（op=3）中服务端分配并返回非 0 `sid`，客户端后续所有 Request / Event / Response 必须携带此 `sid`。
@@ -665,31 +668,38 @@ MVP 阶段设备可采用"全量广播模式"：忽略 `eventMasks`，只要 App
 
 ---
 
-## 18. 后续对象编码
+## 18. RPC payload 编码优先级
 
-MessagePack 和 CBOR 保留为后续扩展，不属于 AXTP v1 Core 必选实现。
+`rpcEncoding` 表示 `PayloadType=RPC` 的 payload 使用哪种编码。接收方必须先读取 payload 第一个字节，再选择 parser。
 
-若后续启用 MessagePack 或 CBOR，它们必须复用 JSON 的 sid/op/d 语义，不得复用 Binary RPC 15B Header，也不得改变 methodId/eventId/errorCode registry。
+实现优先级为：
 
-当前实现入口只要求 `rpcEncoding=JSON` 与 `rpcEncoding=BINARY`。
+| 优先级 | rpcEncoding | 说明 |
+|---:|---|---|
+| 1 | `JSON(0x01)` | Phase 1 默认路径，可读、易调试、WebSocket 与 Standard Framed 都可用 |
+| 2 | `CBOR(0x02)` | 后续紧凑对象编码，仍然编码 `{sid, op, d}` |
+| 3 | `MSGPACK(0x03)` | 后续紧凑对象编码，仍然编码 `{sid, op, d}` |
+| 4 | `JSON_BINARY(0x04)` | 固定二进制 envelope + bodyEncoding，面向高吞吐或 MCU 优化 |
+
+CBOR 和 MessagePack 不复用 15B JSON_BINARY Header，也不改变 methodId/eventId/errorCode registry。它们只是在 payload body 中用不同编码表示同一个 `{sid, op, d}` 对象。
 
 ---
 
-## 19. Binary RPC 编码
+## 19. JSON_BINARY RPC 编码
 
-Binary 模式面向 Standard Framed 设备，使用统一 15B 固定二进制头承载 sid+op+d 语义。AXTP v1 Core 不再区分 RPC Standard/Compact Payload；Compact 低带宽降级见 `docs/specs/1-core/08-Low-Bandwidth-Degradation.md`。
+JSON_BINARY 模式面向 Standard Framed 设备，使用统一 15B 固定二进制头承载 sid+op+d 语义。AXTP v1 Core 不再区分 RPC Standard/Compact Payload；Compact 低带宽降级见 `docs/specs/1-core/08-Low-Bandwidth-Degradation.md`。
 
-### 19.1 Binary Payload（15B 固定头）
+### 19.1 JSON_BINARY Payload（15B 固定头）
 
 | 字段 | 长度 | 类型 | 说明 |
 | --- | ---: | --- | --- |
-| `rpcEncoding` | 1B | uint8 | 首字节，v1 Core 使用 `0x01=JSON / 0x02=BINARY` |
+| `rpcEncoding` | 1B | uint8 | 首字节，`0x04=JSON_BINARY` |
 | `rpcOp` | 1B | uint8 | op 值，见 §4 |
 | `sid` | 4B | uint32 | RPC Session ID；未分配前填 0，APP_READY 后必须为服务端分配的非 0 sid |
 | `requestId` | 4B | uint32 | 请求 ID，EVENT 填 0 |
 | `methodOrEventId` | 2B | uint16 | methodId 或 eventId |
 | `statusCode` | 2B | uint16 | `0x0000=SUCCESS`，非 0 为 ErrorCode Registry 错误码 |
-| `bodyEncoding` | 1B | uint8 | 仅 `rpcEncoding=BINARY` 时有效，v1 Core 使用 `0x01=TLV8` |
+| `bodyEncoding` | 1B | uint8 | 仅 `rpcEncoding=JSON_BINARY` 时有效，Phase 1 使用 `0x00=NONE` / `0x01=TLV8` |
 | `body` | N | bytes | 由 bodyEncoding 决定 |
 
 固定头 15B，所有多字节字段 Little-Endian。body 长度 = `Frame.payloadLength - 15`。
@@ -701,11 +711,11 @@ Binary 模式面向 Standard Framed 设备，使用统一 15B 固定二进制头
 | rpcEncoding | Parser |
 | ---: | --- |
 | `0x01` JSON | JSON sid/op/d parser |
-| `0x02` BINARY | Binary 15B header parser |
-| `0x03` CBOR | 后续扩展 |
-| `0x04` MSGPACK | 后续扩展 |
+| `0x02` CBOR | CBOR sid/op/d parser |
+| `0x03` MSGPACK | MessagePack sid/op/d parser |
+| `0x04` JSON_BINARY | JSON_BINARY 15B header parser |
 
-JSON 模式下不使用 Binary 15B Header，`bodyEncoding` 字段不存在。CBOR/MSGPACK 若后续启用，也不得复用 Binary 15B Header。
+JSON / CBOR / MSGPACK 模式下不使用 JSON_BINARY 15B Header，`bodyEncoding` 字段不存在。
 
 ### 19.3 bodyEncoding
 
@@ -714,10 +724,8 @@ JSON 模式下不使用 Binary 15B Header，`bodyEncoding` 字段不存在。CBO
 | `0x00` | `NONE` | 无 body，或非 Binary 编码内部占位 |
 | `0x01` | `TLV8` | `fieldId:uint8 + length:uint8 + value` |
 | `0x02` | `TLV16` | 支持扩展长度的 TLV |
-| `0x03` | `RAW_BYTES` | 原始字节，由 method schema 或 profile 解释 |
-| `0x04` | `CBOR_BODY` | Binary RPC 内部使用 CBOR body |
 
-MVP 必须实现 `NONE` 和 `TLV8`。`bodyEncoding` 只在 `rpcEncoding=BINARY` 时有语义。
+Phase 1 必须实现 `NONE` 和 `TLV8`；`TLV16` 是后续扩展。`bodyEncoding` 只在 `rpcEncoding=JSON_BINARY` 时有语义。
 
 ### 19.4 statusCode
 
@@ -727,20 +735,20 @@ MVP 必须实现 `NONE` 和 `TLV8`。`bodyEncoding` 只在 `rpcEncoding=BINARY` 
 - Response 成功：必须填 `0x0000`
 - Response 失败：填 ErrorCode Registry 中的非 0 错误码
 
-Binary RESPONSE 中 `statusCode` 与 JSON `status.code` 对应，不再维护独立 RPC statusCode 表。当前 Binary Header 的 `statusCode` 为 uint16，映射到文本 `status.code:uint32` 时零扩展；`statusCode == 0` 等价于 `status.ok=true`；`statusCode != 0` 等价于 `status.ok=false`。
+JSON_BINARY RESPONSE 中 `statusCode` 与 JSON `status.code` 对应，不再维护独立 RPC statusCode 表。当前 JSON_BINARY Header 的 `statusCode` 为 uint16，映射到文本 `status.code:uint32` 时零扩展；`statusCode == 0` 等价于 `status.ok=true`；`statusCode != 0` 等价于 `status.ok=false`。
 
 ### 19.5 Binary 与 op+d 语义映射
 
 | op+d 字段 | Binary 字段 | 说明 |
 | --- | --- | --- |
-| `sid` | `sid` | uint32；JSON string ↔ Binary uint32 必须无损互转 |
+| `sid` | `sid` | uint32；JSON/CBOR/MSGPACK hex string ↔ JSON_BINARY uint32 必须无损互转 |
 | `op` | `rpcOp` | 直接对应 |
 | `d.id` | `requestId` | uint32，Event 填 0 |
 | `d.method` | `methodOrEventId` | 方法名映射到 uint16 methodId |
 | `d.event` | `methodOrEventId` | 事件名映射到 uint16 eventId |
 | `d.intent` | body 或本地订阅上下文 | Binary 固定头不携带 intent |
-| `d.params` / `d.result` / `d.data` | `body` | JSON object ↔ TLV |
-| `d.status.ok` | `statusCode == 0` | bool 不单独入 Binary Header，由 statusCode 推导 |
+| `d.params` / `d.result` / `d.data` | `body` | JSON/CBOR/MSGPACK object ↔ TLV8/TLV16 |
+| `d.status.ok` | `statusCode == 0` | bool 不单独入 JSON_BINARY Header，由 statusCode 推导 |
 | `d.status.code` | `statusCode` | 状态码，0=成功，非 0=错误码 |
 
 ---
@@ -855,17 +863,17 @@ Response 失败：
 }
 ```
 
-### 21.3 GetAlgorithmConfig（Binary，空选择器）
+### 21.3 GetAlgorithmConfig（JSON_BINARY，空选择器）
 
 ```text
 Request:
-02 07 78 56 34 12 01 00 00 00 01 09 00 00 00
-rpcEncoding=BINARY(2), rpcOp=Request(7), sid=0x12345678, requestId=1, methodId=0x0901, statusCode=SUCCESS, bodyEncoding=NONE
+04 07 78 56 34 12 01 00 00 00 01 09 00 00 00
+rpcEncoding=JSON_BINARY(4), rpcOp=Request(7), sid=0x12345678, requestId=1, methodId=0x0901, statusCode=SUCCESS, bodyEncoding=NONE
 body: empty
 
 Response 成功:
-02 08 78 56 34 12 01 00 00 00 01 09 00 00 01 ...
-rpcEncoding=BINARY(2), rpcOp=RequestResponse(8), sid=0x12345678, requestId=1, methodId=0x0901, statusCode=SUCCESS, bodyEncoding=TLV8
+04 08 78 56 34 12 01 00 00 00 01 09 00 00 01 ...
+rpcEncoding=JSON_BINARY(4), rpcOp=RequestResponse(8), sid=0x12345678, requestId=1, methodId=0x0901, statusCode=SUCCESS, bodyEncoding=TLV8
 body: TLV8 encoded AudioAlgorithmConfig, field layout comes from generated schema
 ```
 
@@ -938,10 +946,10 @@ legacyMappings:
   - legacyCmdValue: 0xC0021
     axtpMethodId: 0x0402
     axtpMethodName: SetVideoMode
-    bodyEncoding: RAW_BYTES
+    bodyEncoding: TLV8
 ```
 
-Binary Payload 使用 uint16 methodOrEventId。超出 0xFFFF 的旧 CmdValue 必须通过 `legacy_mapping.yaml` 建立唯一映射，不得改变 AXTP MethodId 宽度。
+JSON_BINARY Payload 使用 uint16 methodOrEventId。超出 0xFFFF 的旧 CmdValue 必须通过 `legacy_mapping.yaml` 建立唯一映射，不得改变 AXTP MethodId 宽度。旧 payload 如需短期透传，应在 legacy adapter 中完成，不作为 Phase 1 `bodyEncoding` 枚举。
 
 ---
 
@@ -979,11 +987,11 @@ RPC Parser 必须满足：
 ### 26.1 必须实现
 
 ```text
-rpcEncoding = JSON / BINARY
+rpcEncoding = JSON；Standard Framed 优先同时实现 JSON_BINARY
 op = Hello(0) / Identify(2) / Identified(3) / Event(6) / Request(7) / RequestResponse(8)
 sid+op+d Envelope（JSON，sid 为 8 位 hex string）
-Binary RPC Header（15B，sid 为 uint32）
-TLV body encode/decode
+JSON_BINARY Header（15B，sid 为 uint32）
+JSON_BINARY TLV8 body encode/decode
 uint16 methodId / eventId
 uint32 sid（RPC Session ID）
 uint32 id（requestId）
@@ -1012,6 +1020,7 @@ Reidentify
 Bye / ByeAck
 stream.open / stream.close
 device.statusChanged / stream.opened / stream.closed / stream.error
+固件 / 文件 / 日志类 STREAM profile
 MessagePack / CBOR
 压缩 body / 加密 body
 ```

@@ -158,7 +158,7 @@ sequenceDiagram
 
 | Step | Actor | User or system action | Protocol call/event | Request / event payload notes | Response / state result | Error or fallback |
 |---:|---|---|---|---|---|---|
-| 1 | User / Host | 用户连接设备，上位机发现设备。 | Non-protocol / AXTP transport | USB descriptor 用于发现设备；AXTP Standard Framed path 使用 CONTROL OPEN/ACCEPT。 | 上位机建立 RPC 和 STREAM 可用会话。 | 未枚举到设备时提示连接异常；WebSocket JSON 不支持 STREAM，不适合作为本地上传 P0 路径。 |
+| 1 | User / Host | 用户连接设备，上位机发现设备。 | Non-protocol / AXTP transport | USB descriptor 用于发现设备；AXTP Standard Framed path 使用 CONTROL OPEN/ACCEPT。 | 上位机建立 RPC 和 STREAM 可用会话。 | 未枚举到设备时提示连接异常；WebSocket JSON 不支持 STREAM，本地上传需要 Standard Framed 或改用 URL 模式。 |
 | 2 | Host | 加载当前产品 generated registry。 | Generated registry lookup | 上位机检查当前包是否包含需要的正式方法。 | 当前 generated 不包含 firmware 业务方法，只能进入草案/legacy 兼容路径。 | 若产品固件仍使用旧协议，Host 走 adapter；若要求纯 AXTP，实现需等待 Stage 20/30/50。 |
 | 3 | Host | 查询当前版本。 | Draft `firmware.getInfo` | 请求为空；返回 currentVersion、buildId、productId、hardwareRevision、partitionScheme 等。 | UI 展示当前版本和硬件信息。 | 草案未采纳前使用旧协议或设备现有接口；读取失败时禁止盲目升级。 |
 | 4 | Host | 查询固件更新能力。 | Draft `firmware.getUpdateCapabilities` | 需要 transferModes、streamLayouts、supportsMultiFile、hashAlgorithms(md5)、requiresSignature=false、preferredChunkSize、autoReboot 等。 | Host 判断是否支持本地 STREAM 固件更新、多文件、md5 校验和设备自动重启策略。 | 不支持时隐藏升级入口或提示固件不支持；能力缺失时不要猜测 multi-file 支持。 |
@@ -169,7 +169,7 @@ sequenceDiagram
 | 9 | Host / Stream | 发送固件字节。 | Generated core STREAM + draft `firmware.update` profile binding | STREAM 包只包含 `streamId`、`seqId`、`cursor`、`payload`；业务字段来自 manifest 和 begin response。 | 设备写入 staging 区并更新接收进度。 | `STREAM_CRC_ERROR` / `STREAM_OFFSET_INVALID` 时首版重试当前 chunk/file 或重新开始；missingRanges 补发作为预留扩展。 |
 | 10 | Device / Host | 展示进度。 | Draft `firmware.updateProgressReported`; optional `firmware.getUpdateTransferState` | 事件包含 overall progress 和 files[] 进度；未收到事件时 Host 可轮询。 | UI 展示 receiving/downloading/verifying/installing 等阶段。 | 事件丢失不得导致升级失败；以状态查询或 commit response 校正。 |
 | 11 | Host / Device | 提交一个或多个文件/range。 | Draft `firmware.commitUpdateBatch` | `batchId` 在会话内唯一；files[] 标记 ranges 和 complete。 | 设备返回每个 file 的 receivedBytes、cursor 和 progress；missingRanges 仅为扩展字段。 | 同 batchId 重试需幂等；payload 不一致返回 `ALREADY_EXISTS` 或 `INVALID_ARGUMENT`。 |
-| 12 | Host / Device | 预留断点续传或补缺失范围。 | Reserved draft `firmware.getUpdateTransferState` + STREAM | P0 不要求重连后续传、乱序补传或多文件并行；实现该扩展时再返回每个 file cursor/missingRanges。 | 不实现扩展时 Host 从失败文件或整个会话重新开始。 | 设备丢失临时状态时返回 `FW_TRANSFER_NOT_STARTED` 或 `NOT_FOUND`，Host 重新开始。 |
+| 12 | Host / Device | 预留断点续传或补缺失范围。 | Reserved draft `firmware.getUpdateTransferState` + STREAM | Phase 1 不要求重连后续传、乱序补传或多文件并行；实现该扩展时再返回每个 file cursor/missingRanges。 | 不实现扩展时 Host 从失败文件或整个会话重新开始。 | 设备丢失临时状态时返回 `FW_TRANSFER_NOT_STARTED` 或 `NOT_FOUND`，Host 重新开始。 |
 | 13 | Host / Device | 校验完整包。 | Draft `firmware.verifyUpdatePackage` | `scope=all`；设备校验 required 文件、package hash 和 md5。 | 状态进入 `verified`。 | `FW_SIZE_MISMATCH`、`FW_HASH_MISMATCH`、`FW_VERIFY_FAILED` 时不得安装；UI 指明失败文件。 |
 | 14 | Host / Device | 安装固件更新。 | Draft `firmware.installUpdate` | 传 `installMode`、`rebootPolicy`；通常只能在 verified 后调用。 | 设备进入 `installing`、`installed` 或 `reboot_required`。 | `FW_APPLY_FAILED` 时保留旧版本可启动；安装不可取消阶段不应显示 cancel。 |
 | 15 | Device / Host | 处理自动重启。 | Draft firmware response | `requiresReboot=true` 时设备自动重启，Host 提示保持供电并等待断连/重连。 | Host 等待设备断开并重新连接。 | 本流程不要求 system 主动重启方法；若设备未重启或重连超时，Host 展示可诊断失败。 |
@@ -291,7 +291,7 @@ Flow rules:
 | `firmware-update-install-failed-safe` | 安装失败时设备仍可启动旧版本，并通过 state/error 说明失败阶段。 |
 | `firmware-update-auto-reboot` | `installUpdate` 返回 `requiresReboot=true` 后设备自动重启，Host 等待重连并读取新版本。 |
 | `firmware-update-cancel-receiving` | receiving 阶段用户取消，设备清理临时文件并进入 cancelled。 |
-| `firmware-update-no-stream-transport` | WebSocket JSON 或不支持 STREAM 的 transport 不允许走本地上传 P0；可提示使用 URL 模式或 USB/TCP。 |
+| `firmware-update-no-stream-transport` | WebSocket JSON 或不支持 STREAM 的 transport 不允许走本地上传数据面；Phase 1 可提示使用 URL 模式，或等待 USB/TCP STREAM profile。 |
 
 ## 9. Acceptance Gates
 

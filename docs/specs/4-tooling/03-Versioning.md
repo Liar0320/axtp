@@ -21,7 +21,7 @@
 |---|---|---|---|
 | Native AXTP | 新固件、新 App 或可同步升级的链路 | 直接使用 AXTP method/event/error/schema/stream profile | 不保留旧 wire envelope |
 | Adapter | 旧设备或旧 App 仍需共存 | 在边界层解析旧 CmdValue / Payload，再映射到 AXTP RPC / STREAM | 不污染 AXTP Frame Header，不复用业务类型为 PayloadType |
-| Tunnel | 短期无法拆解的私有数据或诊断链路 | 用 RAW_BYTES 或 vendor/profile 明确标注透传 | 不作为长期主协议设计 |
+| Tunnel | 短期无法拆解的私有数据或诊断链路 | 用 runtime legacy adapter 或 vendor/profile 明确标注透传 | 不作为长期主协议设计 |
 
 迁移检查清单：
 
@@ -194,7 +194,7 @@ AXTP v1 只保留三类顶层 PayloadType：
 旧 Firmware Payload    -> AXTP STREAM / RPC 建流 profile = firmware.update
 旧 RawStream Payload   -> AXTP STREAM / RPC 建流 profile = media.video、sensor.sample 或 legacy.tunnel
 旧 LogStream Payload   -> AXTP STREAM / RPC 建流 profile = log.realtime 或 log.bundle
-旧 BinaryRPC Payload   -> AXTP RPC / rpcEncoding = BINARY
+旧 BinaryRPC Payload   -> AXTP RPC / rpcEncoding = JSON_BINARY
 旧 JSON-RPC Payload    -> AXTP RPC / rpcEncoding = JSON
 ```
 
@@ -623,7 +623,7 @@ data
 
 ```text
 payloadType = RPC
-rpcEncoding = BINARY
+rpcEncoding = JSON_BINARY
 bodyEncoding = TLV8
 ```
 
@@ -940,7 +940,7 @@ AXTP 拆成两类能力：
 | 是否支持压缩 | `compression` |
 | 是否支持加密 | `encryption` |
 | 是否支持 JSON | `rpcEncoding.JSON` |
-| 是否支持二进制 | `rpcEncoding.BINARY` |
+| 是否支持二进制 | `rpcEncoding.JSON_BINARY` |
 
 ### 13.3 业务能力映射
 
@@ -1211,7 +1211,7 @@ mappings:
       methodId: 0x0706
       methodName: video.setMode
       payloadType: RPC
-      rpcEncoding: BINARY
+      rpcEncoding: JSON_BINARY
       bodyEncoding: TLV
     schemas:
       request: VideoSetModeRequest
@@ -1269,10 +1269,10 @@ old byte2 -> fieldId 0x03 value
 需要跨语言解析
 ```
 
-#### 方式 B：RAW_BYTES 透传（短期兼容）
+#### 方式 B：legacy adapter 透传（短期兼容）
 
 ```text
-bodyEncoding = RAW_BYTES
+bodyEncoding = TLV8/TLV16 或 adapter 私有格式
 schema = LegacyCommonSetVideoModeRawBytes
 ```
 
@@ -1288,7 +1288,7 @@ Adapter baseline 推荐：
 
 ```text
 对新方法使用 TLV8
-对旧命令短期允许 RAW_BYTES
+对旧命令短期允许 adapter 私有透传
 但必须登记 legacyMapping 和兼容 schema
 ```
 
@@ -1297,7 +1297,7 @@ Adapter baseline 推荐：
 ```yaml
 schemas:
   LegacyCommonSetVideoModeRawBytes:
-    encoding: RAW_BYTES
+    encoding: legacy_adapter_bytes
     fields:
       - name: mode
         offset: 0
@@ -1467,7 +1467,7 @@ public:
 2. Extract legacy protocol / cmdValue / payload / status
 3. Lookup legacy_mapping.yaml generated table
 4. Convert cmdValue -> methodId
-5. Convert old payload -> TLV8 schema or RAW_BYTES legacy body
+5. Convert old payload -> TLV8 schema or runtime legacy adapter body
 6. Convert old status -> AXTP ErrorCode
 7. Output AxtpMessage
 ```
@@ -1619,7 +1619,7 @@ AXTP 老协议迁移的核心不是把旧协议逐字节搬进新协议，而是
 
 ```text
 旧 CmdValue        -> AXTP methodId + legacyCmdValue
-旧 Payload         -> AXTP TLV8 Schema / RAW_BYTES legacy body
+旧 Payload         -> AXTP TLV8 Schema / runtime legacy adapter body
 旧 Status          -> AXTP ErrorCode
 旧 Event           -> AXTP EventId
 旧 Capability      -> AXTP Capability Registry

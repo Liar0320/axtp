@@ -102,6 +102,33 @@ refreshed protocol/axtp.protocol.yaml + generated artifacts
 - `[REVIEW-BLOCKER]`：当前文档定位会误导新协议生成，必须先重写或拆分。
 
 
+## Domain 状态矩阵
+
+本表用于让研发、测试和产品快速判断每个 domain 当前走到哪里。`Generated` 统计当前 generated protocol 中已经落地的方法和事件数量；`video` / `audio` 的 P0 stream 优先级表示要同时采纳 RPC 建流/关流控制面和 STREAM 数据面字段约束。
+
+| Domain | Drafts | Review | Generated | Priority | Next Step |
+|---|---:|---|---:|---|---|
+| audio | 12 | ASK | 5 | 旁路高覆盖 / P0 stream | 已进入 generated；后续按修订流程维护，同时补齐 audio stream 控制面和 STREAM 数据面确认。 |
+| auth | 3 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
+| camera | 7 | ASK | 0 | P3/P4 | 补产品/设备/legacy 确认。 |
+| capability | 1 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
+| device | 8 | ASK | 0 | P1 | 补产品/设备/legacy 确认，优先进入采纳批次。 |
+| diagnostic | 10 | ASK | 0 | P5 | 补产品/设备/legacy 确认。 |
+| display | 6 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
+| file | 2 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
+| firmware | 3 | ASK | 0 | 旁路高覆盖 | 补产品/设备/legacy 确认。 |
+| input | 5 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
+| log | 3 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
+| network | 6 | ASK | 0 | 旁路高覆盖 | 补产品/设备/legacy 确认。 |
+| output | 1 | ASK | 0 | P2b | 补产品/设备/legacy 确认。 |
+| privacy | 3 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
+| room | 5 | ASK | 0 | P7 | 补产品/设备/legacy 确认。 |
+| signage | 5 | ASK | 0 | P7 | 补产品/设备/legacy 确认。 |
+| storage | 6 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
+| stream | 2 | ASK | 0 | P0 data-plane plumbing | Phase 1 需要通用 STREAM open/data/close 语义支撑 audio/video；具体业务参数仍由 audio/video profile 定义。 |
+| system | 5 | ASK | 0 | P1 | 补产品/设备/legacy 确认，优先进入采纳批次。 |
+| video | 12 | ASK | 0 | P0 stream | 先补 video stream RPC 控制面和 STREAM 数据面确认；这是 P0 媒体流主线。 |
+
 ## 协议采纳/生成优先级
 
 本表用于安排后续从草案到 YAML、再到 generated 产物的顺序。统计依据为 `docs/legacy-migration/classification/legacy-protocol-classification.csv` 和 `docs/legacy-migration/classification/README.md`；当前 `docs/generated/protocol.md` 只有 `audio.algorithm` 已生成，其余业务域大多仍是草案状态。

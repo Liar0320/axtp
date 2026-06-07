@@ -14,13 +14,3 @@ rpc_body_encodings:
     domain: rpc
     status: draft
     description: TLV body with extended length support.
-  - id: 0x03
-    name: RAW_BYTES
-    domain: rpc
-    status: draft
-    description: Raw byte body interpreted by the method schema or stream profile.
-  - id: 0x04
-    name: CBOR_BODY
-    domain: rpc
-    status: draft
-    description: CBOR body used inside Binary RPC.

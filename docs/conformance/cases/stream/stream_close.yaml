@@ -1,5 +1,5 @@
 id: stream.stream_close
-title: STREAM close releases stream context
+title: Media STREAM close releases stream context
 since: spec/v0.0.2
 level: stream
 profiles:
@@ -16,7 +16,7 @@ steps:
     rpc:
       op: REQUEST
       requestId: 201
-      method: stream.close
+      method: video.closeStream
       params:
         streamId: 9
 

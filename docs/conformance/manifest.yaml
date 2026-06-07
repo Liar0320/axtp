@@ -26,7 +26,7 @@ levels:
       - event.emit_event
 
   stream:
-    description: Standard framed STREAM payload behavior.
+    description: Phase 1 Standard Framed STREAM payload behavior.
     required_cases:
       - stream.stream_open
       - stream.stream_data
@@ -42,9 +42,12 @@ levels:
       - rpc.request_id_match
 
   framed-binary:
-    description: Standard framed binary transport behavior.
+    description: Standard framed CONTROL, RPC and STREAM behavior.
     required_cases:
       - handshake.open_accept
       - handshake.close
       - handshake.heartbeat
       - rpc.request_id_match
+      - stream.stream_open
+      - stream.stream_data
+      - stream.stream_close

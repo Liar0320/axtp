@@ -144,7 +144,7 @@ AXTP Frame Header
 RPC Payload
   rpcOp = EVENT
   eventId = xxx
-  bodyEncoding = NONE / TLV8 / TLV16 / RAW_BYTES / CBOR_BODY
+  bodyEncoding = NONE / TLV8 / TLV16
   body = event data
 ```
 

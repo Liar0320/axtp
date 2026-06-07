@@ -20,7 +20,7 @@ Phase 1 的目标不是一次做完所有高级能力，而是先把 runtime 的
 | CONTROL OPEN / ACCEPT | 否 | 是 |
 | CONTROL HEARTBEAT / HEARTBEAT_ACK | 否 | 是 |
 | CONTROL CLOSE / CLOSE_ACK | 否 | 是 |
-| STREAM | 否 | 后续 profile |
+| STREAM open / data / close | 否 | 是，P0 用于 audio/video 媒体流 |
 
 Phase 1 暂不实现：
 
@@ -28,9 +28,9 @@ Phase 1 暂不实现：
 ACK/NACK 重传
 RESUME / SESSION_RESET
 PING/PONG RTT 测量
-STREAM 固件 / 文件 / 媒体数据面
+STREAM 固件 / 文件 / 日志 profile
 链路加密
-自定义 binary JSON
+固件 / 文件 / 日志类 STREAM profile
 ```
 
 默认鉴权策略是 `AXTP-AUTH-NONE`。只有产品或客户明确要求密码门禁时，才启用 OBS-style challenge-response。
@@ -74,13 +74,13 @@ export AXTP_SPEC_PATH=/Users/qing/Desktop/sources/gitee/axtp
 
 ## 4. Standard Framed MVP Checklist
 
-适合 TCP、USB HID、需要二进制 Frame Header 或未来 STREAM 的设备链路。
+适合 TCP、USB HID、需要二进制 Frame Header 或 STREAM 数据面的设备链路。
 
 | 检查项 | 通过标准 |
 |---|---|
 | Header parser | 校验 `AX` magic、version、payloadType、payloadLength、fragment 字段。 |
 | CRC16 | CRC 覆盖 Header + Payload，不覆盖 CRC 自身；多字节整数 little-endian。 |
-| Payload dispatch | `payloadType=CONTROL` 进 ControlParser，`RPC` 进 RpcParser，`STREAM` 可暂不实现。 |
+| Payload dispatch | `payloadType=CONTROL` 进 ControlParser，`RPC` 进 RpcParser，`STREAM` 进 StreamParser。 |
 | CONTROL OPEN | 只允许 Physical Client 在 `LINK_CONNECTED` 发送。 |
 | CONTROL ACCEPT | `controlId` 匹配 OPEN；成功后进入 `FRAMING_READY`。 |
 | `ackMode` | Phase 1 默认 `NONE`，不实现 ACK/NACK 重传。 |
@@ -89,6 +89,9 @@ export AXTP_SPEC_PATH=/Users/qing/Desktop/sources/gitee/axtp
 | Heartbeat timeout | 连续 3 次未收到 HEARTBEAT_ACK 后关闭 transport 并清理上下文。 |
 | CLOSE | 任意一端可发；对端返回相同 `controlId` 的 CLOSE_ACK 后关闭 transport。 |
 | RPC session | CONTROL 成功后，继续执行 Hello / Identify / Identified。 |
+| STREAM open | 通过 RPC 建流方法创建 stream context，返回非 0 `streamId`。 |
+| STREAM data | 解析 16B STREAM Header：`streamId:uint32`、`seqId:uint32`、`cursor:uint64`，并把 data 交给对应 audio/video profile。 |
+| STREAM close | 通过 RPC 关闭 stream context，释放 `streamId`。 |
 | Conformance | 至少通过 `core` 和 `framed-binary` level。 |
 
 ## 5. Conformance Quickstart
@@ -121,7 +124,7 @@ $AXTP_SPEC_PATH/conformance
 | runtime 类型 | 最小 level | 之后可加 |
 |---|---|---|
 | WebSocket JSON | `core`、`websocket-jsonrpc` | `capability`、`event` |
-| Standard Framed | `core`、`framed-binary` | `capability`、`event`、`stream` |
+| Standard Framed | `core`、`framed-binary` | `capability`、`event` |
 | mock server | `core`、`websocket-jsonrpc` | `capability`、`event` |
 | 固件 / MCU | `core`、`framed-binary` | `stream` 或低带宽 profile |
 
@@ -132,7 +135,12 @@ handshake.open_accept
 handshake.heartbeat
 handshake.close
 rpc.request_id_match
+stream.stream_open
+stream.stream_data
+stream.stream_close
 ```
+
+其中 `stream.stream_open` / `stream.stream_close` 验收的是 P0 媒体流业务域建流，不是常规 `stream.open` / `stream.close`。测试 fixture 以 `video.openStream` / `video.closeStream` 表示最小媒体流入口；发布前，产品使用的 video/audio 方法必须先进入 `registry/` 和 generated protocol。
 
 如果某个 case 属于 runtime 尚未声明的 profile，不要在实现里偷偷跳过；应调整 runtime 声明的 level，或者等对应能力实现后再声明支持。若 case 与 Phase 1 裁决冲突，应先修正主库 conformance case 和 manifest，再要求 runtime 通过。
 
@@ -160,8 +168,8 @@ Phase 1 runtime 可以认为达到 MVP，当它满足：
 4. 能完成至少一次 generated method 的 Request / Response。
 5. 能返回标准错误形状。
 6. 能处理事件或明确声明暂不支持 event level。
-7. Standard Framed runtime 能完成 OPEN / ACCEPT、HEARTBEAT、CLOSE。
+7. Standard Framed runtime 能完成 OPEN / ACCEPT、HEARTBEAT、CLOSE 和 STREAM open/data/close。
 8. 通过已声明 conformance level。
 ```
 
-做到这里，runtime 就可以进入业务协议接入和 SDK 包装；STREAM、恢复、重传、加密等能力后续按 profile 增量实现。
+做到这里，runtime 就可以进入业务协议接入和 SDK 包装；恢复、重传、加密以及固件/文件/日志类 STREAM profile 后续增量实现。

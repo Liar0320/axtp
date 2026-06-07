@@ -46,14 +46,23 @@ function assertYamlStreamHeader(model: ProtocolModel): void {
 }
 
 function assertYamlControl(model: ProtocolModel): void {
-  if (!model.control.requiredOpcodes.includes("OPEN") || !model.control.requiredOpcodes.includes("ACCEPT")) {
-    fail("protocol/axtp.protocol.yaml", "control.requiredOpcodes", "YAML control.requiredOpcodes must include OPEN and ACCEPT");
+  for (const opcode of ["OPEN", "ACCEPT", "HEARTBEAT", "HEARTBEAT_ACK", "CLOSE", "CLOSE_ACK"]) {
+    if (!model.control.requiredOpcodes.includes(opcode)) {
+      fail("protocol/axtp.protocol.yaml", "control.requiredOpcodes", `YAML control.requiredOpcodes must include ${opcode}`);
+    }
   }
-  if (model.control.requiredOpcodes.includes("READY")) {
-    fail("protocol/axtp.protocol.yaml", "control.requiredOpcodes", "READY must not be a required opcode in AXTP v1 Core");
+  for (const opcode of ["READY", "ACK", "NACK"]) {
+    if (model.control.requiredOpcodes.includes(opcode)) {
+      fail("protocol/axtp.protocol.yaml", "control.requiredOpcodes", `${opcode} must not be a Phase 1 required opcode`);
+    }
   }
   if (!model.control.optionalOpcodes.includes("READY")) {
     fail("protocol/axtp.protocol.yaml", "control.optionalOpcodes", "YAML control.optionalOpcodes must include READY");
+  }
+  for (const opcode of ["ACK", "NACK"]) {
+    if (!model.control.optionalOpcodes.includes(opcode)) {
+      fail("protocol/axtp.protocol.yaml", "control.optionalOpcodes", `YAML control.optionalOpcodes must keep ${opcode} as future optional opcode`);
+    }
   }
 }
 
@@ -84,8 +93,11 @@ export function validateProtocolDocsConsistency(model: ProtocolModel, docs: Prot
   requirePattern(docs.streamSpec, /cursor:uint64/, "docs/specs/1-core/07-Stream-Data-Plane.md", "STREAM Header", "stream spec must define cursor:uint64");
 
   requirePattern(docs.controlSpec, /OPEN[\s\S]*ACCEPT/, "docs/specs/1-core/05-Control-Session.md", "OPEN/ACCEPT", "control spec must define OPEN and ACCEPT");
+  requirePattern(docs.controlSpec, /HEARTBEAT[\s\S]*HEARTBEAT_ACK/, "docs/specs/1-core/05-Control-Session.md", "HEARTBEAT", "control spec must define HEARTBEAT and HEARTBEAT_ACK");
+  requirePattern(docs.controlSpec, /CLOSE[\s\S]*CLOSE_ACK/, "docs/specs/1-core/05-Control-Session.md", "CLOSE", "control spec must define CLOSE and CLOSE_ACK");
   requirePattern(docs.controlSpec, /READY[\s\S]{0,80}可选/, "docs/specs/1-core/05-Control-Session.md", "READY", "control spec must define READY as optional");
   requirePattern(docs.controlSpec, /默认握手只要求 OPEN \/ ACCEPT/, "docs/specs/1-core/05-Control-Session.md", "READY", "control spec must state that default handshake only requires OPEN / ACCEPT");
+  requirePattern(docs.controlSpec, /Phase 1[\s\S]{0,120}不要求 runtime 实现 ACK\/NACK/, "docs/specs/1-core/05-Control-Session.md", "ACK/NACK", "control spec must keep ACK/NACK out of Phase 1");
 
   assertYamlStreamHeader(model);
   assertYamlControl(model);
@@ -93,7 +105,7 @@ export function validateProtocolDocsConsistency(model: ProtocolModel, docs: Prot
 
   return [
     "[OK] docs/specs: STREAM header facts checked",
-    "[OK] docs/specs: CONTROL OPEN/ACCEPT/READY facts checked",
+    "[OK] docs/specs: CONTROL Phase 1 opcode facts checked",
     "[OK] docs/specs: optional capability discovery facts checked"
   ];
 }

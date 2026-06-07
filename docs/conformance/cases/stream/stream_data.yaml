@@ -1,5 +1,5 @@
 id: stream.stream_data
-title: STREAM data header carries streamId, seqId, and cursor
+title: Media STREAM data header carries streamId, seqId, and cursor
 since: spec/v0.0.2
 level: stream
 profiles:
@@ -10,21 +10,22 @@ given:
   stream:
     streamId: 9
     state: open
+    profile: media.video
 
 steps:
-  - direction: client_to_server
+  - direction: server_to_client
     stream:
       streamId: 9
       seqId: 1
-      cursor: 0
+      cursor: 1000000
       data: "AABBCC"
 
-  - direction: server_observes
+  - direction: client_observes
     expect:
       stream:
         streamId: 9
         seqId: 1
-        cursor: 0
+        cursor: 1000000
         data: "AABBCC"
 
 assertions:

@@ -160,7 +160,7 @@ AXTP Frame Header
   payloadType = RPC
 
 RPC Payload
-  rpcEncoding = BINARY / JSON / CBOR / MSGPACK
+  rpcEncoding = JSON / CBOR / MSGPACK / JSON_BINARY
   rpcOp       = REQUEST / RESPONSE / EVENT / BATCH
   requestId
   methodOrEventId
@@ -238,7 +238,7 @@ rpc:
   event: false
   supportedEncodings:
     - JSON
-    - BINARY
+    - JSON_BINARY
   supportedBodyEncodings:
     - TLV8
 schema:

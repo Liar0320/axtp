@@ -1,20 +1,23 @@
 # AXTP 研发接入 Quickstart
 
-这份文档给研发一个最短可跑方案：先用 `AXTP-WS-JSON` 接通 RPC，再按 generated protocol 做业务调用和 conformance 验收。
+这份文档给研发两条最短可跑方案：
+
+1. 先用 `AXTP-WS-JSON` 接通 RPC，最快验证 generated protocol、SDK、mock server 和普通业务方法。
+2. 如果要做音视频媒体流，直接进入 `AXTP-TCP` / `AXTP-USB-HID` Standard Framed 路径，按 `RPC 建流 -> STREAM 数据 -> RPC 关流` 验收 P0 数据面。
 
 适用场景：
 
 - App、Web、Node、Python、mock server 或云端先接入控制面。
-- 只需要 RPC / Event，不需要 STREAM 连续数据。
+- 设备端、runtime 或测试要实现 Standard Framed CONTROL / RPC / STREAM。
+- 需要承载 audio/video 媒体数据流。
 - 目标是最快验证协议、SDK、mock server 或设备端业务方法。
 
 不适用场景：
 
-- 固件升级数据块、媒体帧、日志流、文件块等连续数据传输。
-- 必须走 USB HID / TCP Standard Frame 的设备链路。
+- 固件升级数据块、日志流、文件块等非音视频连续数据 profile。
 - 低带宽 BLE / UART / HID-64 降级链路。
 
-这些场景仍然可以用 AXTP，但不是最短接入路径，需要进入 Standard Framed、STREAM 或 Low-Bandwidth 文档。
+这些场景仍然可以用 AXTP，但不是当前 P0 最短接入路径，需要进入对应业务草案、STREAM profile 或 Low-Bandwidth 文档。
 
 ## 0. 最短方案选型
 
@@ -62,6 +65,8 @@ axtp_spec:
 
 ## 2. 最短接入流程图
 
+### 2.1 RPC 控制面最快路径
+
 ```mermaid
 sequenceDiagram
     participant C as Client / SDK
@@ -93,6 +98,43 @@ sequenceDiagram
 | 保存 sid | Identified 返回的 `sid` 是固定 8 位 hex string，例如 `"12345678"`；后续所有 Request / Event / Response 都要携带。 |
 | requestId 递增 | `d.id` 从 1 开始，同一 session 内未完成请求不得复用。 |
 | 按 conformance 验收 | 接通不等于实现正确，最终以 conformance 和 generated contract 为准。 |
+
+### 2.2 音视频 STREAM 最短路径
+
+```mermaid
+sequenceDiagram
+    participant C as Client / SDK
+    participant S as Device / Runtime
+    participant P as Protocol Draft / Generated
+    participant T as Conformance
+
+    C->>S: TCP / USB HID connect
+    C->>S: CONTROL OPEN
+    S-->>C: CONTROL ACCEPT(payloadTypes=CONTROL/RPC/STREAM)
+    S-->>C: RPC Hello
+    C->>S: RPC Identify
+    S-->>C: RPC Identified(sid="12345678")
+    C->>P: 确认 video/audio stream 方法和字段
+    C->>S: RPC video.openStream 或 audio.startRecording
+    S-->>C: RPC Response(streamId > 0)
+    loop media chunks
+        S-->>C: STREAM(streamId, seqId, cursor, media bytes)
+    end
+    C->>S: RPC video.closeStream 或 audio.stopRecording
+    S-->>C: RPC Response success
+    C->>T: 跑 framed-binary + stream conformance
+```
+
+这条链路的关键点：
+
+| 步骤 | 要点 |
+|---|---|
+| CONTROL | 只有 Standard Framed 有 OPEN / ACCEPT；ACCEPT 后才能发 RPC 和 STREAM。 |
+| 建流 | 用业务 RPC 创建 Stream Context，P0 优先是 `video.openStream` 和 `audio.startRecording(deliveryMode=stream)`。 |
+| `streamId` | 建流响应必须返回非 0 `streamId`，后续 STREAM data 只靠它投递。 |
+| STREAM Header | 固定 16B：`streamId:uint32`、`seqId:uint32`、`cursor:uint64`，全部 little-endian。 |
+| 音视频可靠性 | Phase 1 默认 `ackMode=none`，用丢包统计、关键帧请求、背压和解码容错处理。 |
+| 关流 | 正常结束走业务 RPC；链路断开或心跳超时，runtime 立即释放所有 Stream Context。 |
 
 ## 3. 最小 JSON 报文
 
@@ -373,7 +415,7 @@ Header 字段：
 | 1 | Magic[1] | `0x58` | ASCII `X` |
 | 2 | Version | `0x01` | Standard Header v1 |
 | 3 | PayloadType | `0x02` | RPC |
-| 4-5 | PayloadLength | `0x0050` little-endian | Payload 字节数，示例为 80 |
+| 4-5 | PayloadLength | `0x0051` little-endian | Payload 字节数，示例为 1 字节 rpcEncoding + 80 字节 JSON |
 | 6 | SourceId | `0x01` | 发送方逻辑节点 |
 | 7 | DestinationId | `0x02` | 接收方逻辑节点 |
 | 8-9 | MessageId | `0x0001` little-endian | Frame message id |
@@ -390,24 +432,63 @@ Header 字段：
 
 ```text
 Header:
-41 58 01 02 50 00 01 02 01 00 00 01
+41 58 01 02 51 00 01 02 01 00 00 01
 
-Payload UTF-8:
+Payload:
+01
 7b 22 73 69 64 22 3a 22 31 32 33 34 35 36 37 38 22 2c 22 6f 70 22 3a 37 2c 22 64 22 3a 7b 22 69 64 22 3a 31 2c 22 6d 65 74 68 6f 64 22 3a 22 61 75 64 69 6f 2e 67 65 74 41 6c 67 6f 72 69 74 68 6d 43 61 70 61 62 69 6c 69 74 69 65 73 22 7d 7d
 
 CRC16-CCITT-FALSE little-endian:
-f6 af
+f5 55
 
 Full packet:
-41 58 01 02 50 00 01 02 01 00 00 01 7b 22 73 69 64 22 3a 22 31 32 33 34 35 36 37 38 22 2c 22 6f 70 22 3a 37 2c 22 64 22 3a 7b 22 69 64 22 3a 31 2c 22 6d 65 74 68 6f 64 22 3a 22 61 75 64 69 6f 2e 67 65 74 41 6c 67 6f 72 69 74 68 6d 43 61 70 61 62 69 6c 69 74 69 65 73 22 7d 7d f6 af
+41 58 01 02 51 00 01 02 01 00 00 01 01 7b 22 73 69 64 22 3a 22 31 32 33 34 35 36 37 38 22 2c 22 6f 70 22 3a 37 2c 22 64 22 3a 7b 22 69 64 22 3a 31 2c 22 6d 65 74 68 6f 64 22 3a 22 61 75 64 69 6f 2e 67 65 74 41 6c 67 6f 72 69 74 68 6d 43 61 70 61 62 69 6c 69 74 69 65 73 22 7d 7d f5 55
 ```
 
 说明：
 
 - CRC 覆盖 Header + Payload，不覆盖 CRC 自身。
 - 多字节整数使用 little-endian。
+- RPC Payload 第一个字节是 `rpcEncoding=JSON(0x01)`；后面才是 UTF-8 JSON envelope。
 - Standard Framed 传输在 RPC 前还需要 CONTROL OPEN / ACCEPT；上面的 packet 只展示 RPC frame 内容。
-- 如果要传固件、文件、日志、媒体等连续数据，应使用 STREAM，不要把大块数据塞进 RPC JSON。
+- 如果要传音视频媒体数据，Phase 1 使用 Standard Framed STREAM 数据面；固件、文件、日志等 profile 后续增量采纳。
+
+### 5.1 音视频 STREAM 包内容
+
+STREAM Payload 固定为：
+
+```text
+streamId(4B) + seqId(4B) + cursor(8B) + media data(N)
+```
+
+视频示例：设备把 `streamId=101` 的 H.264 chunk 发给 Host，`cursor=1000000` 表示 1 秒时间戳。
+
+```text
+Header:
+41 58 01 03 17 00 02 01 06 00 00 01
+
+STREAM Payload:
+65 00 00 00              # streamId=101
+01 00 00 00              # seqId=1
+40 42 0f 00 00 00 00 00  # cursor=1000000us
+00 00 00 01 65 88 84     # H.264 sample data
+
+CRC16 little-endian:
+bb f5
+
+Full packet:
+41 58 01 03 17 00 02 01 06 00 00 01
+65 00 00 00 01 00 00 00 40 42 0f 00 00 00 00 00
+00 00 00 01 65 88 84 bb f5
+```
+
+音频示例：`48000Hz / 2ch / s16le / 20ms` 的 PCM chunk 是 3840 bytes，所以一个音频 STREAM frame 的 payload 形状是：
+
+```text
+STREAM Header(16B) + PCM data(3840B)
+```
+
+更完整的建流、丢包和关流规则见 [core-protocol-flow.md](core-protocol-flow.md#14-phase-1-音视频-stream-数据流)。
 
 ## 6. 最短验收清单
 
@@ -419,6 +500,7 @@ Full packet:
 | 能完成一次 request/response | `audio.getAlgorithmCapabilities` 返回 `status.ok=true`。 |
 | 能处理失败 | 非法参数返回 `status.ok=false`，并带稳定错误码。 |
 | 能处理事件 | `audio.setAlgorithmConfig` 成功后，客户端能接收或容忍 `audio.algorithmConfigChanged`。 |
+| 能跑音视频 STREAM | Standard Framed runtime 能通过业务 RPC 返回 `streamId`，解析 STREAM 16B header，并处理 video/audio media bytes。 |
 | 能通过 conformance | runtime 指向同一份 spec checkout 或 release artifact，并通过 `docs/conformance/**` 对应用例。 |
 
 ## 7. 下一步读什么

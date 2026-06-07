@@ -1,14 +1,11 @@
-# AXTP Architecture
+# AXTP 架构说明
 
-`docs/architecture/` contains cross-language architecture guidance for AXTP.
-These documents describe protocol design principles and shared constraints that
-apply regardless of runtime language.
+`docs/architecture/` 存放跨语言通用的架构指导。这里不写某一种 runtime 的 API 设计、代码风格或构建方式，只解释所有语言实现都需要遵守的边界和设计原则。
 
-Language-specific runtime API design, code style, build layout, and transport
-implementation details belong in the matching runtime repository.
+语言专属 runtime API、目录结构、transport adapter 和编码细节，应放到对应 runtime 仓库。
 
-## Documents
+## 文档
 
-No standalone architecture notes are currently maintained here. Use
-`docs/specs/` for normative protocol rules, `docs/guides/` for integration
-guides, and `docs/dev/` for maintainer workflows.
+| 文档 | 说明 |
+|---|---|
+| [protocol-lifecycle-boundaries.md](protocol-lifecycle-boundaries.md) | AXTP 协议生命周期、链路上下文、业务 session、payload encoding、registry/generated/conformance 的边界。 |
