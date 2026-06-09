@@ -904,15 +904,17 @@ def method_for(capability: str, blob: str, flags: dict[str, bool], template: str
         return "system.getTimeConfig" if flags["get"] else "system.setTimeConfig"
     if capability == "system.lifecycle":
         compact = re.sub(r"[^a-z0-9]+", "", blob)
-        if read:
-            return "system.getLifecycleConfig" if ("interval" in blob or "config" in blob or "policy" in blob) else "system.getLifecycleState"
-        if "rebootinterval" in compact or "autoshutdown" in compact or "autopower" in compact:
-            return "system.setLifecycleConfig"
         if "reboot" in blob:
+            if "interval" in blob or "schedule" in blob:
+                return "system.getRebootSchedule" if read else "system.setRebootSchedule"
             return "system.reboot"
         if "shutdown" in blob:
+            if "auto" in blob or "schedule" in blob:
+                return "system.getShutdownSchedule" if read else "system.setShutdownSchedule"
             return "system.shutdown"
-        return "system.setLifecycleConfig"
+        if "autopower" in compact or "keepalive" in compact or "setlive" in compact or "unconnect" in compact:
+            return ""
+        return "system.getLifecycleState" if read else ""
     if capability == "system.initialization":
         if read:
             return "system.getInitializationState"

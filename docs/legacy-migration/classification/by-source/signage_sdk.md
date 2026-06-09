@@ -4,10 +4,10 @@
 
 | Source | File | Line | Type | Legacy Wire | Command ID | Class | Method | Event | Config Name | Capability | AXTP Method | AXTP Event | Protocol Doc | Confidence | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| signage_sdk | docs/legacy-migration/evidence/NearHub-Launcher数字标牌设备管理通用管理命令.md | 37 | method | KeepAlive |  |  | KeepAlive |  |  | system.lifecycle | system.setLifecycleConfig |  | docs/protocol/system/system.lifecycle.md | medium | 系统生命周期状态归 system.lifecycle。 |
+| signage_sdk | docs/legacy-migration/evidence/NearHub-Launcher数字标牌设备管理通用管理命令.md | 37 | method | KeepAlive |  |  | KeepAlive |  |  | core.session / adapter-private |  |  |  | medium | 保活/在线策略不进入 system.lifecycle；保留为 core/session 或适配层策略。 |
 | signage_sdk | docs/legacy-migration/evidence/NearHub-Launcher数字标牌设备管理通用管理命令.md | 48 | event | KeepAlive |  |  |  | KeepAlive |  | system.lifecycle |  | system.lifecycleStateChanged | docs/protocol/system/system.lifecycle.md | medium | 系统生命周期状态归 system.lifecycle。 |
 | signage_sdk | docs/legacy-migration/evidence/NearHub-Launcher数字标牌设备管理通用管理命令.md | 62 | method | GetDeviceInfo |  |  | GetDeviceInfo |  |  | device.info | device.getInfo |  | docs/protocol/device/device.info.md | high | 设备基础信息归 device.info。 |
-| signage_sdk | docs/legacy-migration/evidence/NearHub-Launcher数字标牌设备管理通用管理命令.md | 81 | method | SetDeviceName |  |  | SetDeviceName |  |  | device.info | device.setInfoConfig |  | docs/protocol/device/device.info.md | high | 设备基础信息归 device.info。 |
+| signage_sdk | docs/legacy-migration/evidence/NearHub-Launcher数字标牌设备管理通用管理命令.md | 81 | method | SetDeviceName |  |  | SetDeviceName |  |  | future setting protocol |  |  |  | medium | 当前 `device.info` 只读；设备名设置待具体需求后另起草。 |
 | signage_sdk | docs/legacy-migration/evidence/NearHub-Launcher数字标牌设备管理通用管理命令.md | 97 | method | SetSysTime |  |  | SetSysTime |  |  | system.time | system.setTimeConfig |  | docs/protocol/system/system.time.md | high | 校时、系统时间和时区归 system.time。 |
 | signage_sdk | docs/legacy-migration/evidence/NearHub-Launcher数字标牌设备管理通用管理命令.md | 119 | method | ResetConfig |  |  | ResetConfig |  |  | system.initialization | system.reset |  | docs/protocol/system/system.initialization.md | medium | 恢复配置/初始化/复位归 system.initialization。 |
 | signage_sdk | docs/legacy-migration/evidence/NearHub-Launcher数字标牌设备管理通用管理命令.md | 130 | method | GetNetworkInfo |  |  | GetNetworkInfo |  |  | network.ip | network.getIpConfig |  | docs/protocol/network/network.ip.md | high | IP/DHCP/netmask/gateway/default route 归 network.ip。 |

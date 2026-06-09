@@ -1,12 +1,12 @@
 # AXTP device.info 协议草案
 
-版本：v0.2
+版本：v0.5
 
 归属域：`device`
 
 Capability ID：`device.info`
 
-适用范围：当前 AXTP endpoint 代表的主设备身份、产品、硬件、OS、软件、AXTP runtime 和轻量 capability 建模摘要；同时承接原 `device.identity` 中可写显示名/资产标识的语义。
+适用范围：只读读取当前 AXTP endpoint 代表的主设备身份、产品、硬件、OS、软件、AXTP runtime 和轻量 capability 建模摘要。
 
 ---
 
@@ -14,8 +14,9 @@ Capability ID：`device.info`
 
 | 标记 | 条目 | 审核结论 | 后续动作 |
 |---|---|---|---|
-| `[REVIEW-OK]` | domain.feature | `device.info` 回答“这是谁”，属于 device 物理设备层；不把运行时状态、电源或健康混入本 capability。 | 可作为 `registry/domains/device/domain.yaml` 草案输入。 |
-| `[REVIEW-OK]` | `device.identity` 合并 | 独立 `device.identity` 不再作为本 flow 的采纳目标；只读 ID/SN/vendor/product identity 和可写显示名/资产标识统一进入 `device.info`。 | 采纳时不要重新创建独立 `device.identity` 草案或 capability。 |
+| `[REVIEW-OK]` | domain.feature | `device.info` 回答“这是谁”，属于 device 物理设备层；不把运行时状态、生命周期控制或健康判定混入本 capability。 | 可作为 `registry/domains/device/domain.yaml` 草案输入。 |
+| `[REVIEW-OK]` | `device.identity` 合并 | 独立 `device.identity` 不再作为本 flow 的采纳目标；只读 ID/SN/vendor/product identity 与产品展示字段统一由 `device.info` 读取。 | 采纳时不要重新创建独立 `device.identity` 草案或 capability。 |
+| `[REVIEW-OK]` | read-only scope | 本轮 `device.info` 只保留 `device.getInfo` 只读接口；不定义设备信息配置写入或信息变化事件。 | 有明确设备名/资产设置需求后另起草具体设置协议。 |
 | `[REVIEW-DRAFT]` | `capability` 字段 | `device.getInfo` 保留轻量建模摘要，用于看设备大体按哪些 domain.feature 建模。 | 完整 methods/events/permissions/dynamic availability 仍走 `capability.registry`。 |
 | `[REVIEW-ASK]` | productType / os.type 枚举 | 首批 enum 值需要产品、设备和 runtime 确认。 | 采纳前补 enum baseline 和 unknown/other 策略。 |
 | `[REVIEW-ASK]` | legacy 映射 | AXDP / Rooms / Signage / VM33 的设备信息字段需确认到新 schema 的字段级映射。 | 采纳前补 legacyRefs 或明确 adapter-only。 |
@@ -32,9 +33,9 @@ Capability ID：`device.info`
 
 | 项 | 内容 |
 |---|---|
-| 需求来源 | `docs/flows/device-system-info.md`、设备信息管理需求、legacy device info / SetDeviceName 线索。 |
+| 需求来源 | `docs/flows/device-system-info.md`、设备信息管理需求、legacy device info 线索。 |
 | 目标用户 | App / PC host / cloud console / device management service。 |
-| 目标行为 | 连接后快速读取当前主设备是谁、是什么产品、运行什么 OS/软件/AXTP runtime，并允许在受控权限下修改显示名或资产标识。 |
+| 目标行为 | 连接后快速读取当前主设备是谁、是什么产品、运行什么 OS/软件/AXTP runtime。 |
 | 当前实现程度 | Drafted only；`device.identity` 已合并到本文，不再保留独立草案。 |
 
 ## 3. Domain 边界
@@ -45,36 +46,34 @@ Capability ID：`device.info`
 | Feature | `device.info` |
 | Capability | `device.info` |
 | 负责 | 主设备 identity、product、hardware、os、software、runtime、capability modeling summary。 |
-| 可写范围 | `displayName`、`assetName`、`assetTag` 等人工资产/显示字段，需权限控制。 |
-| 不属于本文 | children/topology 属于 `device.childDevice`；CPU/内存属于 `system.state`；电源/电池/power off 属于 `system.power`；健康/温度属于 `system.health`；完整 capability 查询属于 `capability.registry`。 |
+| 写入范围 | 本轮无写入接口；`device.info` 是只读信息查询能力。 |
+| 不属于本文 | children/topology 属于 `device.childDevice`；CPU/内存/运行态属于 `system.state`；关机/重启/计划任务属于 `system.lifecycle`；健康判定由业务端基于 `system.stateChanged` 自行实现；完整 capability 查询属于 `capability.registry`。 |
 
 ## 4. 协议决策
 
 | 决策点 | 结论 | 理由 |
 |---|---|---|
 | 新增/修改/复用 | Modify existing draft | 复用 `device.info` capability，但替换配置型模板。 |
-| 命名 | `device.getInfo` / `device.setInfoConfig` / `device.infoChanged` | `getInfo` 是信息型主查询；显示名和资产标识作为 config 子集写入。 |
+| 命名 | `device.getInfo` | `getInfo` 是信息型主查询；暂不引入配置写入方法或信息变化事件。 |
 | children 默认值 | 不返回 children | 子设备数量、状态和权限变化更频繁，独立到 `device.childDevice`。 |
 | capability 摘要 | 保留轻量摘要 | 让调用方看到设备大体建模方式，但不替代完整能力查询。 |
+| 设备名/资产设置 | Deferred | 有具体设置需求、权限模型和变化通知需求后另起草协议，不预占 `device.info` 写接口。 |
 
 ## 5. 候选 Capability
 
 | Capability | 状态 | 说明 |
 |---|---|---|
-| `device.info` | draft | 当前 endpoint 主设备信息和可写展示/资产标识。 |
+| `device.info` | draft | 当前 endpoint 主设备只读信息。 |
 
 ## 6. 候选 Methods
 
 | Method | Params Schema | Result Schema | 说明 | Review |
 |---|---|---|---|---|
 | `device.getInfo` | `GetDeviceInfoParams` | `DeviceInfo` | 读取当前 endpoint 主设备信息。默认返回 capability 建模摘要，不返回 children。 | `[REVIEW-OK]` |
-| `device.setInfoConfig` | `SetDeviceInfoConfigParams` | `SetDeviceInfoConfigResult` | 修改可写显示名或资产标识；不得修改 `deviceId`、`serialNumber`、`vendorId`、`productId`。 | `[REVIEW-DRAFT]` |
 
 ## 7. 候选 Events
 
-| Event | Schema | 触发时机 | Review |
-|---|---|---|---|
-| `device.infoChanged` | `DeviceInfoChangedEvent` | displayName、asset 字段、软件版本、runtime 版本或 capability modeling summary 变化。 | `[REVIEW-DRAFT]` |
+本轮不定义 `device.info` 事件。信息变化通知暂不需要；如果未来出现设备名、资产标识、软件版本或 capability 变化通知需求，应基于具体业务场景另行起草事件。
 
 ## 8. 候选 Schemas
 
@@ -104,8 +103,6 @@ Capability ID：`device.info`
 | `serialNumber` | string | no | 厂商序列号。 | `[REVIEW-DRAFT]` |
 | `vendorId` | string | no | 厂商 ID，例如 `nearhub`。 | `[REVIEW-DRAFT]` |
 | `productId` | string | no | 产品 ID，例如 `nh-win-box-a1`。 | `[REVIEW-DRAFT]` |
-| `assetName` | string | no | 用户或组织维护的资产名称。 | `[REVIEW-DRAFT]` |
-| `assetTag` | string | no | 用户或组织维护的资产标签。 | `[REVIEW-DRAFT]` |
 
 ### `DeviceProduct`
 
@@ -114,7 +111,7 @@ Capability ID：`device.info`
 | `brand` | string | no | 品牌。 | `[REVIEW-DRAFT]` |
 | `productType` | string enum | yes | 产品类型，例如 `windowsDevice` / `androidDevice` / `embeddedDevice`。 | `[REVIEW-ASK]` |
 | `model` | string | yes | 硬件或整机型号，不填软件名。 | `[REVIEW-OK]` |
-| `displayName` | string | no | 用户可见设备名称，可通过 `device.setInfoConfig` 修改。 | `[REVIEW-DRAFT]` |
+| `displayName` | string | no | 用户可见设备名称；本轮仅只读返回，不提供写入接口。 | `[REVIEW-DRAFT]` |
 
 ### `DeviceHardware`
 
@@ -163,31 +160,6 @@ Capability ID：`device.info`
 | `profile` | string | no | 产品/设备建模 profile，例如 `windows-managed-device`。 | `[REVIEW-DRAFT]` |
 | `domains` | string[] | no | 设备暴露的主要 domain 摘要。 | `[REVIEW-DRAFT]` |
 | `features` | string[] | no | 设备暴露的主要 `domain.feature` 摘要。 | `[REVIEW-DRAFT]` |
-
-### `SetDeviceInfoConfigParams`
-
-| Field | Type | Required | 说明 | Review |
-|---|---|---:|---|---|
-| `displayName` | string | no | 新显示名；空字符串是否允许需确认。 | `[REVIEW-ASK]` |
-| `assetName` | string | no | 新资产名称。 | `[REVIEW-DRAFT]` |
-| `assetTag` | string | no | 新资产标签。 | `[REVIEW-DRAFT]` |
-| `expectedVersion` | string | no | 可选乐观锁版本，避免覆盖并发修改。 | `[REVIEW-DRAFT]` |
-
-### `SetDeviceInfoConfigResult`
-
-| Field | Type | Required | 说明 | Review |
-|---|---|---:|---|---|
-| `info` | `DeviceInfo` | no | 修改后的设备信息快照。 | `[REVIEW-DRAFT]` |
-| `changedFields` | string[] | no | 发生变化的字段路径。 | `[REVIEW-DRAFT]` |
-| `version` | string | no | 配置版本或更新时间戳。 | `[REVIEW-DRAFT]` |
-
-### `DeviceInfoChangedEvent`
-
-| Field | Type | Required | 说明 | Review |
-|---|---|---:|---|---|
-| `changedFields` | string[] | yes | 字段路径，例如 `product.displayName`。 | `[REVIEW-DRAFT]` |
-| `info` | `DeviceInfo` | no | 变化后的完整或部分快照。 | `[REVIEW-DRAFT]` |
-| `reason` | string enum | no | `user_update` / `software_update` / `runtime_update` / `capability_update`。 | `[REVIEW-ASK]` |
 
 ## 9. JSON 示例
 
@@ -260,60 +232,8 @@ Capability ID：`device.info`
         "device.info",
         "device.childDevice",
         "system.state",
-        "system.power",
-        "system.health",
         "system.lifecycle"
       ]
-    }
-  }
-}
-```
-
-### `device.setInfoConfig` request
-
-```json
-{
-  "id": 2,
-  "method": "device.setInfoConfig",
-  "params": {
-    "displayName": "Lobby Display Controller",
-    "assetTag": "ASSET-REDACTED"
-  }
-}
-```
-
-### `device.setInfoConfig` response
-
-```json
-{
-  "id": 2,
-  "status": {
-    "ok": true,
-    "code": 0
-  },
-  "result": {
-    "changedFields": ["product.displayName", "identity.assetTag"],
-    "version": "2026-06-09T10:30:00Z"
-  }
-}
-```
-
-### `device.infoChanged` event
-
-```json
-{
-  "event": "device.infoChanged",
-  "intent": 1,
-  "data": {
-    "changedFields": ["product.displayName"],
-    "reason": "user_update",
-    "info": {
-      "identity": {
-        "deviceId": "dev_001"
-      },
-      "product": {
-        "displayName": "Lobby Display Controller"
-      }
     }
   }
 }
@@ -323,13 +243,13 @@ Capability ID：`device.info`
 
 ```json
 {
-  "id": 2,
+  "id": 1,
   "status": {
     "ok": false,
-    "code": 9,
-    "msg": "Permission denied.",
+    "code": 13,
+    "msg": "Read device info failed.",
     "details": {
-      "candidateError": "DEVICE_INFO_PERMISSION_DENIED"
+      "candidateError": "DEVICE_INFO_READ_FAILED"
     }
   }
 }
@@ -340,8 +260,6 @@ Capability ID：`device.info`
 | Error | 类别 | 说明 | Review |
 |---|---|---|---|
 | `DEVICE_INFO_READ_FAILED` | device | 读取本机信息失败；JSON 示例可暂用 `INTERNAL_ERROR`。 | `[REVIEW-DRAFT]` |
-| `DEVICE_INFO_PERMISSION_DENIED` | device | 无权修改显示名或资产字段；JSON 示例使用通用 `PERMISSION_DENIED`。 | `[REVIEW-DRAFT]` |
-| `DEVICE_INFO_VERSION_CONFLICT` | device | `expectedVersion` 与当前版本不匹配；采纳时确认是否使用通用 `INVALID_STATE` 或新增业务错误。 | `[REVIEW-ASK]` |
 
 ## 11. Legacy 待映射
 
@@ -349,7 +267,7 @@ Capability ID：`device.info`
 |---|---|---|---|---|
 | AXDP | `CommonGetEncryptedInfo` 等设备信息命令 | `device.getInfo` | `[REVIEW-ASK]` | 字段级映射和是否包含敏感加密信息需确认。 |
 | Rooms | `GetDeviceInfo` / `GetDevInfo` / `GetSn` | `device.getInfo` | `[REVIEW-ASK]` | SN 和设备详情进入 `identity` / `product`。 |
-| Rooms / Signage | `SetDeviceName` | `device.setInfoConfig` | `[REVIEW-ASK]` | 仅映射 displayName，不允许写入只读 identity。 |
+| Rooms / Signage | `SetDeviceName` | out of current draft / future setting protocol | `[REVIEW-OK]` | 本轮不映射到 `device.info`；有明确设置需求后另起草设备名或资产设置协议。 |
 | VM33 | `System.GetDevInfo` | `device.getInfo` | `[REVIEW-ASK]` | 旧 System namespace 不决定新 domain；按语义归 `device.info`。 |
 
 ## 12. Registry 草案输入
@@ -363,9 +281,6 @@ capabilities:
     status: draft
     methods:
       - device.getInfo
-      - device.setInfoConfig
-    events:
-      - device.infoChanged
 
 methods:
   - name: device.getInfo
@@ -376,31 +291,13 @@ methods:
     responseSchema: DeviceInfo
     capabilities:
       - device.info
-  - name: device.setInfoConfig
-    id: TBD after adoption
-    bitOffset: TBD after adoption
-    domain: device
-    requestSchema: SetDeviceInfoConfigParams
-    responseSchema: SetDeviceInfoConfigResult
-    capabilities:
-      - device.info
-
-events:
-  - name: device.infoChanged
-    id: TBD after adoption
-    bitOffset: TBD after adoption
-    domain: device
-    eventSchema: DeviceInfoChangedEvent
-    capabilities:
-      - device.info
 ```
 
 ## 13. 采纳检查清单
 
 - [ ] 08 已确认 `device.info` 合并 `device.identity` 的边界。
 - [ ] 08 已确认 `product.model` 不承载软件名。
-- [ ] 09/10 已确认 `device.getInfo` / `device.setInfoConfig` 的 methodId、bitOffset 和 schema。
-- [ ] 11 已确认 `device.infoChanged` 的 eventId、eventMasks bitOffset 和触发策略。
+- [ ] 09/10 已确认 `device.getInfo` 的 methodId、bitOffset 和 schema。
 - [ ] 12 已确认错误码复用或新增策略。
 - [ ] 13 已确认 schema fieldId、capabilityId、profile summary 表达。
 - [ ] 采纳时确认不再生成独立 `device.identity` capability，避免双写。
@@ -408,7 +305,6 @@ events:
 ## 14. 待确认问题
 
 1. `productType`、`os.type`、`cpuArch`、`software.components[].role` 的首批 enum 值是什么？
-2. `displayName` 是否允许空字符串，长度限制和字符集是什么？
-3. `assetName` / `assetTag` 是否需要进入 P0，还是只作为 P1 资产管理扩展？
-4. `capability.profile` 是否来自 profiles registry，还是先作为产品 profile 字符串？
-5. legacy 设备信息中是否包含敏感字段；如包含，是否应拆到 auth/vendor/diagnostic 域？
+2. `capability.profile` 是否来自 profiles registry，还是先作为产品 profile 字符串？
+3. legacy 设备信息中是否包含敏感字段；如包含，是否应拆到 auth/vendor/diagnostic 域？
+4. legacy `SetDeviceName` 是否只保留在旧 adapter，还是未来另起草设备名设置协议？

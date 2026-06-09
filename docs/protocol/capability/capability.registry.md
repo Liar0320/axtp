@@ -1,6 +1,6 @@
 # AXTP capability.registry 协议草案
 
-版本：v0.3
+版本：v0.4
 
 归属域：`capability`
 
@@ -200,13 +200,7 @@ Capability ID：`capability.registry`
                 "available": true
               }
             ],
-            "events": [
-              {
-                "name": "device.infoChanged",
-                "available": true,
-                "subscribed": true
-              }
-            ]
+            "events": []
           }
         ]
       },
@@ -254,7 +248,7 @@ Capability ID：`capability.registry`
                 "available": true
               },
               {
-                "name": "system.getLifecycleSchedules",
+                "name": "system.getRebootSchedule",
                 "available": true
               },
               {
@@ -262,11 +256,19 @@ Capability ID：`capability.registry`
                 "available": true
               },
               {
+                "name": "system.cancelRebootSchedule",
+                "available": true
+              },
+              {
+                "name": "system.getShutdownSchedule",
+                "available": true
+              },
+              {
                 "name": "system.setShutdownSchedule",
                 "available": true
               },
               {
-                "name": "system.cancelLifecycleSchedule",
+                "name": "system.cancelShutdownSchedule",
                 "available": true
               }
             ],
@@ -305,28 +307,6 @@ Capability ID：`capability.registry`
             "events": [
               {
                 "name": "system.resetStatusChanged",
-                "available": true,
-                "subscribed": true
-              }
-            ]
-          },
-          {
-            "id": "system.power",
-            "available": true,
-            "status": "draft",
-            "methods": [
-              {
-                "name": "system.getPowerState",
-                "available": true
-              },
-              {
-                "name": "system.powerOff",
-                "available": true
-              }
-            ],
-            "events": [
-              {
-                "name": "system.powerStateChanged",
                 "available": true,
                 "subscribed": true
               }

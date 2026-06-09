@@ -1,6 +1,6 @@
 # AXTP system.state 协议草案
 
-版本：v0.3
+版本：v0.5
 
 归属域：`system`
 
@@ -16,10 +16,10 @@ Capability ID：`system.state`
 |---|---|---|---|
 | `[REVIEW-OK]` | domain.feature | `system.state` 回答“这台机器现在怎么运行”，属于 system 运行时状态层。 | 可作为 `registry/domains/system/domain.yaml` 草案输入。 |
 | `[REVIEW-OK]` | 与 device 的边界 | 原 `device.state` 中 CPU/内存/在线等运行时状态迁移到 `system.state`。 | 采纳时不要重新创建独立 `device.state` 草案或 capability。 |
-| `[REVIEW-OK]` | 与 power/health 的边界 | 电源/电池/下电控制归 `system.power`；健康/温度/告警归 `system.health`。 | 三个 capability 分别采纳。 |
+| `[REVIEW-OK]` | 与 lifecycle / health 判定的边界 | 关机、重启和计划任务归 `system.lifecycle`；健康、告警和 fault 不再作为独立 capability，由业务端基于 `system.stateChanged` 自行判定。 | 不再保留独立 system power 或 system health 草案。 |
 | `[REVIEW-OK]` | `recoverRuntimeState` 语义 | 重置设备状态若指 MCU、runtime service 或控制器异常恢复，命名为 `system.recoverRuntimeState`；不是恢复默认配置、恢复出厂或初始化。 | 采纳前确认 scope、权限和是否允许 child/component target。 |
 | `[REVIEW-ASK]` | P0 字段 | CPU、内存、uptime、online、load、process/runtime summary 的 P0 范围需确认。 | 采纳前确定字段基线和采样/节流策略。 |
-| `[REVIEW-ASK]` | legacy 映射 | `device.state` legacy 分类中泛设备状态需要重新拆到 `system.state` 或 `system.health`。 | 采纳前补 legacyRefs。 |
+| `[REVIEW-ASK]` | legacy 映射 | `device.state` legacy 分类中泛设备状态需要重新拆到 `system.state` 或其他 telemetry/sensor capability；不再映射到 `system.health`。 | 采纳前补 legacyRefs。 |
 
 ---
 
@@ -45,14 +45,14 @@ Capability ID：`system.state`
 | Domain | `system` |
 | Feature | `system.state` |
 | Capability | `system.state` |
-| 负责 | `online`、`uptimeSeconds`、CPU、内存、load、runtime/process 摘要，以及 runtime/MCU/controller/service 状态恢复动作。 |
-| 不属于本文 | 设备身份属于 `device.info`；电源/电池/power off 属于 `system.power`；温度/健康/告警属于 `system.health`；恢复默认配置/恢复出厂属于 `system.reset` / `system.initialization`；高频 telemetry 或传感器流不走本 event。 |
+| 负责 | `online`、`uptimeSeconds`、CPU、内存、load、runtime/process 摘要、低频 `system.stateChanged` 状态变化事件，以及 runtime/MCU/controller/service 状态恢复动作。 |
+| 不属于本文 | 设备身份属于 `device.info`；关机/重启/计划任务属于 `system.lifecycle`；恢复默认配置/恢复出厂属于 `system.reset` / `system.initialization`；健康/告警/fault 等判定不作为协议 capability，由业务端基于状态事件自行实现；电池/供电遥测和高频传感器流不走本 event。 |
 
 ## 4. 候选 Capability
 
 | Capability | 状态 | 说明 |
 |---|---|---|
-| `system.state` | draft | 通用运行时状态读取、低频变化通知和运行时状态恢复动作。 |
+| `system.state` | draft | 通用运行时状态读取、低频变化通知和运行时状态恢复动作；不标准化健康/告警/fault 判定。 |
 
 ## 5. 候选 Methods
 
@@ -119,7 +119,7 @@ Capability ID：`system.state`
 
 | Field | Type | Required | 说明 | Review |
 |---|---|---:|---|---|
-| `state` | string enum | no | `running` / `starting` / `degraded` / `stopping` / `unknown`。 | `[REVIEW-ASK]` |
+| `state` | string enum | no | `running` / `starting` / `stopping` / `error` / `unknown`。 | `[REVIEW-ASK]` |
 | `processId` | uint32 | no | host 进程 ID；仅本地诊断使用。 | `[REVIEW-DRAFT]` |
 | `restartCount` | uint32 | no | runtime 重启次数。 | `[REVIEW-DRAFT]` |
 
@@ -311,14 +311,14 @@ Capability ID：`system.state`
 | `SYSTEM_STATE_SECTION_NOT_SUPPORTED` | system | 请求了设备不支持的 section；JSON 示例可使用 `NOT_SUPPORTED`。 | `[REVIEW-DRAFT]` |
 | `SYSTEM_STATE_RECOVERY_NOT_SUPPORTED` | system | 当前设备或 scope 不支持运行时状态恢复；JSON 示例可使用 `NOT_SUPPORTED`。 | `[REVIEW-DRAFT]` |
 | `SYSTEM_STATE_RECOVERY_PERMISSION_DENIED` | system | 无权执行运行时状态恢复；JSON 示例可使用 `PERMISSION_DENIED`。 | `[REVIEW-DRAFT]` |
-| `SYSTEM_STATE_RECOVERY_BUSY` | system | 状态恢复正在执行，或 lifecycle/power 动作进行中；JSON 示例可使用 `BUSY`。 | `[REVIEW-DRAFT]` |
+| `SYSTEM_STATE_RECOVERY_BUSY` | system | 状态恢复正在执行，或 lifecycle 动作进行中；JSON 示例可使用 `BUSY`。 | `[REVIEW-DRAFT]` |
 | `SYSTEM_STATE_RECOVERY_INVALID_SCOPE` | system | 请求的 scope 或 componentId 非法；JSON 示例可使用 `INVALID_ARGUMENT`。 | `[REVIEW-DRAFT]` |
 
 ## 10. Legacy 待映射
 
 | 来源 | 旧协议条目 | 候选映射 | 状态 | 说明 |
 |---|---|---|---|---|
-| AXDP / Rooms / VM33 | `CommonGetTipsStatus`、`CheckLineStatus`、`DeviceStatus.Get` 等 | `system.getState` 或 `system.getHealth` | `[REVIEW-ASK]` | 原分类为 `device.state`，需按字段拆到 state/health。 |
+| AXDP / Rooms / VM33 | `CommonGetTipsStatus`、`CheckLineStatus`、`DeviceStatus.Get` 等 | `system.getState` / `system.stateChanged` 或未来 telemetry/sensor capability | `[REVIEW-ASK]` | 原分类为 `device.state`，需按字段拆到 runtime state、业务端判定或其他遥测能力。 |
 | Signage | `OnTelemetryReport` 中 CPU/内存类字段 | `system.stateChanged` | `[REVIEW-ASK]` | 遥测字段集合未确认；高频字段可能不进入 event。 |
 | MCU / controller 状态恢复 | 待确认旧命令或 SDK 行为 | `system.recoverRuntimeState` | `[REVIEW-ASK]` | 需求来自上位机指定恢复异常状态；需确认是否已有 legacy 命令、scope 和结果码。 |
 
@@ -371,7 +371,7 @@ events:
 - [ ] 11 已确认 `system.stateChanged` 的节流、阈值和 eventMasks bitOffset。
 - [ ] 12 已确认错误码复用或新增策略。
 - [ ] 13 已确认 fieldId 和跨平台可选字段表达。
-- [ ] legacy `device.state` 线索已拆分到 `system.state` / `system.health`。
+- [ ] legacy `device.state` 线索已拆分到 `system.state`、业务端判定或未来 telemetry/sensor capability，不再映射到 `system.health`。
 
 ## 13. 待确认问题
 

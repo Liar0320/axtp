@@ -90,7 +90,7 @@ Transport
 | `KeepAlive` method | Server <-> Device | AXTP session liveness / `system.lifecycle` | 优先使用 transport/session 心跳；如需业务最后在线事件，再补 `system.lifecycle` 草案并采纳。 |
 | `KeepAlive` event | Server <-> Device | `system.lifecycleStateChanged` 或 session telemetry | 不保留旧同名 event；确认是否需要业务事件。 |
 | `GetDeviceInfo` | Server -> Device | `device.getInfo` | 复用当前已采纳 `device.info`，检查是否覆盖 `model/devName/cpuUsage/memoryUsage/ip/mac/version`。 |
-| `SetDeviceName` | Server -> Device, Device -> Server | `device.setInfoConfig` | `device.info` 草案需补设备名可写字段；采纳后实现。 |
+| `SetDeviceName` | Server -> Device, Device -> Server | future device name setting protocol / legacy adapter | 当前 `device.info` 只读；有具体设置需求后另起草设备名设置协议。 |
 | `SetSysTime` | Server -> Device | `system.setTimeConfig` | 补 `timezone/year/month/day/hour/minute/second` 到 `system.time`。 |
 | `ResetConfig` | Server -> Device | `system.reset` / `system.initialization` | 明确是恢复配置、恢复出厂还是重启；按 system 域采纳。 |
 | `GetNetworkInfo` | Server -> Device | `network.getIpConfig` | 补接口数组、Wi-Fi/ethernet、`connected/ip/mac/ssid/rssi` 字段。 |
