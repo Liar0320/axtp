@@ -7,7 +7,7 @@
 
 本文根据“投屏器发射/接收端配对流程”的业务需求，梳理上位机、NA20 接收端、NT10 发射端和 AXTP 协议之间的交互流程。
 
-本文不是最终协议事实源。当前 generated 协议只包含已采纳的 `audio` 域业务方法；本流程涉及的 `network.ap`、`network.wifi`、`device.info` / `device.identity` 仍是 `docs/protocol/**` 草案或主机实现细节，后续需要进入 Stage 20 `draft-business-protocol` 完成协议草案细化和采纳前评审。
+本文不是最终协议事实源。当前 generated 协议只包含已采纳的 `audio` 域业务方法；本流程涉及的 `network.ap`、`network.wifi`、`device.info` 仍是 `docs/protocol/**` 草案或主机实现细节，后续需要进入 Stage 20 `draft-business-protocol` 完成协议草案细化和采纳前评审。
 
 ## 1. Story Summary
 
@@ -58,7 +58,7 @@
 | Need | Coverage state | AXTP protocol | Evidence | Next action |
 |---|---|---|---|---|
 | 上位机与 NA20/NT10 建立 USB AXTP 会话 | Adopted/generated core | `AXTP-USB-HID`, connection lifecycle | `docs/generated/protocol.md` | 可按 AXTP core/session 实现。 |
-| 识别哪个设备是 NA20、哪个是 NT10 | Drafted only / Non-protocol | USB descriptor, `device.info`, `device.identity` | `docs/protocol/device/device.info.md`, `docs/protocol/device/device.identity.md` | 若 USB descriptor 足够则不新增协议；若需 AXTP 查询，转 Stage 20 细化 device 草案。 |
+| 识别哪个设备是 NA20、哪个是 NT10 | Drafted only / Non-protocol | USB descriptor, `device.info` | `docs/protocol/device/device.info.md` | 若 USB descriptor 足够则不新增协议；若需 AXTP 查询，转 Stage 20 细化 device 草案。 |
 | 查询 NA20 是否支持 AP 能力 | Drafted only | `network.getApCapabilities`, `network.ap` | `docs/protocol/network/network.ap.md` | 转 Stage 20 细化并采纳 `network.ap`。 |
 | 读取 NA20 AP 配置和状态 | Drafted only | `network.getApConfig`, `network.getApState` | `docs/protocol/network/network.ap.md` | 转 Stage 20；重点确认凭据字段和可读策略。 |
 | 必要时启动 NA20 AP | Drafted only | `network.startAp`, `network.apStateChanged` | `docs/protocol/network/network.ap.md` | 转 Stage 20；确认 AP 生命周期和启动条件。 |
@@ -124,7 +124,7 @@ sequenceDiagram
 |---:|---|---|---|---|---|---|
 | 1 | User / Host | 用户插入 NA20 和 NT10。 | Non-protocol / USB enumeration | 上位机发现两个 USB HID 设备。 | 进入自动配对候选集。 | 只发现一个设备时等待另一个设备或提示缺失设备。 |
 | 2 | Host | 分别建立到两个设备的 AXTP 会话。 | AXTP connection lifecycle | 使用 `AXTP-USB-HID` 建立 session、完成 Hello / Identify / Identified。 | 两个设备均可接收 RPC。 | 任一会话失败则中止配对并提示设备连接异常。 |
-| 3 | Host | 判断设备角色。 | USB descriptor or draft `device.info` / `device.identity` | 优先使用 USB VID/PID/product string；如需协议查询，可读取型号、产品名、序列号或角色字段。 | 标记 NA20 receiver 与 NT10 transmitter。 | 无法区分时不应猜测；多设备时进入人工选择或按绑定记录匹配。 |
+| 3 | Host | 判断设备角色。 | USB descriptor or draft `device.info` | 优先使用 USB VID/PID/product string；如需协议查询，可读取型号、产品名、序列号或角色字段。 | 标记 NA20 receiver 与 NT10 transmitter。 | 无法区分时不应猜测；多设备时进入人工选择或按绑定记录匹配。 |
 | 4 | Host | 检查 NA20 AP 能力。 | Draft `network.getApCapabilities` | 查询 AP/SoftAP 是否支持配置读取、启动和客户端列表。 | 确认 NA20 可作为 AP 端点。 | 不支持时中止配对；能力缺失时进入产品兼容处理。 |
 | 5 | Host | 获取 NA20 AP 信息。 | Draft `network.getApConfig`, `network.getApState` | 需要 SSID、安全类型、凭据或凭据引用、AP 运行状态；可选 BSSID、频段、信道、IP 网段。 | 上位机获得可写入 NT10 的配对材料。 | 若凭据不可读，应使用配对 token 或让 NA20 生成一次性配置；该行为需 Stage 20 确认。 |
 | 6 | Host / NA20 | 若 AP 未运行且允许自动启动，则启动 NA20 AP。 | Draft `network.startAp`, `network.apStateChanged` | 使用当前 AP config 启动；必要时等待 `running` 状态。 | NA20 AP 可被 NT10 连接。 | 启动失败、忙碌或策略禁止时中止并提示。 |
@@ -151,7 +151,7 @@ sequenceDiagram
 
 | Draft method/event | Purpose in this flow | Source |
 |---|---|---|
-| `device.getInfoConfig` / `device.getIdentityConfig` | 在 USB descriptor 不足时识别设备型号、角色、序列号或绑定标识。 | `docs/protocol/device/device.info.md`, `docs/protocol/device/device.identity.md` |
+| `device.getInfo` | 在 USB descriptor 不足时识别设备型号、角色、序列号或绑定标识。 | `docs/protocol/device/device.info.md` |
 | `network.getApCapabilities` | 确认 NA20 支持 AP 配置读取、启动、状态和客户端查询。 | `docs/protocol/network/network.ap.md` |
 | `network.getApConfig` | 读取 NA20 AP SSID、安全类型和配对所需凭据材料。 | `docs/protocol/network/network.ap.md` |
 | `network.startAp` | 在配对前启动 NA20 AP。 | `docs/protocol/network/network.ap.md` |
@@ -215,7 +215,7 @@ NT10 Wi-Fi set request 需要表达：
 | NT10 Wi-Fi profile 的保存、立即连接和持久化语义尚未定义。 | `network.wifi` | `network.setWifiConfig`, `network.connectWifi`, profile schema | `docs/dev/skills/20-draft-business-protocol/SKILL.md` | `[REVIEW-ASK]` 写入后是否默认持久化并自动连接？ |
 | 连接状态和失败原因需要可测试枚举。 | `network.wifi` | `network.getWifiState`, `network.wifiStateChanged` state/reason schema | `docs/dev/skills/20-draft-business-protocol/SKILL.md` | `[REVIEW-ASK]` 需要区分 auth_failed、ap_not_found、timeout、unsupported_security 吗？ |
 | NA20 AP 客户端列表是否作为配对成功强校验。 | `network.ap` | `network.getApClients`, `network.apClientChanged` client schema | `docs/dev/skills/20-draft-business-protocol/SKILL.md` | `[REVIEW-ASK]` 是否必须在 NA20 侧看到 NT10 才算成功？ |
-| 上位机是否需要通过 AXTP 查询设备角色。 | `device.info` / `device.identity` | role/model/product/serial fields | `docs/dev/skills/20-draft-business-protocol/SKILL.md` | `[REVIEW-ASK]` USB VID/PID/product string 是否足以区分 NA20 和 NT10？ |
+| 上位机是否需要通过 AXTP 查询设备角色。 | `device.info` | role/model/product/serial fields | `docs/dev/skills/20-draft-business-protocol/SKILL.md` | `[REVIEW-ASK]` USB VID/PID/product string 是否足以区分 NA20 和 NT10？ |
 | 产品是否需要单 RPC 原子配对能力。 | `[REVIEW-ASK]` taxonomy TBD | Possible `cast.pairing` / `device.pairing` / no new capability | `docs/dev/skills/20-draft-business-protocol/SKILL.md` only if required | `[REVIEW-ASK]` 当前是否接受上位机编排多个 network 方法，而不是一个 pairing 方法？ |
 
 ## 8. Test Fixtures
@@ -237,7 +237,7 @@ NT10 Wi-Fi set request 需要表达：
 - NA20 AP 信息能以已确认的安全策略提供给上位机，并能转成 NT10 Wi-Fi profile。
 - NT10 能保存 NA20 Wi-Fi profile；如产品要求立即连接，必须能报告连接成功或可诊断失败原因。
 - 明文 AP 密码不得进入普通日志、本地持久化记录或非必要 UI。
-- 所有 `network.ap`、`network.wifi`、`device.info` / `device.identity` 依赖在采纳前都只能作为草案依赖，不得按 generated 实现合同开发。
+- 所有 `network.ap`、`network.wifi`、`device.info` 依赖在采纳前都只能作为草案依赖，不得按 generated 实现合同开发。
 - 本流程不修改 registry、generated 或 Protocol IR；后续协议事实必须通过 Stage 20/30/50 工作流进入正式生成路径。
 
 ## 10. Open Questions

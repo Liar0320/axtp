@@ -112,7 +112,7 @@ refreshed protocol/axtp.protocol.yaml + generated artifacts
 | auth | 3 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
 | camera | 7 | ASK | 0 | P3/P4 | 补产品/设备/legacy 确认。 |
 | capability | 1 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
-| device | 8 | ASK | 0 | P1 | 补产品/设备/legacy 确认，优先进入采纳批次。 |
+| device | 5 | ASK | 0 | P1 | 补产品/设备/legacy 确认，优先进入采纳批次。 |
 | diagnostic | 10 | ASK | 0 | P5 | 补产品/设备/legacy 确认。 |
 | display | 6 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
 | file | 2 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
@@ -126,7 +126,7 @@ refreshed protocol/axtp.protocol.yaml + generated artifacts
 | signage | 5 | ASK | 0 | P7 | 补产品/设备/legacy 确认。 |
 | storage | 6 | ASK | 0 | 待排期 | 补产品/设备/legacy 确认。 |
 | stream | 2 | ASK | 0 | P0 data-plane plumbing | Phase 1 需要通用 STREAM open/data/close 语义支撑 audio/video；具体业务参数仍由 audio/video profile 定义。 |
-| system | 5 | ASK | 0 | P1 | 补产品/设备/legacy 确认，优先进入采纳批次。 |
+| system | 8 | ASK | 0 | P1 | 补产品/设备/legacy 确认，优先进入采纳批次。 |
 | video | 12 | ASK | 0 | P0 stream | 先补 video stream RPC 控制面和 STREAM 数据面确认；这是 P0 媒体流主线。 |
 
 ## 协议采纳/生成优先级
@@ -135,7 +135,7 @@ refreshed protocol/axtp.protocol.yaml + generated artifacts
 
 | 优先级 | 生成批次 | Legacy 覆盖 | 当前状态 | 建议动作 |
 |---|---|---:|---|---|
-| P1 | `device.*` / `system.*`：[`device.info`](device/device.info.md)、[`device.identity`](device/device.identity.md)、[`device.state`](device/device.state.md)、[`device.childDevice`](device/device.childDevice.md)、[`system.lifecycle`](system/system.lifecycle.md)、[`system.initialization`](system/system.initialization.md)、[`system.time`](system/system.time.md) | 64 条，覆盖 AXDP / Rooms / Signage / VM33 | 草案已存在，未进入 generated | 最先采纳生成。它们是设备识别、状态读取、重启、初始化、时间同步等通用底座，后续业务和工具都依赖这些基础事实。 |
+| P1 | `device.*` / `system.*`：[`device.info`](device/device.info.md)、[`device.childDevice`](device/device.childDevice.md)、[`system.state`](system/system.state.md)、[`system.power`](system/system.power.md)、[`system.health`](system/system.health.md)、[`system.lifecycle`](system/system.lifecycle.md)、[`system.initialization`](system/system.initialization.md)、[`system.time`](system/system.time.md) | 64 条，覆盖 AXDP / Rooms / Signage / VM33 | 草案已存在，未进入 generated | 最先采纳生成。它们是设备识别、运行时状态、电源、健康、重启、初始化、时间同步等通用底座，后续业务和工具都依赖这些基础事实。 |
 | P2 | [`video.framing`](video/video.framing.md) | 22 条，主要来自 AXDP，少量 VM33 | 草案已存在，未进入 generated | 紧跟 P1 生成。framing mode 是 legacy 高频控制项，也会影响 camera tracking、布局和画面输出的语义边界。 |
 | P2b | [`output.layout`](output/output.layout.md) / [`video.layout`](video/video.layout.md) | 28 条，`output.layout` 20 条、`video.layout` 8 条 | 草案已存在，未进入 generated | 原始优先级清单未单列，但 legacy 覆盖高。若近期要做输出画面、拼接、多画面或分屏，建议插在 P2 后、camera 控制前。 |
 | P3 | [`camera.focus`](camera/camera.focus.md)、[`camera.zoom`](camera/camera.zoom.md)、[`camera.ptz`](camera/camera.ptz.md) | 20 条，覆盖 AXDP / VM33 | 草案已存在，未进入 generated | 按同一 camera control 批次采纳。focus 和 zoom 命中多，PTZ 条目少但和控制体验强相关，适合一起确认 schema 与状态事件。 |

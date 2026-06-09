@@ -8,4 +8,5 @@
 
 | 文档 | 说明 |
 |---|---|
+| [domain-feature-classification.md](domain-feature-classification.md) | AXTP domain / feature 分类规则，说明 room、device、system、signage、cast、software、firmware 等边界和 legacy 迁移判断方法。 |
 | [protocol-lifecycle-boundaries.md](protocol-lifecycle-boundaries.md) | AXTP 协议生命周期、链路上下文、业务 session、payload encoding、registry/generated/conformance 的边界。 |

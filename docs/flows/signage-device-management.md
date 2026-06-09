@@ -35,7 +35,7 @@
 | Audio settings | 设置/查询 Line-out 音量和 Line-in 预增益。 | 映射到 `audio.volume` / `audio.input` 草案；当前 generated `audio.algorithm` 不覆盖这些字段。 |
 | Firmware maintenance | URL 远程升级并查询升级进度。 | 优先按 `firmware.update` 草案的 `source.type=url`、`firmware.getUpdateState` 和 progress event 设计，不新增 `RemoteUpgrade`。 |
 | Binding page / bind code | 设备获取绑定码，服务端/设备查询绑定状态，服务端下发绑定状态变更，设备上报绑定结果。 | 映射到 `auth.session` 或绑定专属 auth 能力；当前草案过于通用，需要补绑定码、过期时间、方向和事件语义。 |
-| Telemetry | 设备上报温度、电量等遥测。 | 当前分类低置信度；候选 `sensor.telemetry` 或拆到 `device.power` / sensor 域。 |
+| Telemetry | 设备上报温度、电量等遥测。 | 当前分类低置信度；候选 `sensor.telemetry` 或拆到 `system.power` / sensor 域。 |
 | Playlist manager | 服务端全量同步播放列表，设备读取当前列表，资源 URL 即将过期时设备请求刷新。 | 映射到 `signage.playlist` 和 `signage.media` 草案；需补完整 playlist/item/settings schema。 |
 | Appearance settings | 管理 `panelLayout`、`autoHidePanel`、`autoHideDelay`。 | 映射到 `signage.osd` 草案；需确认 OSD 命名是否准确表达播放器面板外观。 |
 | Update policy settings | 管理自动更新开关、时间窗口和通道。 | 映射到 `firmware.updatePolicy` 草案。 |
@@ -84,7 +84,7 @@
 | URL 远程升级和升级进度 | Drafted only | `firmware.update`, `firmware.getUpdateState`, progress/state events | `docs/protocol/firmware/firmware.update.md` | 转 Stage 20 采纳 URL source 流程；同步更新旧分类中 `firmware.ota` 命名。 |
 | 自动更新策略 | Drafted only | `firmware.updatePolicy` | `docs/protocol/firmware/firmware.updatePolicy.md` | 转 Stage 20 补 `autoUpdate/autoUpdateWindow/channel`。 |
 | 绑定码和绑定状态 | Drafted only / semantic gap | `auth.session` or binding-specific auth feature | `docs/protocol/auth/auth.session.md` | 转 Stage 20 补 `GetBindCode`、`bound`、过期时间、状态事件和方向。 |
-| 温度、电量等遥测上报 | Missing | Candidate `sensor.telemetry`; possible split to `device.power` / sensor domains | `docs/legacy-migration/classification/by-source/signage_sdk.md` | 转 Stage 20 先定域和字段集合。 |
+| 温度、电量等遥测上报 | Missing | Candidate `sensor.telemetry`; possible split to `system.power` / sensor domains | `docs/legacy-migration/classification/by-source/signage_sdk.md` | 转 Stage 20 先定域和字段集合。 |
 | 播放列表全量同步 | Drafted only | `signage.playlist` | `docs/protocol/signage/signage.playlist.md` | 转 Stage 20 补 playlists/items/settings schema、全量替换语义和错误策略。 |
 | 播放项 URL 刷新 | Drafted only / naming gap | `signage.media`; candidate `signage.getPlaylistItemUrl` or `signage.refreshMediaUrl` | `docs/protocol/signage/signage.media.md` | 转 Stage 20 决定 method 命名和 `url`/`urls` 二选一 schema。 |
 | 外观/面板配置 | Drafted only / naming review | `signage.osd` | `docs/protocol/signage/signage.osd.md` | 转 Stage 20 确认 OSD 是否合适，补 `panelLayout/autoHidePanel/autoHideDelay`。 |
@@ -164,7 +164,7 @@ sequenceDiagram
 | 17 | Device / Cloud | 获取绑定码。 | Draft auth binding method under `auth.session` or new auth feature | 旧 `GetBindCode` 返回 code、expiresAt、expiresInSeconds。 | 设备/云端得到可展示或可校验绑定码。 | 当前 `auth.session` 草案没有绑定码 schema；转 Stage 20。 |
 | 18 | App / Cloud / Device | 查询或设置绑定状态。 | Draft `auth.getSessionState` / `auth.setSessionConfig` or binding method | 旧 `bound: true`。 | 设备绑定状态更新。 | 需确认绑定与 auth session 的关系，不直接复用旧 bool。 |
 | 19 | Device / Cloud | 上报绑定结果。 | Draft `auth.sessionStateChanged` | 旧 `status/code/message`。 | Cloud 更新绑定状态。 | 事件名和 payload 需重新定域。 |
-| 20 | Device / Cloud | 上报遥测。 | Missing `sensor.telemetryReported` candidate | 旧示例 temp、battery。 | Cloud 记录遥测。 | 字段集合不足；先确认是否拆到 `device.power` / sensor。 |
+| 20 | Device / Cloud | 上报遥测。 | Missing `sensor.telemetryReported` candidate | 旧示例 temp、battery。 | Cloud 记录遥测。 | 字段集合不足；先确认是否拆到 `system.power` / sensor。 |
 | 21 | App / Cloud / Device | 全量同步播放列表。 | Draft `signage.setPlaylistConfig` | `playlists[]`、日期/时间/星期、items、settings。 | 播放器替换当前配置。 | 第二次全量下发删除缺失项；schema 和错误策略需补。 |
 | 22 | App / Cloud / Device | 读取播放列表。 | Draft `signage.getPlaylistConfig` | 请求为空。 | 返回当前完整 playlist config。 | 需保持 set/get 结构一致。 |
 | 23 | Device / Cloud | 刷新播放项资源 URL。 | Draft `signage.media` method | 旧 `itemId`，返回 `url` 或 `urls`、`expiresAt`。 | 设备获得新的资源 URL。 | `listMedia` 命名与旧语义不完全一致，需 Stage 20 决定。 |
@@ -254,7 +254,7 @@ sequenceDiagram
 | SD 卡格式化不是普通 config set | `storage.sdCard` | `storage.getSdCardState`, `storage.formatSdCard`, `storage.sdCardFormatStateChanged` | `draft-business-protocol` | `[REVIEW-ASK]` 是否需要进度、完成事件和格式化失败原因？ |
 | URL 远程升级草案与旧分类中 `firmware.ota` 命名冲突 | `firmware.update` | `firmware.beginUpdate`, `firmware.getUpdateState`, progress event | `draft-business-protocol` | `[REVIEW-ASK]` 是否统一废弃 `firmware.ota` 候选名，改以 `firmware.update` 为唯一草案？ |
 | 绑定码与 auth session 语义不清 | `auth.session` or `auth.binding` | binding code/state methods and `auth.sessionStateChanged` | `draft-business-protocol` | `[REVIEW-ASK]` 绑定是设备认领、租户绑定还是认证 session？ |
-| 遥测缺少协议草案 | `sensor.telemetry` / `device.power` | `sensor.telemetryReported` or split events | `draft-business-protocol` | `[REVIEW-ASK]` 除 temp/battery 外还有哪些字段？电量是否归 `device.power`？ |
+| 遥测缺少协议草案 | `sensor.telemetry` / `system.power` | `sensor.telemetryReported` or split events | `draft-business-protocol` | `[REVIEW-ASK]` 除 temp/battery 外还有哪些字段？电量是否归 `system.power`？ |
 | Schedule 定域冲突 | `system.lifecycle` or `signage.schedule` | power/reboot schedule config or playlist schedule config | `draft-business-protocol` | `[REVIEW-ASK]` 旧 shutdown/reboot schedule 是否属于设备电源计划？ |
 | Signage media URL 刷新命名不准 | `signage.media` | `signage.refreshPlaylistItemUrl` / `signage.getPlaylistItemUrl` / `signage.listMedia` | `draft-business-protocol` | `[REVIEW-ASK]` 这是按 itemId 刷新 URL，不是通用 media list 吗？ |
 | Appearance 是否应命名为 OSD | `signage.osd` or `signage.appearance` | `signage.getOsdConfig`, `signage.setOsdConfig` | `draft-business-protocol` | `[REVIEW-ASK]` `panelLayout` / auto-hide 是播放器面板，不一定是 OSD。 |
