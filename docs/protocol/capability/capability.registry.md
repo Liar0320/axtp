@@ -1,6 +1,6 @@
 # AXTP capability.registry 协议草案
 
-版本：v0.2
+版本：v0.3
 
 归属域：`capability`
 
@@ -222,11 +222,106 @@ Capability ID：`capability.registry`
               {
                 "name": "system.getState",
                 "available": true
+              },
+              {
+                "name": "system.resetState",
+                "available": true
               }
             ],
             "events": [
               {
                 "name": "system.stateChanged",
+                "available": true,
+                "subscribed": true
+              }
+            ]
+          },
+          {
+            "id": "system.lifecycle",
+            "available": true,
+            "status": "draft",
+            "methods": [
+              {
+                "name": "system.getLifecycleState",
+                "available": true
+              },
+              {
+                "name": "system.reboot",
+                "available": true
+              },
+              {
+                "name": "system.shutdown",
+                "available": true
+              },
+              {
+                "name": "system.getLifecycleSchedules",
+                "available": true
+              },
+              {
+                "name": "system.setRebootSchedule",
+                "available": true
+              },
+              {
+                "name": "system.setShutdownSchedule",
+                "available": true
+              },
+              {
+                "name": "system.cancelLifecycleSchedule",
+                "available": true
+              }
+            ],
+            "events": [
+              {
+                "name": "system.lifecycleStateChanged",
+                "available": true,
+                "subscribed": true
+              }
+            ]
+          },
+          {
+            "id": "system.reset",
+            "available": true,
+            "status": "draft",
+            "methods": [
+              {
+                "name": "system.getResetCapabilities",
+                "available": true
+              },
+              {
+                "name": "system.getResetState",
+                "available": true
+              },
+              {
+                "name": "system.resetDevice",
+                "available": true,
+                "permission": "system.reset"
+              }
+            ],
+            "events": [
+              {
+                "name": "system.resetStateChanged",
+                "available": true,
+                "subscribed": true
+              }
+            ]
+          },
+          {
+            "id": "system.power",
+            "available": true,
+            "status": "draft",
+            "methods": [
+              {
+                "name": "system.getPowerState",
+                "available": true
+              },
+              {
+                "name": "system.powerOff",
+                "available": true
+              }
+            ],
+            "events": [
+              {
+                "name": "system.powerStateChanged",
                 "available": true,
                 "subscribed": true
               }
